@@ -20,6 +20,7 @@ This repository contains a **suspicious email triage workbench**: analysts submi
 ## Developer hygiene
 
 - Local setup: `npm run setup:dev`
+- Dev setup + image build: `npm run build:dev` (or `bash scripts/setup-and-build-dev.sh`)
 - Lint: `sh scripts/lint-all.sh`
 - Tests: `sh scripts/test-all.sh`
 - Git hooks: Husky runs lint on commit and tests on push (see `docs/VERSIONS_BUILDS_AND_SIMULATION.md` and repo hook files under `.husky/`).

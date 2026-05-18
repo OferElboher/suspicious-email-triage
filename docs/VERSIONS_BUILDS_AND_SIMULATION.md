@@ -52,6 +52,15 @@ The easiest option is to run the repository setup script. It checks first, insta
 bash scripts/setup-local-dev.sh
 ```
 
+To install prerequisites **and** build the dev Docker images in one step:
+
+```bash
+# Setup + dev image build (npm alias: npm run build:dev).
+bash scripts/setup-and-build-dev.sh
+```
+
+After that script finishes, start the stack with `DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up` (see [Local development: recommended multi-terminal layout](#local-development-recommended-multi-terminal-layout) below).
+
 If you prefer to do the checks manually, the commands below use the same idea. They are meant for Ubuntu/WSL-style development machines. If you use another OS, keep the same spirit: check first, then install only what is absent.
 
 ```bash

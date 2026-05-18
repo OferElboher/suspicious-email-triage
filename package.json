@@ -5,6 +5,7 @@
   "scripts": {
     "prepare": "husky",
     "setup:dev": "bash scripts/setup-local-dev.sh",
+    "build:dev": "bash scripts/setup-and-build-dev.sh",
     "lint": "sh scripts/lint-all.sh",
     "test": "sh scripts/test-all.sh"
   },

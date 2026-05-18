@@ -2,6 +2,17 @@
 
 This guide is for local development. The `dev` version uses local Docker Compose services for MongoDB, PostgreSQL, Redis, and Redpanda/Kafka. You do not need to install MongoDB or PostgreSQL directly on the host machine for the normal dev path.
 
+## Quick start: setup and build
+
+From the repository root, one command checks/installs prerequisites and builds dev images:
+
+```bash
+bash scripts/setup-and-build-dev.sh
+# or: npm run build:dev
+```
+
+Then continue with the terminal layout below to start services and the React UI.
+
 ## First, check required tools
 
 ```bash

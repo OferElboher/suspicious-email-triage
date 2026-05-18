@@ -14,9 +14,16 @@ This split keeps chart rendering from scanning a large MongoDB review history.
 ## Build images
 
 ```bash
+# Recommended for local dev: install prerequisites, then build dev images.
+bash scripts/setup-and-build-dev.sh
+```
+
+Or build manually after Docker/Compose are available:
+
+```bash
 # Check Docker/Compose first; build only if the tools are present.
 docker compose version >/dev/null 2>&1 && \
-  docker compose -f infra/docker/docker-compose.yml build
+  DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml build
 ```
 
 During image build, no real staging/prod secrets should be present. Secrets are runtime configuration, not image content.

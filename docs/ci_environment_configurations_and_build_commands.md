@@ -72,6 +72,12 @@ PY
 Development is intentionally local. It should not require remote database credentials.
 
 ```bash
+# One-shot: install missing tools/libraries and build dev images.
+bash scripts/setup-and-build-dev.sh
+# or: npm run build:dev
+```
+
+```bash
 # Start local MongoDB, PostgreSQL, Redis, Redpanda/Kafka, API, Celery worker, and dispatcher.
 DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up --build
 ```
