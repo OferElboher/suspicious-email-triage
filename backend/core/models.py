@@ -1,3 +1,4 @@
-# from django.db import models  <<<--- Comment-in once any models are actually defined below!
+# Django model placeholder.
+# Import django.db.models here when this app gets persistent Django-owned tables.
 
-# Create your models here.
+# No Django models are currently required; MongoDB stores the active triage records.

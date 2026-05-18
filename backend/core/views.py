@@ -20,12 +20,19 @@ This layer performs NO AI processing.
 It only queues work asynchronously.
 """
 
+# json parses request bodies from bytes into Python dictionaries.
 import json
+
+# Dict/Any describe the flexible JSON payload sent through Kafka.
 from typing import Dict, Any
 
+# JsonResponse returns compact JSON HTTP responses from Django views.
 from django.http import JsonResponse
+
+# csrf_exempt keeps this demo endpoint easy to call from non-browser clients.
 from django.views.decorators.csrf import csrf_exempt
 
+# send_task publishes accepted payloads into Kafka.
 from core.kafka_producer import send_task
 
 
@@ -81,14 +88,17 @@ def submit_task(request):
     """
 
     if request.method != "POST":
+        # Only POST carries a payload that can be queued for asynchronous work.
         return JsonResponse({"error": "POST method required"}, status=405)
 
     try:
+        # Parse incoming JSON once; validation can be expanded as the contract grows.
         data: Dict[str, Any] = json.loads(request.body)
     except json.JSONDecodeError:
+        # Return a gentle client error when the body is not JSON.
         return JsonResponse({"error": "Invalid JSON"}, status=400)
 
-    # Send to Kafka
+    # Publish to Kafka and return immediately; processing continues elsewhere.
     send_task(data)
 
     return JsonResponse({"status": "queued"})

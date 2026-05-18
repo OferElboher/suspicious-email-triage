@@ -28,12 +28,19 @@ Depends on
 Kafka broker running on localhost:9092
 """
 
+# json serializes Python dict payloads into Kafka message bytes.
 import json
+
+# time.sleep spaces out retry attempts while Kafka is starting.
 import time
+
+# Dict/Any describe flexible task payloads passed from views to Kafka.
 from typing import (
     Dict,
     Any,
 )  # Must precede the import from kafka in order to avoid linting erros along commit!
+
+# KafkaProducer is the client used by Django endpoints to publish events.
 from kafka import KafkaProducer
 
 
@@ -47,14 +54,17 @@ producer = None
 
 
 def get_producer() -> KafkaProducer:
+    # producer is module-scoped so multiple requests reuse one connection.
     global producer
     while producer is None:
         try:
+            # bootstrap_servers points at the Kafka broker visible to this process.
             producer = KafkaProducer(
                 bootstrap_servers="localhost:9092",
                 value_serializer=lambda v: json.dumps(v).encode("utf-8"),
             )
         except Exception:
+            # Kafka may start after Django in local dev, so retry gently.
             print("Kafka not ready, retrying in 2 seconds...")
             time.sleep(2)
     return producer
@@ -102,6 +112,11 @@ def send_task(data: Dict[str, Any]) -> None:
     producer.flush() ensures message delivery before returning.
     This is safer but slightly slower, that can be removed later for higher throughput.
     """
-    producer = get_producer()
-    producer.send(TOPIC_NAME, data)
-    producer.flush()
+    # producer_instance avoids shadowing the module-level producer variable.
+    producer_instance = get_producer()
+
+    # Send the payload to the shared AI task topic.
+    producer_instance.send(TOPIC_NAME, data)
+
+    # Flush before returning so callers know the broker accepted the message.
+    producer_instance.flush()

@@ -1,132 +1,28 @@
-///////////////////////////////////////////////////////////////////////////////
-// Queue used to trigger asynchronous analysis
-///////////////////////////////////////////////////////////////////////////////
-
 /**
- * Review analysis queue (Redis-backed via BullMQ).
- *
- * Responsibility:
- * - receives jobs from API layer
- * - forwards them to worker process asynchronously
- */
-const reviewQueue = require("../queue/reviewQueue");
-
-///////////////////////////////////////////////////////////////////////////////
-// Core Imports
-///////////////////////////////////////////////////////////////////////////////
-
-/**
- * Express framework used for routing HTTP requests.
+ * Reviews REST: create (Kafka + optional BullMQ), list, detail, analyst override.
  */
 const express = require("express");
 const router = express.Router();
-
-/**
- * Mongoose model representing a review document in MongoDB.
- */
 const Review = require("../models/Review");
-
-///////////////////////////////////////////////////////////////////////////////
-// Pagination Contract Binding
-///////////////////////////////////////////////////////////////////////////////
-
-/**
- * IMPORTANT ARCHITECTURAL RULE:
- *
- * The backend MUST NOT define its own pagination size independently.
- *
- * Instead, it consumes the shared configuration, REVIEW_PAGE_SIZE.
- *
- * This ensures:
- * - frontend and backend always stay in sync
- * - no hidden divergence in pagination behavior
- * - single source of truth for page size across the system
- *
- * This value is defined in:
- * shared/config/pagination.js
- */
+const { extractLinks } = require("../lib/extractLinks");
 const { REVIEW_PAGE_SIZE } = require("../../../shared/config/pagination");
+const logger = require("../lib/logger");
+const { enqueueAfterCreate } = require("../services/reviewPipeline");
 
+/** Default page index for GET /reviews pagination (zero-based). */
 const DEFAULT_PAGE = 0;
+/** Default page size is bound to shared REVIEW_PAGE_SIZE for UI/API parity. */
 const DEFAULT_LIMIT = REVIEW_PAGE_SIZE;
 
-
-///////////////////////////////////////////////////////////////////////////////
-// Utility: Link Extraction (ADDED - REQUIRED FOR RULE ENGINE)
-///////////////////////////////////////////////////////////////////////////////
-
-/**
- * Extracts HTTP/HTTPS links from email body text.
- *
- * This is required for:
- * - domain mismatch detection (worker rule)
- * - phishing detection heuristics
- * - external link analysis
- *
- * Without this, rule-based security checks cannot function correctly.
- */
-const extractLinks = (text) => {
-  const regex = /(https?:\/\/[^\s]+)/g;
-  return text.match(regex) || [];
-};
-
-///////////////////////////////////////////////////////////////////////////////
-// Review API Routes
-///////////////////////////////////////////////////////////////////////////////
-
-/**
- * This module defines all API endpoints related to:
- * - creating reviews
- * - retrieving review status and results
- *
- * Acts as the HTTP interface layer between:
- * frontend → backend → queue/worker system
- */
-
-///////////////////////////////////////////////////////////////////////////////
-// Create Review
-///////////////////////////////////////////////////////////////////////////////
-
-/**
- * POST /reviews
- *
- * Creates a new email review and triggers asynchronous analysis.
- *
- * Processing flow:
- * 1. Receive raw email data from client
- * 2. Extract links from email body (used by security rules)
- * 3. Store review in MongoDB with status = "pending"
- * 4. Enqueue background job for worker processing
- * 5. Return immediately without waiting for analysis
- *
- * This ensures:
- * - API remains fast
- * - analysis is fully asynchronous
- * - system scales under load
- */
+/** POST /reviews — persists a review and enqueues async analysis (Kafka/Celery primary path). */
 router.post("/", async (req, res) => {
   try {
-    /**
-     * Extract email payload from request body
-     */
-    const {
-      senderName,
-      senderEmail,
-      subject,
-      body,
-      referenceSources,
-    } = req.body;
-
-    /**
-     * Extract links for later rule-based analysis
-     */
+    const { senderName, senderEmail, subject, body, referenceSources } =
+      req.body;
+    if (!senderName || !senderEmail || !subject || !body) {
+      return res.status(400).json({ error: "missing_fields" });
+    }
     const links = extractLinks(body);
-
-    /**
-     * Persist review in database
-     *
-     * Stored as "pending" until worker processes it.
-     */
     const review = await Review.create({
       senderName,
       senderEmail,
@@ -137,89 +33,51 @@ router.post("/", async (req, res) => {
       status: "pending",
     });
 
-    /**
-     * Enqueue background analysis job
-     *
-     * Only reviewId is passed for lightweight queue payload.
-     */
-    await reviewQueue.add("analyze", {
-      reviewId: review._id.toString(),
-    });
+    await enqueueAfterCreate(review._id);
 
-    /**
-     * Immediate response to client
-     */
-    return res.status(201).json({
-      id: review._id,
-      status: review.status,
-    });
+    logger.info("reviews", "created", { id: String(review._id) });
+    return res.status(201).json({ id: review._id, status: review.status });
   } catch (err) {
-    console.error("Failed to create review:", err);
-
-    return res.status(500).json({
-      error: "Failed to create review",
-    });
+    logger.error("reviews", "create failed", { error: err.message });
+    return res.status(500).json({ error: "Failed to create review" });
   }
 });
 
-///////////////////////////////////////////////////////////////////////////////
-// Get All Paginated Reviews
-///////////////////////////////////////////////////////////////////////////////
+/** POST /reviews/:id/override — analyst audit trail for manual verdict adjustments. */
+router.post("/:id/override", async (req, res) => {
+  try {
+    const review = await Review.findById(req.params.id);
+    if (!review) {
+      return res.status(404).json({ error: "not_found" });
+    }
+    review.override = {
+      verdict: req.body.verdict,
+      recommendedAction: req.body.recommendedAction,
+      reason: req.body.reason,
+      timestamp: new Date(),
+    };
+    await review.save();
+    logger.info("reviews", "override saved", { id: String(review._id) });
+    return res.json({ ok: true, review });
+  } catch (err) {
+    logger.error("reviews", "override failed", { error: err.message });
+    return res.status(500).json({ error: "internal_error" });
+  }
+});
 
-/**
- * GET /reviews
- *
- * Returns a lightweight, paginated list of reviews.
- *
- * Intended use:
- * - dashboard overview
- * - quick scanning of review statuses
- * - scalable handling of large datasets (thousands/millions of reviews)
- *
- * Query Parameters:
- * - page: zero-based page index (default: above defined DEFAULT_PAGE)
- * - limit: number of items per page (default: above defined DEFAULT_LIMIT)
- *
- * Behavior:
- * - results are sorted by most recently updated (updatedAt descending)
- * - pagination is applied using skip + limit
- * - only minimal fields are returned to reduce payload size
- *
- * Returned fields:
- * - senderEmail
- * - subject
- * - status
- * - analysisResult.verdict
- * - updatedAt
- */
+/** GET /reviews — paginated dashboard rows sorted by recent activity. */
 router.get("/", async (req, res) => {
   try {
-    /**
-     * Extract pagination parameters from query string
-     */
-    const page = parseInt(req.query.page ?? DEFAULT_PAGE);
-    const limit = parseInt(req.query.limit ?? DEFAULT_LIMIT);
-
-    /**
-     * Enforce pagination safety
-     */
+    const page = parseInt(req.query.page ?? DEFAULT_PAGE, 10);
+    const limit = parseInt(req.query.limit ?? DEFAULT_LIMIT, 10);
     const safePage = Math.max(page, 0);
-    const safeLimit = Math.min(
-      Math.max(limit, 1),
-      REVIEW_PAGE_SIZE
-    );
-
+    const safeLimit = Math.min(Math.max(limit, 1), REVIEW_PAGE_SIZE);
     const total = await Review.countDocuments();
-
-    /**
-     * Query MongoDB with pagination and field selection
-     */
     const reviews = await Review.find()
       .sort({ updatedAt: -1 })
       .skip(safePage * safeLimit)
       .limit(safeLimit)
       .select("senderEmail subject status analysisResult.verdict updatedAt");
-
     return res.json({
       data: reviews,
       page: safePage,
@@ -228,60 +86,23 @@ router.get("/", async (req, res) => {
       hasMore: safePage * safeLimit + reviews.length < total,
     });
   } catch (err) {
-    console.error("Failed to fetch reviews:", err);
-
-    return res.status(500).json({
-      error: "Failed to fetch reviews",
-    });
+    logger.error("reviews", "list failed", { error: err.message });
+    return res.status(500).json({ error: "Failed to fetch reviews" });
   }
 });
 
-
-///////////////////////////////////////////////////////////////////////////////
-// Get Single Review (Full Detail View)
-///////////////////////////////////////////////////////////////////////////////
-
-/**
- * GET /reviews/:id
- *
- * Returns complete review information for analyst inspection.
- *
- * Includes:
- * - original email content
- * - analysis result
- * - findings and evidence
- * - follow-up questions
- * - manual override (if present)
- *
- * This endpoint supports full investigation workflow.
- */
+/** GET /reviews/:id — full document for polling and analyst deep-read. */
 router.get("/:id", async (req, res) => {
   try {
-    const { id } = req.params;
-
-    /**
-     * Fetch full review document from MongoDB
-     */
-    const review = await Review.findById(id);
-
+    const review = await Review.findById(req.params.id);
     if (!review) {
-      return res.status(404).json({
-        error: "Review not found",
-      });
+      return res.status(404).json({ error: "Review not found" });
     }
-
     return res.json(review);
   } catch (err) {
-    console.error("Failed to fetch review:", err);
-
-    return res.status(500).json({
-      error: "Failed to fetch review",
-    });
+    logger.error("reviews", "get failed", { error: err.message });
+    return res.status(500).json({ error: "Failed to fetch review" });
   }
 });
-
-///////////////////////////////////////////////////////////////////////////////
-// Export Router
-///////////////////////////////////////////////////////////////////////////////
 
 module.exports = router;

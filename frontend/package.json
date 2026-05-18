@@ -10,12 +10,14 @@
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-scripts": "^5.0.1",
+    "recharts": "^2.15.4",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
+    "lint": "eslint \"src/**/*.{js,jsx}\"",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {

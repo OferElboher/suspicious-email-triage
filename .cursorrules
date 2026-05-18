@@ -1,0 +1,30 @@
+# ============================================================================
+# CURSOR AI EXECUTION RULES & PROJECT CONTEXT
+# ============================================================================
+
+## AUTONOMY & QUOTA OPTIMIZATION (CRITICAL)
+- DO NOT stop to ask clarification questions, permission, or architectural opinions.
+- If requirements are ambiguous or missing, make the most logical, industry-standard engineering assumption and proceed immediately with execution.
+- If technical choices must be made (e.g., choice of library, design pattern, or utility function), pick the most stable, scalable, and modern option.
+- Document all assumptions, architectural choices, and deviations clearly using inline code comments or markdown blocks in your response.
+
+## CODE STYLE & ARCHITECTURE
+- Write clean, modular, and maintainable code adhering to SOLID principles.
+- Use explicit, descriptive variable and function names; avoid cryptic abbreviations.
+- Favor declarative, functional programming patterns (e.g., map, filter, reduce) over imperative loops where appropriate.
+- Maintain consistent formatting: use strict linting rules, proper indentation, and clear separation of concerns.
+- Avoid code duplication. Refactor existing code into reusable utilities or components if you notice repetitive patterns.
+- Keep functions small, focused, and limited to a single responsibility.
+
+## ERROR HANDLING & RESILIENCE
+- Never write "silent fail" or empty catch blocks (`catch (e) {}`).
+- Every risky operation (I/O, API calls, data parsing) must be wrapped in explicit try/catch blocks or robust error-handling wrappers.
+- Provide meaningful, actionable error messages. Log errors with sufficient context to simplify debugging.
+- Implement graceful degradation or safe fallback mechanisms so the application does not crash when an edge-case error occurs.
+- Validate all incoming data, API payloads, and function inputs before processing them.
+
+## EXECUTION STEP-BY-STEP
+1. Read the user's request and analyze the existing codebase context.
+2. Formulate the optimal execution plan based on the rules above.
+3. Execute all necessary file creations, edits, and terminal commands autonomously.
+4. Verify that the changes do not break existing functionality or introduce regressions.

@@ -1,26 +1,14 @@
 {
-  "name": "distributed-ai-demo",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "suspicious-email-triage",
+  "private": true,
+  "description": "Monorepo: Node API, React UI, Kafka + Celery AI pipeline",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "prepare": "husky",
+    "setup:dev": "bash scripts/setup-local-dev.sh",
+    "lint": "sh scripts/lint-all.sh",
+    "test": "sh scripts/test-all.sh"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/OferElboher/distributed-ai-demo.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/OferElboher/distributed-ai-demo/issues"
-  },
-  "homepage": "https://github.com/OferElboher/distributed-ai-demo#readme",
-  "dependencies": {
-    "axios": "^1.13.6",
-    "dotenv": "^17.3.1",
-    "express": "^5.2.1",
-    "kafkajs": "^2.2.4"
+  "devDependencies": {
+    "husky": "^9.1.6"
   }
 }

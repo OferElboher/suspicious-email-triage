@@ -1,474 +1,78 @@
-# Distributed AI Demo — Architecture
+# Architecture, in practical language
 
-## 1. System Overview
+This system is built as a small group of cooperating services. The browser gives analysts a comfortable workspace. The Node.js API accepts submissions quickly. Kafka carries “new review” events. Python/Celery workers do the slower scoring work. MongoDB stores the original review and the final result, while PostgreSQL stores narrow statistics events for charts.
 
-This project demonstrates a **distributed AI processing pipeline** built using:
+The split is intentionally calm and flexible: if scoring is slow, the website can still accept a submission and show a “pending” or “processing” state while the background services catch up.
 
-* Django (REST API)
-* Kafka (event bus)
-* Celery (task queue)
-* Redis (Celery broker)
-* AI workers (processing layer)
-* Postgres / Mongo (storage)
-* Docker Compose (infrastructure)
+## Current main flow
 
-The system is intentionally **decoupled** to simulate production-grade distributed architecture.
-
----
-
-# 2. High-Level Data Flow
-
-```
-Client
-  ↓
-Django REST API
-  ↓
-Kafka Producer
-  ↓
-Kafka Topic (ai_tasks)
-  ↓
-Kafka Consumer
-  ↓
-Celery Task Queue
-  ↓
-AI Worker
-  ↓
-Database (Postgres / Mongo)
+```text
+React browser
+  -> Node.js / Express API
+  -> MongoDB (save Review with status=pending)
+  -> PostgreSQL (save narrow statistics event for charts)
+  -> Kafka / Redpanda (publish email.review.ingested)
+  -> Python dispatcher
+  -> Celery worker
+  -> MongoDB (save analysisResult and status=completed)
+  -> PostgreSQL (save status statistics event)
+  -> React browser polls for the latest result
 ```
 
-This architecture allows:
+## Components
 
-* asynchronous processing
-* horizontal scaling
-* service isolation
-* replayable events
-* multi-consumer pipelines
+### React frontend (`frontend/`)
 
----
+The frontend is what users see. It offers a triage form, live status updates, recent review browsing, analytics graphs, and a dev-only simulation panel.
 
-# 3. Component Hierarchy
+### Node.js API (`backend/src/`)
 
-```
-                ┌──────────────┐
-                │   Client     │
-                └──────┬───────┘
-                       │
-                       ▼
-                ┌──────────────┐
-                │ Django REST  │
-                └──────┬───────┘
-                       │
-                       ▼
-                ┌──────────────┐
-                │ Kafka Topic  │
-                └──────┬───────┘
-                       │
-                       ▼
-                ┌──────────────┐
-                │ Kafka Consumer│
-                └──────┬────────┘
-                       │
-                       ▼
-                ┌──────────────┐
-                │ Celery Queue │
-                └──────┬────────┘
-                       │
-                       ▼
-                ┌──────────────┐
-                │ AI Worker    │
-                └──────┬────────┘
-                       │
-                       ▼
-                ┌──────────────┐
-                │ Database     │
-                └──────────────┘
-```
+The Node API is the main browser-facing backend. It receives review submissions, stores them, publishes Kafka ingest events, exposes polling endpoints, and provides metrics for charts.
 
----
+Metrics are read from PostgreSQL rather than MongoDB. This avoids repeatedly scanning large review documents just to draw graphs.
 
-# 4. Project Structure
+### Python AI service (`ai_service/`)
 
-```
-distributed-ai-demo/
-│
-├── backend/
-│   ├── backend/
-│   │   ├── settings.py
-│   │   └── celery.py
-│   │
-│   └── core/
-│       ├── views.py
-│       ├── kafka_producer.py
-│       ├── kafka_consumer.py
-│       ├── tasks.py
-│       └── models.py
-│
-├── infra/
-│   └── docker-compose.yml
-│
-├── docs/
-│   └── architecture.md
-│
-├── pyproject.toml
-└── README.md
+The Python service handles asynchronous scoring. It consumes Kafka messages, schedules Celery tasks, reads MongoDB review documents, writes completed analysis results, and adds compact PostgreSQL status events for charts.
+
+### Django tree (`backend/config`, `backend/core`, `backend/health`)
+
+The repository also contains a Django project tree. It can support Django settings, management commands, health checks, and Python integration work. The current React UI primarily talks to the Node API, so Django is best understood as a coexisting service area rather than the main UI API.
+
+## Local dev vs staging/prod data
+
+- **dev** uses local services: MongoDB, PostgreSQL, Redis, and Redpanda/Kafka from Docker Compose.
+- **staging** uses remote managed MongoDB, PostgreSQL, Redis, and Kafka-compatible services with staging credentials.
+- **prod** uses remote managed MongoDB, PostgreSQL, Redis, and Kafka-compatible services with production credentials.
+
+This keeps developer machines safe and repeatable while still allowing staging and production to behave like real deployments.
+
+## Sequence diagram
+
+```mermaid
+sequenceDiagram
+  participant U as Analyst browser
+  participant A as Node API
+  participant M as MongoDB
+  participant P as PostgreSQL stats
+  participant K as Kafka
+  participant D as Python dispatcher
+  participant C as Celery worker
+
+  U->>A: POST /reviews
+  A->>M: Insert pending review
+  A->>P: Insert review_created statistic
+  A->>K: Publish email.review.ingested
+  A-->>U: Return review id
+  K->>D: Deliver ingest event
+  D->>C: Enqueue analyze_review
+  C->>M: Read review, score, save result
+  C->>P: Insert status_changed statistic
+  U->>A: Poll GET /reviews/:id
+  A->>M: Read current status/result
+  A-->>U: Show pending/processing/completed
 ```
 
----
+## Operational notes
 
-# 5. Components
-
-## 5.1 Django REST API
-
-Location:
-
-```
-backend/core/views.py
-```
-
-Role:
-
-* Entry point for clients
-* Validates input
-* Publishes events to Kafka
-* Returns immediate response
-
-Flow position:
-
-```
-Client → REST API → Kafka
-```
-
----
-
-## 5.2 Kafka Producer
-
-Location:
-
-```
-core/kafka_producer.py
-```
-
-Role:
-
-* Serialize event
-* Send to Kafka topic
-* Decouple REST from processing
-
-Flow:
-
-```
-REST → Kafka Producer → Kafka Topic
-```
-
----
-
-## 5.3 Kafka Topic
-
-Topic name:
-
-```
-ai_tasks
-```
-
-Role:
-
-* Event streaming layer
-* Message persistence
-* Multiple consumer support
-
-This is the **central event bus**.
-
----
-
-## 5.4 Kafka Consumer
-
-Location:
-
-```
-core/kafka_consumer.py
-```
-
-Role:
-
-* Listen to Kafka topic
-* Deserialize message
-* Send task to Celery
-
-Flow:
-
-```
-Kafka → Consumer → Celery
-```
-
----
-
-## 5.5 Celery Queue
-
-Broker:
-
-```
-Redis
-```
-
-Role:
-
-* Background task scheduling
-* Worker distribution
-* Retry support
-
-Flow:
-
-```
-Kafka Consumer → Celery Queue → Worker
-```
-
----
-
-## 5.6 AI Worker
-
-Location:
-
-```
-core/tasks.py
-```
-
-Role:
-
-* Execute AI logic
-* Process payload
-* Save results
-
-Flow:
-
-```
-Celery → AI Worker → Database
-```
-
----
-
-## 5.7 Database Layer
-
-Postgres:
-
-* structured results
-* job metadata
-* status tracking
-
-Mongo:
-
-* raw events
-* AI output
-* debugging payloads
-
----
-
-# 6. Message Format
-
-Example event:
-
-```json
-{
-  "type": "analyze_text",
-  "text": "hello world",
-  "request_id": "uuid"
-}
-```
-
-This message flows unchanged through:
-
-```
-REST → Kafka → Consumer → Celery → Worker
-```
-
----
-
-# 7. Execution Model
-
-This system runs **multiple independent processes**:
-
-### Process 1 — Django API
-
-Handles incoming requests.
-
-### Process 2 — Kafka Consumer
-
-Reads Kafka messages continuously.
-
-### Process 3 — Celery Worker
-
-Executes AI tasks.
-
-### Process 4 — Infrastructure
-
-Docker containers:
-
-* Kafka
-* Redis
-* Postgres
-* Mongo
-* RabbitMQ (optional)
-* Zookeeper
-
----
-
-# 8. How to Run the System
-
-## Start infrastructure
-
-```
-cd infra
-docker compose up -d
-```
-
----
-
-## Start Django API
-
-```
-cd backend
-poetry run python manage.py runserver
-```
-
----
-
-## Start Celery worker
-
-```
-cd backend
-poetry run celery -A backend worker -l info
-```
-
----
-
-## Start Kafka consumer
-
-```
-cd backend
-poetry run python manage.py run_kafka_consumer
-```
-
----
-
-# 9. End-to-End Example
-
-Client request:
-
-```
-POST /api/analyze
-{
-  "text": "hello AI"
-}
-```
-
-Flow:
-
-1. Django receives request
-2. Django publishes Kafka event
-3. Kafka stores event
-4. Consumer reads event
-5. Consumer sends Celery task
-6. Worker executes AI logic
-7. Result saved to DB
-
----
-
-# 10. Scaling Model
-
-Each layer scales independently:
-
-REST:
-
-* multiple Django instances
-
-Kafka:
-
-* partitioned topics
-
-Consumer:
-
-* consumer groups
-
-Celery:
-
-* multiple workers
-
-AI:
-
-* GPU workers possible
-
-Database:
-
-* read replicas
-
----
-
-# 11. Failure Handling
-
-Kafka:
-
-* message persistence
-* replay support
-
-Celery:
-
-* retry
-* backoff
-* dead-letter queues
-
-Workers:
-
-* idempotent processing
-
----
-
-# 12. Future Extensions
-
-Planned additions:
-
-* multiple AI models
-* model routing
-* streaming responses
-* job status API
-* monitoring dashboard
-* tracing
-* metrics
-
----
-
-# 13. Design Principles
-
-This project follows:
-
-* event-driven architecture
-* async processing
-* decoupled services
-* horizontal scalability
-* observable pipeline
-* production-like topology
-
----
-
-# 14. Summary
-
-Pipeline:
-
-```
-REST API
-    ↓
-Kafka
-    ↓
-Consumer
-    ↓
-Celery
-    ↓
-AI Worker
-    ↓
-Database
-```
-
-Each layer is:
-
-* independent
-* scalable
-* replaceable
-* testable
+The architecture is intentionally modular. A team can scale the API, dispatcher, and Celery workers separately. Logs are written as JSON lines so they can be searched locally and later shipped to a log platform. In dev, the UI also offers a reset control that stops simulation, clears Mongo review data, truncates PostgreSQL statistics, flushes Redis queues, and recreates the local Kafka ingest topic.

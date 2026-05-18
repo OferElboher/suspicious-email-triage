@@ -1,33 +1,28 @@
-# Worker Architecture and Execution Model
+# Worker architecture and execution model
 
-## Overview
+Email analysis is intentionally slower than saving a web form, so the system gently separates **accepting a request** from **processing it**.
 
-This project uses an asynchronous processing architecture to handle email analysis.
+## Default path
 
-The system is divided into two independent components:
+```text
+Node API -> Kafka/Redpanda -> Python dispatcher -> Celery/Redis -> Python worker
+```
 
-- **API Server (Producer)** — receives requests and enqueues jobs
-- **Worker (Consumer)** — processes jobs from the queue
+The Node API stores the review in MongoDB, records a compact PostgreSQL statistics event, and publishes a Kafka ingest message. The Python worker later reads the MongoDB review, updates the result, and writes status statistics to PostgreSQL for charts.
 
-These components communicate through a Redis-backed queue.
+## Why separate processes
 
----
+Separate processes make the system easier to operate:
 
-## Why the Worker Is Not Started Automatically
+- the API can stay responsive,
+- workers can be scaled separately,
+- scoring failures do not directly crash the browser-facing API,
+- statistics can be collected without scanning all MongoDB review documents.
 
-The worker (`reviewWorker.js`) is **not automatically executed** when starting the API server.
+## Legacy Node worker
 
-This is intentional and follows standard production architecture.
+A Node BullMQ worker still exists under `backend/src/worker/`. It is optional and useful for local experiments or fallback work, but the default Docker Compose path is Kafka + Celery.
 
-### Reason
+## Local dev reset
 
-The API and the worker are designed as **separate processes**.
-
-They must be started independently:
-
-```bash
-# Terminal 1
-node src/app.js
-
-# Terminal 2
-node src/worker/reviewWorker.js
+Development mode includes a reset action that stops simulation, clears MongoDB reviews, truncates PostgreSQL statistics, flushes Redis queues/state, and recreates the local Kafka ingest topic. This keeps long-running demos from growing indefinitely.

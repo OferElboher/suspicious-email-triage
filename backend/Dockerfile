@@ -90,4 +90,4 @@ EXPOSE 3000
 # Start command
 # Runs the Express API server
 ###############################################################################
-CMD ["node", "src/app.js"]
+CMD ["node", "src/server.js"]

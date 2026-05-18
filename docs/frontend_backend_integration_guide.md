@@ -1,7 +1,12 @@
 # FRONTEND_BACKEND_INTEGRATION.md
 
 ## Goal
+
 Connect React frontend to Node backend API.
+
+### In normal language
+
+This guide is about the “plumbing” between the browser and the API: which URLs to call, how to configure the base URL for different machines, and how to avoid common pitfalls like CORS misconfiguration during local development.
 
 ---
 
@@ -24,10 +29,15 @@ fetch(`${process.env.REACT_APP_API_URL}/health`)
 
 ## Step 3 — Handle CORS (backend)
 
-Install:
+The backend already declares `cors` in `backend/package.json`. If you are setting up from scratch, check first and install only when it is missing:
 
-```
-npm install cors
+```bash
+# Check whether backend dependencies are already installed.
+test -d backend/node_modules || (cd backend && npm install)
+
+# Check whether the cors package can be resolved by Node.
+(cd backend && node -e "require.resolve('cors'); console.log('cors already installed')") || \
+  (cd backend && npm install cors)
 ```
 
 Use:

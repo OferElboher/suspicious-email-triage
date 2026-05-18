@@ -1,148 +1,89 @@
-# RUNNING_THE_STACK.md
+# Running the local stack
 
-This project consists of:
-- MongoDB (system service)
-- Node.js backend (API)
-- Node.js worker
-- React frontend
+This guide is for local development. The `dev` version uses local Docker Compose services for MongoDB, PostgreSQL, Redis, and Redpanda/Kafka. You do not need to install MongoDB or PostgreSQL directly on the host machine for the normal dev path.
 
----
-
-## Prerequisite
-
-MongoDB must be running (systemd):
+## First, check required tools
 
 ```bash
-sudo systemctl status mongod
+# Docker runs the local databases, queues, and service containers.
+command -v docker >/dev/null 2>&1 && docker --version || echo "Docker is missing"
+
+# Docker Compose starts the multi-container dev stack.
+docker compose version >/dev/null 2>&1 && docker compose version || echo "Docker Compose plugin is missing"
+
+# Node and npm run the React dev server and JS tooling.
+command -v node >/dev/null 2>&1 && node --version || echo "Node.js is missing"
+command -v npm >/dev/null 2>&1 && npm --version || echo "npm is missing"
 ```
 
-Expected:
-- Active: running
-
----
-
-## Terminal Setup (3 terminals required)
-
-### Terminal 1 — Backend (API)
+## Terminal 1 — local infrastructure and backend services
 
 ```bash
-cd ~/suspicious-email-triage/backend
-node src/app.js
+# From the repository root, start MongoDB, PostgreSQL, Redis, Redpanda/Kafka, Node API, Celery, and dispatcher.
+docker compose -f infra/docker/docker-compose.yml up --build
 ```
 
-Expected output:
-- "Server running on port 3000"
-- "MongoDB connection established"
+Expected signs:
 
----
+- MongoDB container stays running.
+- PostgreSQL container stays running and stores chart statistics.
+- Redis container stays running.
+- Redpanda container starts Kafka-compatible listeners.
+- Backend logs mention `listening on 3000`.
+- Celery and dispatcher logs show startup messages.
 
-### Terminal 2 — Worker
+## Terminal 2 — React frontend
 
 ```bash
-cd ~/suspicious-email-triage/backend
-node src/worker/reviewWorker.js
+# Move into the frontend package.
+cd frontend
+
+# Install frontend libraries only when not already installed.
+test -d node_modules || npm install
+
+# Start the local browser UI.
+REACT_APP_API_URL=http://localhost:3000 PORT=3001 npm start
 ```
 
-Expected output:
-- "Worker connected to MongoDB"
+## Browser
 
----
+Open:
 
-### Terminal 3 — React Frontend
-
-```bash
-cd ~/suspicious-email-triage/frontend
-npm start
-```
-
-Notes:
-- If prompted about port 3000 → press `Y`
-- React will run on port 3001
-
----
-
-## Access Application
-
-Open browser:
-
-```
+```text
 http://localhost:3001
 ```
 
----
+You should see the triage workspace, analytics graphs, and (because this is `dev`) the simulation controls.
 
-## Basic Health Checks
-
-### Backend
+## Health checks
 
 ```bash
+# API health check.
 curl http://localhost:3000/health
+
+# Local MongoDB ping through the host port exposed by docker-compose.
+mongosh --port 27018 --eval "db.runCommand({ ping: 1 })"
+
+# Local PostgreSQL readiness check for chart statistics.
+docker compose -f infra/docker/docker-compose.yml exec postgres pg_isready -U triage -d triage_stats
 ```
 
-Expected:
+If `mongosh` is not installed, you can still use the application normally; Docker is running MongoDB inside the compose stack. The PostgreSQL check uses the container’s own `pg_isready`, so it does not require host PostgreSQL tools.
 
-```json
-{"status":"ok"}
-```
+## Reset local dev data
 
----
-
-### MongoDB
+Use the UI button **Reset local databases & queues** in development mode, or call the endpoint directly:
 
 ```bash
-mongosh --port 27018 --eval "db.runCommand({ ping: 1 })"
+# Stop simulation and clear local MongoDB reviews, PostgreSQL stats, Redis, and Kafka ingest backlog.
+curl -sS -X POST "http://localhost:3000/dev/reset-local-state" \
+  -H "content-type: application/json" \
+  -d '{}'
 ```
-
-Expected:
-
-```json
-{ ok: 1 }
-```
-
----
 
 ## Notes
 
-- MongoDB runs on port **27018**
-- Backend runs on port **3000**
-- Frontend runs on port **3001**
-- Worker runs in background (no port)
-
----
-
-## Common Issues
-
-### Port conflict (3000)
-
-Cause: backend already using it
-
-Solution:
-- Allow React to switch to 3001
-
----
-
-### Mongo connection errors
-
-Check:
-
-```bash
-systemctl status mongod
-```
-
----
-
-### Backend not responding
-
-Check logs in Terminal 1
-
----
-
-## End State (Everything Working)
-
-- MongoDB: running
-- Backend: running
-- Worker: running
-- Frontend: running
-
-All set.
-
+- Dev databases are local.
+- MongoDB stores review records; PostgreSQL stores chart statistics.
+- Staging and production databases/statistics stores are remote and credentialed.
+- The old Node BullMQ worker can still be started through the `legacy-bullmq` profile, but the default path is Kafka → Celery.

@@ -1,43 +1,8 @@
 ###############################################################################
-# Suspicious Email Triage - Docker Compose
-#
-# PURPOSE:
-# This file defines the full local development / containerized runtime
-# environment for the Suspicious Email Triage system.
-#
-# ARCHITECTURE OVERVIEW:
-#
-#   frontend (external / React dev server)
-#          ↓ HTTP
-#   backend (Express API)
-#          ↓
-#   Redis (BullMQ queue)
-#          ↓
-#   worker (async analysis engine)
-#          ↓
-#   MongoDB (persistent storage)
-#
-# DESIGN GOALS:
-# - Fully decoupled async processing (API vs worker)
-# - Scalable background job architecture (BullMQ)
-# - Stateless API container
-# - Persistent database + queue separation
+# Local stack: API, optional Node worker, Redpanda (Kafka API), Celery, dispatcher.
 ###############################################################################
-
 services:
-
-  #############################################################################
-  # MongoDB - Primary Data Store
-  #
-  # ROLE:
-  # - stores all email reviews
-  # - stores analysis results
-  # - stores analyst overrides
-  #
-  # NOTES:
-  # - runs as standalone container
-  # - exposed locally for debugging (27018 on host → 27017 in container)
-  #############################################################################
+  # mongo: local dev document database for Review records and analysis results.
   mongo:
     container_name: triage-mongo
     image: mongo:6
@@ -45,16 +10,7 @@ services:
       - "27018:27017"
     restart: unless-stopped
 
-  #############################################################################
-  # Redis - Queue Backend (BullMQ)
-  #
-  # ROLE:
-  # - stores job queue for async processing
-  # - acts as broker between API and worker
-  #
-  # FLOW:
-  # backend → Redis queue → worker consumes jobs
-  #############################################################################
+  # redis: local dev broker/backend for Celery and lightweight API state.
   redis:
     container_name: triage-redis
     image: redis:7
@@ -62,18 +18,46 @@ services:
       - "6379:6379"
     restart: unless-stopped
 
-  #############################################################################
-  # Backend API (Express Server)
-  #
-  # ROLE:
-  # - exposes REST API (/reviews, /test, /override)
-  # - writes to MongoDB
-  # - enqueues jobs into Redis queue
-  #
-  # DEPENDENCIES:
-  # - mongo (data persistence)
-  # - redis (job queue)
-  #############################################################################
+  # postgres: local dev statistics database for chart-friendly narrow events.
+  postgres:
+    container_name: triage-postgres
+    image: postgres:16
+    environment:
+      # POSTGRES_DB: local stats database name used only by the dev stack.
+      - POSTGRES_DB=triage_stats
+      # POSTGRES_USER: local stats database user for Node/Python services.
+      - POSTGRES_USER=triage
+      # POSTGRES_PASSWORD: local dev password; staging/prod use remote secrets.
+      - POSTGRES_PASSWORD=triage
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  # redpanda: local Kafka-compatible broker used by the async ingest event stream.
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v24.2.11
+    container_name: triage-redpanda
+    command:
+      - redpanda
+      - start
+      - --smp
+      - "1"
+      - --memory
+      - 512M
+      - --reserve-memory
+      - 0M
+      - --node-id
+      - "0"
+      - --check=false
+      - --kafka-addr
+      - PLAINTEXT://0.0.0.0:9092
+      - --advertise-kafka-addr
+      - PLAINTEXT://redpanda:9092
+    ports:
+      - "19092:9092"
+    restart: unless-stopped
+
+  # backend: Node/Express API used by the React UI.
   backend:
     container_name: triage-backend
     build:
@@ -81,37 +65,73 @@ services:
       dockerfile: backend/Dockerfile
     ports:
       - "3000:3000"
-    environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - MONGO_HOST=mongo
-      - MONGO_PORT=27017
+    env_file:
+      # Profile env: defaults to backend/.env.dev; set DEPLOYMENT_ENV=staging|prod to switch.
+      - ../../backend/.env.${DEPLOYMENT_ENV:-dev}
+    volumes:
+      - triage-logs:/var/log/triage
     depends_on:
       - mongo
+      - postgres
       - redis
+      - redpanda
     restart: unless-stopped
 
-  #############################################################################
-  # Worker (Async Analysis Engine)
-  #
-  # ROLE:
-  # - consumes jobs from Redis queue
-  # - runs analysis logic (rules / ML / heuristics)
-  # - updates MongoDB with results
-  #
-  # DESIGN:
-  # - fully decoupled from HTTP layer
-  # - can be horizontally scaled independently
-  #############################################################################
+  # worker: optional legacy Node BullMQ worker, started only with the legacy-bullmq profile.
   worker:
     container_name: triage-worker
     build:
       context: ../../
       dockerfile: backend/Dockerfile.worker
+    env_file:
+      # Profile env: defaults to backend/.env.dev; set DEPLOYMENT_ENV=staging|prod to switch.
+      - ../../backend/.env.${DEPLOYMENT_ENV:-dev}
+    volumes:
+      - triage-logs:/var/log/triage
     depends_on:
       - mongo
+      - postgres
       - redis
-    restart: unless-stopped
+    profiles:
+      - legacy-bullmq
+
+  # ai-celery: Python worker that performs asynchronous scoring.
+  ai-celery:
+    build:
+      context: ../../
+      dockerfile: ai_service/Dockerfile
+    container_name: triage-ai-celery
+    command: ["celery", "-A", "app.celery_app", "worker", "-l", "info"]
+    env_file:
+      # Profile env: defaults to backend/.env.dev; set DEPLOYMENT_ENV=staging|prod to switch.
+      - ../../backend/.env.${DEPLOYMENT_ENV:-dev}
+    volumes:
+      - triage-logs:/var/log/triage
     extra_hosts:
       - "host.docker.internal:host-gateway"
-      
+    depends_on:
+      - mongo
+      - postgres
+      - redis
+    restart: unless-stopped
+
+  # ai-kafka-dispatch: Python Kafka consumer that schedules Celery tasks.
+  ai-kafka-dispatch:
+    build:
+      context: ../../
+      dockerfile: ai_service/Dockerfile
+    container_name: triage-ai-kafka-dispatch
+    command: ["python", "kafka_dispatcher.py"]
+    env_file:
+      # Profile env: defaults to backend/.env.dev; set DEPLOYMENT_ENV=staging|prod to switch.
+      - ../../backend/.env.${DEPLOYMENT_ENV:-dev}
+    volumes:
+      - triage-logs:/var/log/triage
+    depends_on:
+      - redpanda
+      - redis
+    restart: unless-stopped
+
+volumes:
+  # triage-logs: shared dev volume so API and workers append to one merged log.
+  triage-logs:

@@ -1,26 +1,35 @@
-# PRODUCTION_SETUP.md
+# Production setup guide
 
 ## Goal
-Prepare app for production deployment.
+
+Prepare the app for production in a careful, repeatable way. Production should use remote managed MongoDB, PostgreSQL, Redis, and Kafka-compatible infrastructure, with secrets injected by deployment automation rather than committed to this repository.
 
 ---
 
 ## Backend
 
-Use process manager:
+Use a process manager only when you are not running the API in containers. Check before installing:
 
-```
-npm install -g pm2
-pm2 start src/app.js
+```bash
+# Check whether PM2 already exists; install it globally only if missing.
+command -v pm2 >/dev/null 2>&1 || npm install -g pm2
+
+# Start the Node API entrypoint if this host is running the API directly.
+pm2 start src/server.js --name suspicious-email-api
 ```
 
 ---
 
 ## Frontend
 
-Build:
+Build after dependencies are present:
 
-```
+```bash
+# Install frontend dependencies only when node_modules is absent.
+test -d frontend/node_modules || (cd frontend && npm install)
+
+# Build the production static bundle.
+cd frontend
 npm run build
 ```
 
@@ -28,32 +37,34 @@ Serve via nginx or static server
 
 ---
 
-## MongoDB
+## Databases
 
-- Use default port 27017
-- Enable authentication
+- Use remote managed MongoDB for review documents in `prod`.
+- Use remote managed PostgreSQL for chart statistics in `prod`.
+- Enable authentication and network restrictions.
+- Keep production credentials in a secret manager.
 
 ---
 
 ## Reverse Proxy (nginx)
 
-- Route /api → backend
-- Serve frontend build
+- Route API traffic to the Node backend.
+- Serve the frontend build from a static host, CDN, or nginx.
 
 ---
 
 ## Security
 
-- Use .env
+- Use environment variables or a secret manager.
 - Enable firewall
-- Restrict Mongo access
+- Restrict MongoDB and PostgreSQL access
 
 ---
 
 ## Monitoring
 
-- pm2 logs
-- systemctl status mongod
+- Container/platform logs or `pm2 logs` (only when PM2 is used)
+- Managed service dashboards for MongoDB/PostgreSQL/Redis/Kafka health
 
 ---
 

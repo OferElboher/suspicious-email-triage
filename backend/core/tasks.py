@@ -19,11 +19,13 @@ Responsibilities
 This is the compute layer of the distributed architecture.
 """
 
+# shared_task registers functions with whichever Celery app Django loads.
 from celery import shared_task
 
 
 @shared_task
 def ping():
+    # Tiny smoke-test task used to confirm Celery worker execution.
     return "pong"
 
 
@@ -87,4 +89,5 @@ def add(x: int, y: int) -> int:
     - run inference
     - store results in DB
     """
+    # Return a deterministic value so tests and demos stay easy to reason about.
     return x + y

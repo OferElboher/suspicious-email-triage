@@ -1,46 +1,25 @@
-# Suspicious Email Triage System
+# Suspicious Email Triage (monorepo)
 
-## Overview
-This project is a full-stack email triage system that analyzes suspicious emails using:
-- rule-based detection (backend worker)
-- LLM-assisted reasoning (Ollama)
-- real-time UI polling dashboard
+This repository contains a **suspicious email triage workbench**: analysts submit content through a web UI, the system stores it, processes it asynchronously (Kafka + Celery), stores review records in MongoDB, and stores chart statistics in PostgreSQL, and displays structured results with optional manual overrides.
 
----
+## Quick map
 
-## Architecture
+- `backend/` — Node.js + Express API (ingest, metrics, logging, dev simulation loop).
+- `frontend/` — React UI (triage, analytics charts, dev simulation controls).
+- `ai_service/` — Python Celery workers + Kafka dispatcher.
+- `infra/docker/` — local compose stack (MongoDB, PostgreSQL stats, Redis, Redpanda/Kafka, services).
+- `docs/` — human-oriented documentation (start with `docs/README.md`).
 
-Frontend (React)
-- Submits email for analysis
-- Polls backend for status updates
-- Displays verdict, findings, and recommendations
+## Documentation entry points
 
-Backend (Node.js + Express)
-- Stores reviews in MongoDB
-- Queues analysis jobs via BullMQ (Redis)
-- Exposes REST API for frontend
+- Non-technical readers: `docs/USER_GUIDE_BUSINESS.md`
+- Deep technical handbook: `docs/SYSTEM_COMPREHENSIVE.md`
+- Local commands + simulation: `docs/VERSIONS_BUILDS_AND_SIMULATION.md`
+- Django vs Node/Python clarification: `docs/NODE_PYTHON_AND_LEGACY_DJANGO.md`
 
-Worker
-- Processes review jobs
-- Runs rule-based security heuristics
-- Calls local LLM (Ollama)
-- Combines results into final structured output
+## Developer hygiene
 
-Storage
-- MongoDB stores reviews + analysis results
-
-Queue
-- Redis + BullMQ handles async processing
-
-LLM Layer
-- Ollama local model (e.g. llama3)
-- Enforced JSON structured output
-
----
-
-## Setup
-
-### 1. Start infrastructure
-
-```bash
-docker compose -f infra/docker/docker-compose.yml up -d --build
+- Local setup: `npm run setup:dev`
+- Lint: `sh scripts/lint-all.sh`
+- Tests: `sh scripts/test-all.sh`
+- Git hooks: Husky runs lint on commit and tests on push (see `docs/VERSIONS_BUILDS_AND_SIMULATION.md` and repo hook files under `.husky/`).

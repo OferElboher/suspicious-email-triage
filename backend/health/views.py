@@ -1,8 +1,9 @@
+"""Django health-check views for lightweight service availability checks."""
+
 from django.http import JsonResponse
-# from django.shortcuts import render
 
 
+# health: returns a tiny JSON payload so callers can verify the Django app boots.
 def health(request):
-    # An initial trivial implementation.
-    # May be expanded to check DBs, Redis, etc.
+    # request is accepted for Django's view signature; no request fields are needed.
     return JsonResponse({"status": "ok"})

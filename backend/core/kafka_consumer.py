@@ -18,11 +18,19 @@ Responsibilities
 This layer bridges event streaming with async worker processing.
 """
 
+# json deserializes Kafka message bytes back into Python dictionaries.
 import json
-from kafka import KafkaConsumer
+
+# os reads broker settings from the environment.
 import os
+
+# Dict/Any document the expected JSON message shape.
 from typing import Dict, Any
 
+# KafkaConsumer is the long-running Kafka client for this Django-side path.
+from kafka import KafkaConsumer
+
+# add is the demo Celery task triggered from consumed messages.
 from core.tasks import add
 
 
@@ -89,7 +97,8 @@ def start() -> None:
     """
 
     for message in consumer:
+        # message.value is already decoded by value_deserializer above.
         data: Dict[str, Any] = message.value
 
-        # Forward message to Celery worker.
+        # Forward message to a Celery worker without blocking this consumer loop.
         add.delay(data["x"], data["y"])
