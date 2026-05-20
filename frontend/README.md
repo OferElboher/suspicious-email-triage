@@ -8,18 +8,20 @@ You run this when you want the “website” part of the system: a place to subm
 
 ## Common commands
 
+Run from the repository root:
+
 ```bash
-# Install libraries only if node_modules is not already present.
-test -d node_modules || npm install
+# Install libraries only if frontend/node_modules is not already present.
+test -d frontend/node_modules || npm install --prefix frontend
 
 # Start the React development server.
-npm start
+npm start --prefix frontend
 
 # Run the React tests.
-npm test
+npm test --prefix frontend
 
 # Run frontend linting.
-npm run lint
+npm run lint --prefix frontend
 ```
 
 ## Environment variables

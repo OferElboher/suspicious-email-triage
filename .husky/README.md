@@ -9,11 +9,11 @@ This directory contains shell hooks executed by **Husky** during git operations.
 
 ## Setup
 
-From the repository root (after `npm install` so `husky` is available):
+From repository root:
 
 ```bash
 # Install Husky/root tooling only if root node_modules is absent.
-test -d node_modules || npm install
+test -d node_modules || npm install --prefix .
 ```
 
 Husky is wired via the root `package.json` `"prepare": "husky"` script.

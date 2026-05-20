@@ -19,6 +19,12 @@ import { getJson } from "../api/client";
 /** Default reporting window when the user has not customized dates yet (7 days). */
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
+/** Rolling window used while auto-refresh is enabled (last 24 hours). */
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Poll interval while auto-refresh is on (30 seconds). */
+const AUTO_REFRESH_MS = 30_000;
+
 /** Formats a Date for datetime-local inputs (local, no timezone suffix). */
 function toLocalInputValue(d) {
   const pad = (n) => String(n).padStart(2, "0");
@@ -38,27 +44,29 @@ export default function AnalyticsView() {
     toLocalInputValue(new Date(now.getTime() - WEEK_MS))
   );
   const [toInput, setToInput] = useState(() => toLocalInputValue(now));
-  /** bucket: controls Mongo $dateTrunc width (15m, 1h, 1d). */
+  /** bucket: controls PostgreSQL date_trunc width (15m, 1h, 1d). */
   const [bucket, setBucket] = useState("1h");
+  /** autoRefresh: when true, poll PostgreSQL for the rolling last-24-hours window. */
+  const [autoRefresh, setAutoRefresh] = useState(false);
   const [series, setSeries] = useState([]);
   const [breakdown, setBreakdown] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const load = useCallback(async () => {
+  const applyMetrics = useCallback(async (from, to, bucketKey) => {
     setLoading(true);
     setError("");
     try {
-      const from = fromLocalInputValue(fromInput).toISOString();
-      const to = fromLocalInputValue(toInput).toISOString();
+      const fromIso = from.toISOString();
+      const toIso = to.toISOString();
       const ts = await getJson(
-        `/metrics/timeseries?from=${encodeURIComponent(from)}&to=${encodeURIComponent(
-          to
-        )}&bucket=${encodeURIComponent(bucket)}`
+        `/metrics/timeseries?from=${encodeURIComponent(fromIso)}&to=${encodeURIComponent(
+          toIso
+        )}&bucket=${encodeURIComponent(bucketKey)}`
       );
       const br = await getJson(
-        `/metrics/status-breakdown?from=${encodeURIComponent(from)}&to=${encodeURIComponent(
-          to
+        `/metrics/status-breakdown?from=${encodeURIComponent(fromIso)}&to=${encodeURIComponent(
+          toIso
         )}`
       );
       setSeries(
@@ -73,11 +81,41 @@ export default function AnalyticsView() {
     } finally {
       setLoading(false);
     }
-  }, [fromInput, toInput, bucket]);
+  }, []);
+
+  const loadManualRange = useCallback(async () => {
+    await applyMetrics(fromLocalInputValue(fromInput), fromLocalInputValue(toInput), bucket);
+  }, [applyMetrics, fromInput, toInput, bucket]);
+
+  const loadRolling24Hours = useCallback(async () => {
+    const to = new Date();
+    const from = new Date(to.getTime() - DAY_MS);
+    setFromInput(toLocalInputValue(from));
+    setToInput(toLocalInputValue(to));
+    await applyMetrics(from, to, bucket);
+  }, [applyMetrics, bucket]);
 
   useEffect(() => {
-    load().catch(() => {});
-  }, [load]);
+    if (autoRefresh) {
+      return;
+    }
+    loadManualRange().catch(() => {});
+  }, [autoRefresh, loadManualRange]);
+
+  useEffect(() => {
+    if (!autoRefresh) {
+      return undefined;
+    }
+    loadRolling24Hours().catch(() => {});
+    const timerId = window.setInterval(() => {
+      loadRolling24Hours().catch(() => {});
+    }, AUTO_REFRESH_MS);
+    return () => window.clearInterval(timerId);
+  }, [autoRefresh, loadRolling24Hours]);
+
+  const toggleAutoRefresh = () => {
+    setAutoRefresh((enabled) => !enabled);
+  };
 
   return (
     <section className="card" style={{ gridColumn: "1 / -1" }}>
@@ -90,13 +128,30 @@ export default function AnalyticsView() {
       <div className="row" style={{ marginTop: "0.75rem" }}>
         <div>
           <label className="field">From</label>
-          <input type="datetime-local" value={fromInput} onChange={(e) => setFromInput(e.target.value)} />
+          <input
+            type="datetime-local"
+            value={fromInput}
+            disabled={autoRefresh}
+            onChange={(e) => setFromInput(e.target.value)}
+          />
         </div>
         <div>
           <label className="field">To</label>
-          <input type="datetime-local" value={toInput} onChange={(e) => setToInput(e.target.value)} />
+          <input
+            type="datetime-local"
+            value={toInput}
+            disabled={autoRefresh}
+            onChange={(e) => setToInput(e.target.value)}
+          />
         </div>
       </div>
+
+      {autoRefresh && (
+        <p className="muted" style={{ marginTop: "0.5rem" }}>
+          Auto-refresh is showing the rolling last 24 hours from PostgreSQL and updates every 30
+          seconds.
+        </p>
+      )}
 
       <div className="row" style={{ marginTop: "0.75rem" }}>
         <div>
@@ -108,7 +163,20 @@ export default function AnalyticsView() {
           </select>
         </div>
         <div className="actions" style={{ alignSelf: "end" }}>
-          <button type="button" className="primary" disabled={loading} onClick={() => load()}>
+          <button
+            type="button"
+            className={autoRefresh ? "primary" : undefined}
+            disabled={loading && autoRefresh}
+            onClick={toggleAutoRefresh}
+          >
+            {autoRefresh ? "Auto-refresh: on" : "Auto-refresh: off"}
+          </button>
+          <button
+            type="button"
+            className="primary"
+            disabled={loading || autoRefresh}
+            onClick={() => loadManualRange()}
+          >
             {loading ? "Loading…" : "Apply range"}
           </button>
         </div>

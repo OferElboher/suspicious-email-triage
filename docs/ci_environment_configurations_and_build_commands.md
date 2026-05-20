@@ -50,21 +50,20 @@ python3 -m pip --version >/dev/null 2>&1 && python3 -m pip --version || echo "pi
 
 ## Local dependency setup (skip when already installed)
 
+Run from the repository root:
+
 ```bash
 # Root Husky tooling.
-test -d node_modules || npm install
+test -d node_modules || npm install --prefix .
 
 # Node API dependencies.
-test -d backend/node_modules || (cd backend && npm install)
+test -d backend/node_modules || npm install --prefix backend
 
 # React UI dependencies.
-test -d frontend/node_modules || (cd frontend && npm install)
+test -d frontend/node_modules || npm install --prefix frontend
 
-# Python async-service dependencies.
-python3 - <<'PY' || (cd ai_service && python3 -m pip install -r requirements.txt)
-import celery, pymongo, kafka, requests
-print("ai_service dependencies already available")
-PY
+# Python async-service dependencies (project venv; avoids PEP 668 system pip blocks).
+bash scripts/ensure-ai-service-venv.sh >/dev/null && echo "ai_service/.venv ready"
 ```
 
 ## Development (`dev`)

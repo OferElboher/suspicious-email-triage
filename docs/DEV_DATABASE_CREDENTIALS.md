@@ -22,6 +22,8 @@ In `dev`, please keep the databases local. The compose network gives services fr
 
 MongoDB stores review request documents and analysis results. PostgreSQL stores compact chart statistics. From the host machine, MongoDB is mapped to `localhost:27018`, PostgreSQL is mapped to `localhost:5432`, and Redpanda’s Kafka API is mapped to `localhost:19092`. Inside Docker, use the service names above.
 
+**Windows GUI clients:** step-by-step DBeaver, MongoDB Compass, and Redis Insight setup is in [windows_docker_databases_start_and_verify.md](windows_docker_databases_start_and_verify.md) and the linked tool guides in this folder.
+
 ## Staging (`staging`) — remote
 
 Staging is the soft rehearsal environment. It should feel like production, but it should not contain production data.

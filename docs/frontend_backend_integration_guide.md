@@ -32,12 +32,12 @@ fetch(`${process.env.REACT_APP_API_URL}/health`)
 The backend already declares `cors` in `backend/package.json`. If you are setting up from scratch, check first and install only when it is missing:
 
 ```bash
-# Check whether backend dependencies are already installed.
-test -d backend/node_modules || (cd backend && npm install)
+# Check whether backend dependencies are already installed (from repository root).
+test -d backend/node_modules || npm install --prefix backend
 
 # Check whether the cors package can be resolved by Node.
-(cd backend && node -e "require.resolve('cors'); console.log('cors already installed')") || \
-  (cd backend && npm install cors)
+npm exec --prefix backend -- node -e "require.resolve('cors'); console.log('cors already installed')" || \
+  npm install cors --prefix backend
 ```
 
 Use:

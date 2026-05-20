@@ -45,15 +45,12 @@ Expected signs:
 
 ## Terminal 2 — React frontend
 
+From repository root:
+
 ```bash
-# Move into the frontend package.
-cd frontend
-
-# Install frontend libraries only when not already installed.
-test -d node_modules || npm install
-
-# Start the local browser UI.
-REACT_APP_API_URL=http://localhost:3000 PORT=3001 npm start
+# Install frontend libraries when needed, then start the local browser UI.
+test -d frontend/node_modules || npm install --prefix frontend && \
+  REACT_APP_API_URL=http://localhost:3000 PORT=3001 npm start --prefix frontend
 ```
 
 ## Browser
@@ -64,7 +61,7 @@ Open:
 http://localhost:3001
 ```
 
-You should see the triage workspace, analytics graphs, and (because this is `dev`) the simulation controls.
+You should see the triage workspace, analytics graphs (with optional **Auto-refresh** for the rolling last 24 hours), and (because this is `dev`) the simulation controls.
 
 ## Health checks
 

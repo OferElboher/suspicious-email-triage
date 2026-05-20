@@ -52,7 +52,7 @@ def main():
     signal.signal(signal.SIGINT, _handle_sig)
     signal.signal(signal.SIGTERM, _handle_sig)
 
-    log_line("info", "kafka-dispatch", "consumer started", topic=topic)
+    log_line("info", "kafka-dispatch", "consumer started", kafkaTopic=topic)
     for msg in consumer:
         # Respect shutdown after the current poll/message cycle.
         if stop:

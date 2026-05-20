@@ -15,22 +15,18 @@ Use a process manager only when you are not running the API in containers. Check
 command -v pm2 >/dev/null 2>&1 || npm install -g pm2
 
 # Start the Node API entrypoint if this host is running the API directly.
-pm2 start src/server.js --name suspicious-email-api
+pm2 start backend/src/server.js --name suspicious-email-api
 ```
 
 ---
 
 ## Frontend
 
-Build after dependencies are present:
+Build after dependencies are present (from repository root):
 
 ```bash
-# Install frontend dependencies only when node_modules is absent.
-test -d frontend/node_modules || (cd frontend && npm install)
-
-# Build the production static bundle.
-cd frontend
-npm run build
+# Install frontend dependencies when needed, then build the production static bundle.
+test -d frontend/node_modules || npm install --prefix frontend && npm run build --prefix frontend
 ```
 
 Serve via nginx or static server

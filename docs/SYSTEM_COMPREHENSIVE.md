@@ -84,10 +84,12 @@ A manager reviews throughput and backlog health using charts.
 
 ```mermaid
 flowchart LR
-  U[Browser analytics tab] -->|GET /metrics/*| API[Node API]
+  U[Browser analytics tab] -->|GET /metrics/* on interval or Apply| API[Node API]
   API -->|aggregate compact events| PG[(PostgreSQL stats)]
   API -->|JSON series| U
 ```
+
+When **Auto-refresh** is enabled in the analytics tab, the browser polls `GET /metrics/timeseries` and `GET /metrics/status-breakdown` every 30 seconds for the rolling last 24 hours. Manual mode uses the selected From/To window instead.
 
 ### UC3 — Engineering validation (dev simulation)
 
@@ -148,7 +150,7 @@ sequenceDiagram
 ### React (`frontend/`)
 
 - `src/TriageApp.jsx` — navigation shell between triage and analytics.
-- `src/views/AnalyticsView.jsx` — charts and time controls.
+- `src/views/AnalyticsView.jsx` — charts, time controls, and auto-refresh toggle (rolling 24-hour PostgreSQL stats).
 - `src/views/SimulationPanel.jsx` — dev simulation controls and local reset button.
 - `src/hooks/useReviewPoller.js` — polling helper for async completion.
 

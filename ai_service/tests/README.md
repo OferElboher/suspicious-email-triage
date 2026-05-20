@@ -7,6 +7,5 @@ Unit tests for scoring helpers and other deterministic logic.
 From repo root:
 
 ```bash
-cd ai_service
-PYTHONPATH=. pytest -q
+PYTHONPATH=ai_service "$(bash scripts/ensure-ai-service-venv.sh)" -m pytest -q ai_service/tests
 ```

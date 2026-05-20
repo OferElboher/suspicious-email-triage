@@ -4,5 +4,5 @@ These components are mounted by `TriageApp.jsx` depending on the active navigati
 
 ## Files
 
-- `AnalyticsView.jsx` — charts + time range controls backed by `/metrics/*`.
+- `AnalyticsView.jsx` — charts, time range controls, and optional auto-refresh (rolling last 24 hours from PostgreSQL via `/metrics/*`).
 - `SimulationPanel.jsx` — dev-only synthetic traffic controls and local reset button backed by `/dev/*` endpoints.

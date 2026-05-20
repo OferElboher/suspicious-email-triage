@@ -31,7 +31,7 @@ The website includes an **Analytics & graphs** area. It is meant to answer quest
 - “Are we seeing spikes at certain times of day?”
 - “What fraction of items are still pending versus completed?”
 
-You can adjust the **time range** and the **bucket size** (for example hourly vs daily) to match the question you are asking. The charts are based on lightweight statistics stored in PostgreSQL, while the detailed email review records stay in MongoDB. This keeps the charts responsive as review history grows.
+You can adjust the **time range** and the **bucket size** (for example hourly vs daily) to match the question you are asking. Turn **Auto-refresh** on to keep the charts on the rolling **last 24 hours** and update them automatically from PostgreSQL every 30 seconds; turn it off to pick a custom range and click **Apply range**. The charts are based on lightweight statistics stored in PostgreSQL, while the detailed email review records stay in MongoDB. This keeps the charts responsive as review history grows.
 
 ## Simulation mode (development only)
 

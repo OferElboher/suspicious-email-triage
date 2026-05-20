@@ -137,21 +137,20 @@ fi
 
 ## Local library installation, skipped when already present
 
+Run from the repository root:
+
 ```bash
 # 1) Install root tooling only if root node_modules is absent.
-test -d node_modules || npm install
+test -d node_modules || npm install --prefix .
 
 # 2) Install backend libraries only if backend/node_modules is absent.
-test -d backend/node_modules || (cd backend && npm install)
+test -d backend/node_modules || npm install --prefix backend
 
 # 3) Install frontend libraries only if frontend/node_modules is absent.
-test -d frontend/node_modules || (cd frontend && npm install)
+test -d frontend/node_modules || npm install --prefix frontend
 
-# 4) Install Python libraries only when an import check fails.
-python3 - <<'PY' || (cd ai_service && python3 -m pip install -r requirements.txt)
-import celery, pymongo, kafka, requests
-print("Python ai_service libraries already import correctly")
-PY
+# 4) Install Python libraries into ai_service/.venv (required on PEP 668 systems such as Ubuntu 24.04).
+bash scripts/ensure-ai-service-venv.sh >/dev/null && echo "ai_service/.venv ready"
 ```
 
 The local databases themselves do not need bare-metal installation. In `dev`, MongoDB, PostgreSQL, Redis, and Redpanda/Kafka are provided by Docker Compose.
@@ -169,7 +168,7 @@ You can also override the exact file path:
 
 ```bash
 # Use a private env file without editing tracked sample profiles.
-ENV_FILE=backend/.env.private npm start
+ENV_FILE=backend/.env.private npm start --prefix backend
 ```
 
 ## Local development: recommended multi-terminal layout
@@ -208,17 +207,11 @@ Expected output (high level, not byte-for-byte):
 
 ### Terminal B — React UI (host machine)
 
-Command:
+Command (from repository root):
 
 ```bash
-# Move into the React package.
-cd frontend
-
-# Install frontend libraries only if they were not installed already.
-test -d node_modules || npm install
-
-# Start the browser UI development server.
-npm start
+# Install frontend libraries only if they were not installed already, then start the UI.
+test -d frontend/node_modules || npm install --prefix frontend && npm start --prefix frontend
 ```
 
 Expected output:
@@ -228,14 +221,14 @@ Expected output:
 
 ```bash
 # Start the frontend on port 3001 if the backend already uses port 3000.
-PORT=3001 npm start
+PORT=3001 npm start --prefix frontend
 ```
 
 Then set the API base for the UI:
 
 ```bash
 # Point the frontend at the local Node API while serving the UI on port 3001.
-REACT_APP_API_URL=http://localhost:3000 PORT=3001 npm start
+REACT_APP_API_URL=http://localhost:3000 PORT=3001 npm start --prefix frontend
 ```
 
 ### Browser
@@ -245,7 +238,7 @@ Open the URL CRA printed (commonly `http://localhost:3000` or `http://localhost:
 You should see:
 
 - **Triage workspace** tab for submissions
-- **Analytics & graphs** tab for charts (requires some PostgreSQL statistics events to look interesting)
+- **Analytics & graphs** tab for charts (requires some PostgreSQL statistics events to look interesting). Use **Auto-refresh: on** for a live rolling 24-hour view, or **Auto-refresh: off** with **Apply range** for a custom window.
 
 ## Simulation mode (dev only)
 

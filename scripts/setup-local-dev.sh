@@ -9,7 +9,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # --help: prints usage without checking or installing anything.
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
   echo "Usage: bash scripts/setup-local-dev.sh"
-  echo "Checks/installs Docker, Compose, Node, npm, Python, pip, curl, jq, and project libraries."
+  echo "Checks/installs Docker, Compose, Node, npm, Python, curl, jq, project libraries, and ai_service/.venv."
   exit 0
 fi
 
@@ -76,13 +76,13 @@ fi
 ensure_command node nodejs
 ensure_command npm npm
 
-# Python/pip run ai_service and optional Django checks.
+# Python runs ai_service and optional Django checks; packages live in ai_service/.venv.
 ensure_command python3 python3
-if python3 -m pip --version >/dev/null 2>&1; then
-  echo "pip already installed: $(python3 -m pip --version)"
+if python3 -c "import venv" >/dev/null 2>&1; then
+  echo "python3 venv module already available"
 else
-  echo "pip missing; installing python3-pip when possible."
-  install_apt_package python3-pip
+  echo "python3 venv module missing; installing python3-venv when possible."
+  install_apt_package python3-venv
 fi
 
 # curl/jq are used by documented health checks and reset/simulation examples.
@@ -90,22 +90,19 @@ ensure_command curl curl
 ensure_command jq jq
 
 # Root tooling includes Husky hooks.
-cd "$ROOT"
-test -d node_modules || npm install
+npm install --prefix "$ROOT"
 
 # Backend libraries include Express, MongoDB/Mongoose, KafkaJS, Redis, and pg.
-cd "$ROOT/backend"
-test -d node_modules || npm install
+npm install --prefix "$ROOT/backend"
 
 # Frontend libraries include React and Recharts.
-cd "$ROOT/frontend"
-test -d node_modules || npm install
+npm install --prefix "$ROOT/frontend"
 
 # Python libraries include Celery, Kafka client, PyMongo, requests, psycopg, and pytest.
-cd "$ROOT/ai_service"
-python3 - <<'PY' || python3 -m pip install -r requirements.txt
-import celery, pymongo, kafka, requests, psycopg, pytest  # noqa: F401
-print("Python ai_service dependencies already import correctly")
-PY
+# PEP 668 blocks system-wide pip on modern Debian/Ubuntu; use a project venv instead.
+# shellcheck source=/dev/null
+source "$ROOT/scripts/ensure-ai-service-venv.sh"
+ensure_ai_service_venv "$ROOT" >/dev/null
+echo "Python ai_service dependencies ready in ai_service/.venv"
 
 echo "Local dev setup checks completed."

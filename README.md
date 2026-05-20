@@ -21,6 +21,7 @@ This repository contains a **suspicious email triage workbench**: analysts submi
 
 - Local setup: `npm run setup:dev`
 - Dev setup + image build: `npm run build:dev` (or `bash scripts/setup-and-build-dev.sh`)
+- Frontend dev server: `REACT_APP_API_URL=http://localhost:3000 PORT=3001 npm start --prefix frontend`
 - Lint: `sh scripts/lint-all.sh`
 - Tests: `sh scripts/test-all.sh`
 - Git hooks: Husky runs lint on commit and tests on push (see `docs/VERSIONS_BUILDS_AND_SIMULATION.md` and repo hook files under `.husky/`).
