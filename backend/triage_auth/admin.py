@@ -9,7 +9,6 @@ from .models import (
     TriagePasswordResetToken,
     TriagePermission,
     TriageRole,
-    TriageRolePermission,
     TriageUser,
     TriageUserRole,
 )
@@ -19,40 +18,26 @@ class ReadOnlyAdminMixin:
     """Hide add/change/delete for tables owned or seeded by the Node API."""
 
     def has_add_permission(self, request):
+        """Block creating rows from admin."""
         return False
 
     def has_change_permission(self, request, obj=None):
+        """Block editing rows from admin."""
         return False
 
     def has_delete_permission(self, request, obj=None):
-        return False
-
-
-class TriageUserRoleInline(admin.TabularInline):
-    """Edit role assignments on the user change form (uses composite PK through table)."""
-
-    model = TriageUserRole
-    extra = 1
-    autocomplete_fields = ["role"]
-    ordering = ("role__name",)  # Avoid default ORDER BY id (column does not exist).
-
-
-class TriageRolePermissionInline(admin.TabularInline):
-    """Show which permission codes a role grants (seeded by Node — read-only)."""
-
-    model = TriageRolePermission
-    extra = 0
-    can_delete = False
-    fields = ("permission",)
-    readonly_fields = ("permission",)
-    ordering = ("permission__code",)
-
-    def has_add_permission(self, request, obj=None):
+        """Block deleting rows from admin."""
         return False
 
 
 class TriageUserAdminForm(forms.ModelForm):
-    """User form with optional password field mapped to ``password_hash`` (bcrypt)."""
+    """
+    User form: email, active flag, password, and roles.
+
+    Roles use a multi-select instead of TabularInline because auth_user_roles has a
+    composite PK and Django admin inlines POST PKs as ``(2, 1)`` while CompositePrimaryKey
+    expects JSON — that mismatch caused JSONDecodeError on save.
+    """
 
     new_password = forms.CharField(
         label="Password",
@@ -60,10 +45,23 @@ class TriageUserAdminForm(forms.ModelForm):
         widget=forms.PasswordInput(render_value=False),
         help_text="Leave blank when editing unless you want to set a new password (min 8 characters).",
     )
+    roles = forms.ModelMultipleChoiceField(
+        queryset=TriageRole.objects.order_by("name"),
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+        label="Roles",
+        help_text="Assign at least admin for Django admin access.",
+    )
 
     class Meta:
         model = TriageUser
         fields = ("email", "is_active")
+
+    def __init__(self, *args, **kwargs):
+        """Pre-select current roles when editing an existing user."""
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            self.fields["roles"].initial = self.instance.roles.all()
 
     def clean_new_password(self):
         """Enforce the same minimum length as the Node API."""
@@ -80,7 +78,7 @@ class TriageUserAdminForm(forms.ModelForm):
         return cleaned
 
     def save(self, commit=True):
-        """Hash password with bcrypt (compatible with Node login) before persisting."""
+        """Persist user row, bcrypt password, and queue role sync for save_m2m."""
         user = super().save(commit=False)
         password = self.cleaned_data.get("new_password")
         now = timezone.now()
@@ -92,22 +90,36 @@ class TriageUserAdminForm(forms.ModelForm):
                 password.encode("utf-8"),
                 bcrypt.gensalt(rounds=12),
             ).decode("utf-8")
+        self._roles_to_sync = list(self.cleaned_data.get("roles", []))
         if commit:
             user.save()
-            self.save_m2m()
+            self._sync_user_roles(user, self._roles_to_sync)
         return user
+
+    def save_m2m(self):
+        """ModelAdmin calls this after save(commit=False); sync auth_user_roles rows."""
+        self._sync_user_roles(self.instance, getattr(self, "_roles_to_sync", []))
+
+    def _sync_user_roles(self, user, roles):
+        """Replace through-table rows to match the multi-select (composite PK, no inline)."""
+        desired_ids = {role.pk for role in roles}
+        existing_ids = set(
+            TriageUserRole.objects.filter(user=user).values_list("role_id", flat=True)
+        )
+        for role_id in desired_ids - existing_ids:
+            TriageUserRole.objects.create(user_id=user.pk, role_id=role_id)
+        TriageUserRole.objects.filter(user=user).exclude(role_id__in=desired_ids).delete()
 
 
 @admin.register(TriageUser)
 class TriageUserAdmin(admin.ModelAdmin):
-    """Create, update, delete users and their role assignments."""
+    """Create, update, delete users; assign roles via the main form (not inlines)."""
 
     form = TriageUserAdminForm
     list_display = ("email", "is_active", "role_list", "updated_at")
     list_filter = ("is_active",)
     search_fields = ("email",)
     ordering = ("email",)
-    inlines = [TriageUserRoleInline]
 
     @admin.display(description="Roles")
     def role_list(self, obj):
@@ -121,6 +133,7 @@ class TriageUserAdmin(admin.ModelAdmin):
         return ()
 
     def save_model(self, request, obj, form, change):
+        """Delegate to ModelForm (password + roles handled in form.save / save_m2m)."""
         super().save_model(request, obj, form, change)
 
     def delete_model(self, request, obj):
@@ -141,19 +154,28 @@ class TriageUserAdmin(admin.ModelAdmin):
 
 
 @admin.register(TriageRole)
-class TriageRoleAdmin(admin.ModelAdmin):
-    """View roles and their permission mappings (role names seeded by Node)."""
+class TriageRoleAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
+    """
+    View roles and permission codes (read-only).
 
+    Permission mappings use auth_role_permissions (composite PK) — no inline to avoid
+    the same JSONDecodeError issue as user role inlines.
+    """
+
+    list_display = ("name", "description", "permission_code_list")
     search_fields = ("name",)
     ordering = ("name",)
-    inlines = [TriageRolePermissionInline]
+    readonly_fields = ("name", "description", "permission_code_list")
 
-    def has_add_permission(self, request):
-        """New roles should be added via Node bootstrap or SQL, not casually in admin."""
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return False
+    @admin.display(description="Permissions")
+    def permission_code_list(self, obj):
+        """List permission codes granted to this role."""
+        if obj is None:
+            return "—"
+        codes = obj.role_permissions.select_related("permission").values_list(
+            "permission__code", flat=True
+        )
+        return ", ".join(codes) or "—"
 
 
 @admin.register(TriagePermission)

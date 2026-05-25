@@ -45,3 +45,17 @@ def test_junction_models_use_composite_primary_key():
     assert 'CompositePrimaryKey("user", "role")' in models_src
     assert "class TriageRolePermission" in models_src
     assert 'CompositePrimaryKey("role", "permission")' in models_src
+
+
+def test_user_admin_avoids_composite_pk_inlines():
+    """
+    Django admin inlines POST composite PKs as '(2, 1)' but CompositePrimaryKey expects JSON.
+
+    User roles must be edited via the main form multi-select, not TabularInline.
+    """
+    admin_src = (ROOT / "backend/triage_auth/admin.py").read_text(encoding="utf-8")
+    assert "TriageUserRoleInline" not in admin_src
+    assert "class TriageUserRoleInline" not in admin_src
+    assert "inlines = [" not in admin_src
+    assert "_sync_user_roles" in admin_src
+    assert "ModelMultipleChoiceField" in admin_src

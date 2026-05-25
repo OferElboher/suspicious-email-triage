@@ -49,7 +49,7 @@ bash scripts/test-all.sh
 
 Files: `integration_tests/test_postgres_schema.py`, `test_http_endpoints.py`, `test_databases.py`, `test_django_orm.py`.
 
-Guardrails in `test_repo_guardrails.py` (always run) assert junction models declare `CompositePrimaryKey` so Django never `SELECT`s a non-existent `auth_user_roles.id`.
+Guardrails in `test_repo_guardrails.py` (always run) assert junction models declare `CompositePrimaryKey` and that user admin **does not** use TabularInline (composite PK POST → JSONDecodeError on save).
 
 If **Postgres (:5432)**, **Node API (:3000)**, and **Django admin (:8000)** are not all reachable, these tests **skip** with a message (push still succeeds).
 

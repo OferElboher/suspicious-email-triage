@@ -36,8 +36,8 @@ Pre-push tests verify this layout when the stack is running — see [pre_push_te
 
 | Admin section | PostgreSQL table | What you can do |
 |---------------|------------------|-----------------|
-| **Users** | `auth_users` + `auth_user_roles` | Create, edit, delete users; assign roles (inline) |
-| **Roles** | `auth_roles` + `auth_role_permissions` | View roles and which permission codes each role grants |
+| **Users** | `auth_users` + `auth_user_roles` | Create, edit, delete users; assign roles (**checkbox list on the user form** — not inline rows) |
+| **Roles** | `auth_roles` + `auth_role_permissions` | **View only** — name, description, and permission codes listed on the role detail page |
 | **Permissions** | `auth_permissions` | **View only** — codes are seeded by the Node API (`constants.js`) |
 | **Password reset tokens** | `auth_password_reset_tokens` | **View only** — created/consumed by forgot-password flow |
 
@@ -142,10 +142,7 @@ To inspect roles and permissions in DBeaver instead, see [dbeaver_auth_tables_an
    - **Email** — required; stored lowercase.
    - **Password** — required for new users (minimum 8 characters).
    - **Is active** — checked for normal access.
-3. Scroll to **User role assignments** (inline table):
-   - Click **Add another User role assignment**.
-   - Choose a **Role** (`admin`, `analyst`, `manager`, `developer`, `viewer`).
-   - Add more rows for multiple roles.
+3. Under **Roles**, check one or more roles (`admin`, `analyst`, `manager`, `developer`, `viewer`).
 4. Click **Save**.
 
 The new user can sign in to `http://localhost:3001` immediately with the password you set.
@@ -159,7 +156,7 @@ The new user can sign in to `http://localhost:3001` immediately with the passwor
    - **Email**
    - **Is active** — uncheck to block sign-in without deleting the row.
    - **Password** — leave blank to keep the current hash; enter a new value to reset.
-3. Adjust **User role assignments** (add/remove role rows).
+3. Under **Roles**, check or uncheck roles as needed.
 4. Click **Save**.
 
 ---
@@ -178,7 +175,7 @@ The new user can sign in to `http://localhost:3001` immediately with the passwor
 
 Roles are seeded by the Node API (`admin`, `analyst`, `manager`, `developer`, `viewer`). In Django admin, open **Roles** to view names and descriptions.
 
-Do not delete roles that are still assigned to users. Prefer editing **User role assignments** on each user.
+Do not delete roles that are still assigned to users. Edit **Roles** on each user instead.
 
 Permission codes (`reviews.read`, `metrics.read`, …) are defined in Node (`backend/src/auth/constants.js`) and mapped to roles at API startup. Django admin manages **role assignment**, not individual permission codes.
 
@@ -197,6 +194,7 @@ Permission codes (`reviews.read`, `metrics.read`, …) are defined in Node (`bac
 | Cannot delete a user | You may be trying to delete yourself; use another admin or SQL. |
 | Duplicate **Users/Groups** in admin or `auth_user` table in DBeaver | Old Django migrations in Postgres — run `scripts/cleanup-postgres-django-auth-tables.sh` and rebuild `django-admin`. |
 | **`auth_user_roles.id does not exist`** when opening a user | Rebuild `django-admin` after pull — junction models must use `CompositePrimaryKey`, not a surrogate `id`. |
+| **`JSONDecodeError`** / `Expecting value` on save (password or roles) | Same root cause: admin inlines cannot POST composite PKs. Pull latest — roles are a **checkbox list** on the user form instead of inline rows. |
 
 ---
 
