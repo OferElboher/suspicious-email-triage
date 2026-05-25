@@ -11,6 +11,7 @@ UI_BASE = "http://127.0.0.1:3001"
 
 @requires_stack
 def test_api_health():
+    """Node API /health must respond when the stack is up."""
     resp = requests.get(f"{API_BASE}/health", timeout=5)
     resp.raise_for_status()
     body = resp.json()
@@ -19,6 +20,7 @@ def test_api_health():
 
 @requires_stack
 def test_django_admin_login_page():
+    """Django admin login form must be reachable on port 8000."""
     resp = requests.get(f"{ADMIN_BASE}/admin/login/", timeout=5)
     assert resp.status_code == 200
     assert "Log in" in resp.text or "login" in resp.text.lower()
@@ -26,6 +28,7 @@ def test_django_admin_login_page():
 
 @requires_stack
 def test_django_admin_index_requires_auth():
+    """Unauthenticated /admin/ must redirect to login."""
     resp = requests.get(f"{ADMIN_BASE}/admin/", timeout=5, allow_redirects=False)
     assert resp.status_code in (302, 301)
     assert "login" in resp.headers.get("Location", "").lower()
@@ -33,15 +36,15 @@ def test_django_admin_index_requires_auth():
 
 @requires_stack
 def test_django_admin_login_page_has_single_accounts_section():
-    """Login form only; after fix, admin home shows Triage accounts — not contrib.auth Users/Groups."""
+    """Login page must not show legacy contrib.auth section labels."""
     resp = requests.get(f"{ADMIN_BASE}/admin/login/", timeout=5)
     assert resp.status_code == 200
-    # Contrib auth admin index labels should not appear on the login page.
     assert "Authentication and Authorization" not in resp.text
 
 
 @requires_stack
 def test_api_metrics_routes_require_auth():
+    """Analytics API routes must reject unauthenticated requests."""
     resp = requests.get(
         f"{API_BASE}/metrics/timeseries?from=2020-01-01T00:00:00.000Z&to=2020-01-02T00:00:00.000Z&bucket=1h",
         timeout=5,
@@ -51,14 +54,15 @@ def test_api_metrics_routes_require_auth():
 
 @requires_frontend
 def test_react_triage_shell_loads():
+    """CRA dev server must serve the React mount point."""
     resp = requests.get(f"{UI_BASE}/", timeout=8)
     assert resp.status_code == 200
-    # CRA serves a static shell; title text is rendered client-side after JS loads.
     assert 'id="root"' in resp.text or "Suspicious email triage" in resp.text
 
 
 @requires_frontend
 def test_react_analytics_hash_route_serves_shell():
+    """Hash routes still serve the same SPA shell from CRA."""
     resp = requests.get(f"{UI_BASE}/#analytics", timeout=8)
     assert resp.status_code == 200
     assert "root" in resp.text.lower() or "html" in resp.text.lower()

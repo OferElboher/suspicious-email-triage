@@ -10,6 +10,7 @@ class TriageAuthBackend(BaseBackend):
     """Map Django admin login to Node-owned rows; no Django auth_user table involved."""
 
     def authenticate(self, request, username=None, password=None, **kwargs):
+        """Validate email/password against auth_users and require admin role."""
         email = (username or kwargs.get("email") or "").strip().lower()
         if not email or not password:
             return None
@@ -28,6 +29,7 @@ class TriageAuthBackend(BaseBackend):
         return user
 
     def get_user(self, user_id):
+        """Reload user from session key (auth_users.id)."""
         try:
             user = TriageUser.objects.get(pk=user_id, is_active=True)
         except TriageUser.DoesNotExist:

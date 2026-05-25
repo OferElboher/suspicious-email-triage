@@ -32,6 +32,17 @@ DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --bui
 
 Pre-push tests verify this layout when the stack is running — see [pre_push_tests_and_stack_verification.md](pre_push_tests_and_stack_verification.md).
 
+### What appears in Django admin
+
+| Admin section | PostgreSQL table | What you can do |
+|---------------|------------------|-----------------|
+| **Users** | `auth_users` + `auth_user_roles` | Create, edit, delete users; assign roles (inline) |
+| **Roles** | `auth_roles` + `auth_role_permissions` | View roles and which permission codes each role grants |
+| **Permissions** | `auth_permissions` | **View only** — codes are seeded by the Node API (`constants.js`) |
+| **Password reset tokens** | `auth_password_reset_tokens` | **View only** — created/consumed by forgot-password flow |
+
+Junction tables `auth_user_roles` and `auth_role_permissions` use **composite primary keys** `(user_id, role_id)` and `(role_id, permission_id)` — they have **no** `id` column. The Django models must match that schema (see `CompositePrimaryKey` in `backend/triage_auth/models.py`).
+
 ---
 
 ## Step 1 — Start the stack including Django admin
@@ -185,6 +196,7 @@ Permission codes (`reviews.read`, `metrics.read`, …) are defined in Node (`bac
 | Password works in Django but not triage (or vice versa) | Re-save password in Django admin (bcrypt) or use forgot-password flow. |
 | Cannot delete a user | You may be trying to delete yourself; use another admin or SQL. |
 | Duplicate **Users/Groups** in admin or `auth_user` table in DBeaver | Old Django migrations in Postgres — run `scripts/cleanup-postgres-django-auth-tables.sh` and rebuild `django-admin`. |
+| **`auth_user_roles.id does not exist`** when opening a user | Rebuild `django-admin` after pull — junction models must use `CompositePrimaryKey`, not a surrogate `id`. |
 
 ---
 

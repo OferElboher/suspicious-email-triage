@@ -47,7 +47,9 @@ bash scripts/test-all.sh
 
 ## Layer 2 — Live stack checks (skipped if services are down)
 
-Files: `integration_tests/test_postgres_schema.py`, `test_http_endpoints.py`, `test_databases.py`.
+Files: `integration_tests/test_postgres_schema.py`, `test_http_endpoints.py`, `test_databases.py`, `test_django_orm.py`.
+
+Guardrails in `test_repo_guardrails.py` (always run) assert junction models declare `CompositePrimaryKey` so Django never `SELECT`s a non-existent `auth_user_roles.id`.
 
 If **Postgres (:5432)**, **Node API (:3000)**, and **Django admin (:8000)** are not all reachable, these tests **skip** with a message (push still succeeds).
 
@@ -61,6 +63,7 @@ When the dev stack **is** running, tests verify:
 | Metrics table present | `review_stats_events` |
 | Django tables **absent** | `auth_user`, `auth_group`, `auth_permission`, `django_session`, `django_content_type`, `django_admin_log`, … |
 | `auth_users` columns | Includes `email`, `password_hash`, …; **no** `last_login` |
+| Junction tables | `auth_user_roles` and `auth_role_permissions` have **no** `id` column (composite PK only) |
 
 If forbidden Django tables still exist from an older build:
 

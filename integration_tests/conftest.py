@@ -42,6 +42,7 @@ FORBIDDEN_PG_TABLES = frozenset(
 
 
 def _port_open(host: str, port: int, timeout: float = 0.4) -> bool:
+    """Return True when a TCP connect succeeds (service likely listening)."""
     try:
         with socket.create_connection((host, port), timeout=timeout):
             return True
@@ -59,14 +60,17 @@ def stack_services_up() -> bool:
 
 
 def mongo_up() -> bool:
+    """True when MongoDB dev port is open."""
     return _port_open("127.0.0.1", 27018)
 
 
 def redis_up() -> bool:
+    """True when Redis dev port is open."""
     return _port_open("127.0.0.1", 6379)
 
 
 def frontend_up() -> bool:
+    """True when CRA dev server is listening."""
     return _port_open("127.0.0.1", 3001)
 
 
@@ -92,6 +96,7 @@ requires_frontend = pytest.mark.skipif(
 
 
 def pg_connect():
+    """Open a short-lived psycopg connection to triage_stats (dev defaults)."""
     import psycopg
 
     return psycopg.connect(
@@ -104,7 +109,22 @@ def pg_connect():
     )
 
 
+def pg_table_columns(table_name: str) -> set[str]:
+    """Return column names for a public schema table."""
+    with pg_connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT column_name FROM information_schema.columns
+                WHERE table_schema = 'public' AND table_name = %s
+                """,
+                (table_name,),
+            )
+            return {row[0] for row in cur.fetchall()}
+
+
 def docker_compose_ps_running(service: str) -> bool:
+    """Return True when the named compose service is in running state."""
     try:
         out = subprocess.run(
             ["docker", "compose", "-f", str(COMPOSE_FILE), "ps", "--status", "running", service],
