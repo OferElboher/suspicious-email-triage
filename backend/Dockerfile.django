@@ -12,7 +12,7 @@ RUN pip install --no-cache-dir -r /app/backend/requirements-django.txt
 COPY backend /app/backend
 
 ENV PYTHONPATH=/app
-ENV DJANGO_SETTINGS_MODULE=backend.config.settings
+ENV DJANGO_SETTINGS_MODULE=triage_auth.django_admin_settings
 ENV ENVIRONMENT=dev
 
 EXPOSE 8000

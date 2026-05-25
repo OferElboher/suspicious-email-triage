@@ -20,11 +20,24 @@ Django admin reads and writes the **same** PostgreSQL tables as the Node API (`a
 
 ## Step 1 — Start the stack including Django admin
 
-From the repository root (WSL):
+The **`django-admin`** service must be running and healthy before **User administration** works. It is included automatically when you start the full stack:
+
+```bash
+cd ~/suspicious-email-triage
+DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up --build
+```
+
+If you start services selectively, **always include `django-admin`**:
 
 ```bash
 cd ~/suspicious-email-triage
 DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d postgres mongo backend django-admin
+```
+
+After the first deploy or code update, rebuild the admin image:
+
+```bash
+DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --build django-admin
 ```
 
 Wait for Django:
@@ -33,7 +46,15 @@ Wait for Django:
 docker compose -f infra/docker/docker-compose.yml logs django-admin --tail 20
 ```
 
-**Expected:** `Starting development server at http://0.0.0.0:8000/`
+**Expected:** `Starting development server at http://0.0.0.0:8000/` (or `Watching for file changes with StatReloader` after migrations).
+
+Verify from WSL (should print `HTTP 200`):
+
+```bash
+curl -sS -o /dev/null -w 'HTTP %{http_code}\n' http://localhost:8000/admin/login/
+```
+
+If the container status is **Restarting** instead of **Up**, read the logs — a common cause is an outdated image. Run the `--build django-admin` command above.
 
 Start the React UI (separate terminal):
 
@@ -142,7 +163,8 @@ Permission codes (`reviews.read`, `metrics.read`, …) are defined in Node (`bac
 |---------|-----|
 | **User administration** button missing | Signed-in user must have **`admin` role** (not only analyst/developer). |
 | Django admin login fails | Same credentials as triage app; confirm `admin` role in DBeaver: `auth_user_roles`. |
-| `Connection refused` on port 8000 | Start `django-admin` container (Step 1). |
+| `Connection refused` / `ERR_CONNECTION_REFUSED` on port 8000 | **`django-admin` is not running.** Check `docker compose -f infra/docker/docker-compose.yml ps django-admin` — status must be **Up**, not **Restarting** or missing. Start or rebuild: `DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --build django-admin`. Then verify with `curl -sS -o /dev/null -w '%{http_code}\n' http://localhost:8000/admin/login/` → `200`. |
+| `django-admin` container **Restarting** | Read logs: `docker compose -f infra/docker/docker-compose.yml logs django-admin --tail 50`. Rebuild the image after pulling latest code: `up -d --build django-admin`. |
 | Password works in Django but not triage (or vice versa) | Re-save password in Django admin (bcrypt) or use forgot-password flow. |
 | Cannot delete a user | You may be trying to delete yourself; use another admin or SQL. |
 

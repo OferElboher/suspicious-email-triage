@@ -96,6 +96,7 @@ Expected output (high level, not byte-for-byte):
 - `redis` starts on host port `6379`.
 - `redpanda` exposes Kafka protocol on host port `19092` (and internally on `9092` inside the compose network).
 - `backend` builds the Node image and prints `listening on 3000` (from the API logger).
+- `django-admin` runs migrations then prints `Starting development server at http://0.0.0.0:8000/` (port **8000** on the host — required for **User administration**).
 - `ai-celery` prints Celery worker boot logs.
 - `ai-kafka-dispatch` prints dispatcher logs like `consumer started`.
 
@@ -103,7 +104,7 @@ Expected output (high level, not byte-for-byte):
 
 ```bash
 cd ~/suspicious-email-triage
-DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d mongo postgres redis backend ai-celery ai-kafka-dispatch redpanda
+DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d mongo postgres redis backend django-admin ai-celery ai-kafka-dispatch redpanda
 ```
 
 ### Terminal B — React UI (host machine)
@@ -144,9 +145,10 @@ You can bookmark or share these URLs; after sign-in, opening one lands on that t
 
 ```bash
 curl -sS http://localhost:3000/health
+curl -sS -o /dev/null -w 'Django admin HTTP %{http_code}\n' http://localhost:8000/admin/login/
 ```
 
-Expected: JSON with `"ok": true` or similar success indicator.
+Expected: JSON with `"ok": true` (or similar) from the API; **`HTTP 200`** from Django admin login. If port 8000 fails, see [django_admin_user_management.md](django_admin_user_management.md#troubleshooting).
 
 ---
 
