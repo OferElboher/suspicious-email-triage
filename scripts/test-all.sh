@@ -13,6 +13,6 @@ npm test --prefix "$ROOT/backend" -- --watchAll=false
 if [[ ! -d "$ROOT/frontend/node_modules" ]]; then npm install --prefix "$ROOT/frontend"; fi
 CI=true npm test --prefix "$ROOT/frontend" -- --watchAll=false
 
-# Python tests: use ai_service/.venv (avoids PEP 668 system pip restrictions).
+# Python tests: ai_service pytest only (legacy Django tests under backend/ are not part of this hook).
 AI_SERVICE_PYTHON="$(bash "$ROOT/scripts/ensure-ai-service-venv.sh")"
-PYTHONPATH="$ROOT/ai_service" "$AI_SERVICE_PYTHON" -m pytest -q
+PYTHONPATH="$ROOT/ai_service" "$AI_SERVICE_PYTHON" -m pytest -q "$ROOT/ai_service/tests"
