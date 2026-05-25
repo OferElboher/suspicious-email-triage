@@ -1,6 +1,6 @@
 /**
  * Dev-only HTTP surface for simulation controls and capability advertisement to the SPA.
- * Non-dev deployments return 403 so staging/prod UIs cannot toggle load generators accidentally.
+ * Requires developer role permissions; mutating routes also require dev deployment slice.
  */
 const express = require("express");
 const { Kafka, logLevel } = require("kafkajs");
@@ -15,6 +15,7 @@ const {
 const { resetStats } = require("../stats/statsPg");
 const { writeSimulation, readSimulation, MAX_EVENTS_PER_MIN } = require("./simulationStore");
 const { applySimulationFromStore, clearLoop } = require("./simulationLoop");
+const { requirePermission, hasPermission } = require("../http/middleware/auth");
 
 /** router: dev-only Express routes mounted at /dev. */
 const router = express.Router();
@@ -42,18 +43,26 @@ async function resetKafkaTopic() {
   }
 }
 
-/** GET /dev/features — tells the SPA which optional panels to render (no secrets). */
+/** GET /dev/features — tells the SPA which optional panels to render for this user. */
 router.get("/features", (req, res) => {
+  const devEnv = isDevDeployment();
+  const canSimulate =
+    devEnv && hasPermission(req.auth, "dev.simulation") && req.auth.roles.includes("developer");
+  const canReset =
+    devEnv && hasPermission(req.auth, "dev.reset") && req.auth.roles.includes("developer");
   res.json({
-    deployment: isDevDeployment() ? "dev" : "non-dev",
-    simulation: isDevDeployment(),
-    analytics: true,
-    resetLocalState: isDevDeployment(),
+    deployment: devEnv ? "dev" : "non-dev",
+    simulation: canSimulate,
+    analytics: hasPermission(req.auth, "metrics.read"),
+    resetLocalState: canReset,
+    adminUsers: hasPermission(req.auth, "admin.users"),
     simulationMaxEventsPerMin: MAX_EVENTS_PER_MIN,
+    roles: req.auth.roles,
+    permissions: req.auth.permissions,
   });
 });
 
-/** Dev guard: all mutating /dev routes after this point are disabled outside dev. */
+/** Dev guard: mutating /dev routes require dev deployment slice. */
 router.use((req, res, next) => {
   if (!isDevDeployment()) {
     return res.status(403).json({ error: "dev_only" });
@@ -62,7 +71,10 @@ router.use((req, res, next) => {
 });
 
 /** POST /dev/simulation { enabled, eventsPerMinute } — updates Redis and restarts the loop. */
-router.post("/simulation", async (req, res) => {
+router.post("/simulation", requirePermission("dev.simulation"), async (req, res) => {
+  if (!req.auth.roles.includes("developer")) {
+    return res.status(403).json({ error: "developer_role_required" });
+  }
   try {
     const saved = await writeSimulation({
       enabled: req.body.enabled,
@@ -78,7 +90,10 @@ router.post("/simulation", async (req, res) => {
 });
 
 /** GET /dev/simulation — read current simulation settings from Redis. */
-router.get("/simulation", async (req, res) => {
+router.get("/simulation", requirePermission("dev.simulation"), async (req, res) => {
+  if (!req.auth.roles.includes("developer")) {
+    return res.status(403).json({ error: "developer_role_required" });
+  }
   try {
     const simulation = await readSimulation();
     res.json({ simulation });
@@ -89,7 +104,10 @@ router.get("/simulation", async (req, res) => {
 });
 
 /** POST /dev/reset-local-state — clears local DBs/queues and disables simulation. */
-router.post("/reset-local-state", async (req, res) => {
+router.post("/reset-local-state", requirePermission("dev.reset"), async (req, res) => {
+  if (!req.auth.roles.includes("developer")) {
+    return res.status(403).json({ error: "developer_role_required" });
+  }
   const summary = {
     simulation: "disabled",
     mongoReviewsDeleted: 0,

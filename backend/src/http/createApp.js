@@ -4,35 +4,52 @@ const cors = require("cors");
 const logger = require("../lib/logger");
 const reviewRoutes = require("../api/reviews");
 const metricsRoutes = require("../api/metrics");
+const authRoutes = require("../api/auth");
+const adminUserRoutes = require("../api/adminUsers");
 const devRoutes = require("../dev/devRoutes");
 const { searchLogs } = require("../lib/logSearch");
 const { enqueueAfterCreate } = require("../services/reviewPipeline");
+const { authenticate, requirePermission } = require("./middleware/auth");
 
 function createApp() {
   const app = express();
 
   /** CORS: allow browser dev servers to call the API during local development. */
-  app.use(cors());
+  app.use(
+    cors({
+      origin: true,
+      exposedHeaders: ["Authorization"],
+    })
+  );
 
   /** JSON body parser with a conservative size cap to reduce accidental huge payloads. */
   app.use(express.json({ limit: "2mb" }));
 
   /** Liveness/readiness style endpoint for orchestrators and quick manual checks. */
   app.get("/health", (req, res) => {
-    res.json({ status: "ok", service: "triage-api" });
+    res.json({ status: "ok", service: "triage-api", auth: "required_for_api" });
   });
+
+  /** Public authentication routes (login, password recovery). */
+  app.use("/auth", authRoutes);
+
+  /** All routes below require a valid bearer token. */
+  app.use(authenticate);
+
+  /** Admin-managed user provisioning and role assignment. */
+  app.use("/admin/users", adminUserRoutes);
 
   /** Core review lifecycle endpoints (create/list/get/override). */
   app.use("/reviews", reviewRoutes);
 
-  /** Dashboard metrics endpoints backed by Mongo aggregations. */
+  /** Dashboard metrics endpoints backed by PostgreSQL statistics. */
   app.use("/metrics", metricsRoutes);
 
-  /** Dev-only controls (simulation) + `/dev/features` advertisement for the SPA. */
+  /** Dev controls + capability advertisement for the SPA (role-gated inside router). */
   app.use("/dev", devRoutes);
 
   /** Operator log search across the merged JSON-lines log file. */
-  app.get("/logs/search", async (req, res) => {
+  app.get("/logs/search", requirePermission("logs.read"), async (req, res) => {
     try {
       const { keyword, topic, from, to, limit } = req.query;
       const result = await searchLogs({
@@ -50,7 +67,7 @@ function createApp() {
   });
 
   /** POST /test — minimal demo ingest (legacy quick path for workshops). */
-  app.post("/test", async (req, res) => {
+  app.post("/test", requirePermission("reviews.write"), async (req, res) => {
     try {
       const Review = require("../models/Review");
 
@@ -61,8 +78,8 @@ function createApp() {
       const review = await Review.create({
         body,
         subject: subject || "no subject",
-        senderEmail: "demo@example.com",
-        senderName: "demo user",
+        senderEmail: req.auth.email,
+        senderName: req.auth.email.split("@")[0],
         status: "pending",
       });
       logger.info("api", "demo review created", { id: String(review._id) });

@@ -5,7 +5,7 @@ const { mongoUri } = require("../config/runtime");
 async function connectMongo() {
   const uri = mongoUri();
   mongoose.set("strictQuery", true);
-  await mongoose.connect(uri);
+  await mongoose.connect(uri, { serverSelectionTimeoutMS: 10_000 });
   logger.info("mongo", "connected", { uri: uri.replace(/\/\/.*@/, "//***@") });
 }
 

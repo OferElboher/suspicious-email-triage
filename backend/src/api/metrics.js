@@ -5,6 +5,7 @@
 const express = require("express");
 const logger = require("../lib/logger");
 const { getTimeseries, getStatusBreakdown } = require("../stats/statsPg");
+const { requirePermission } = require("../http/middleware/auth");
 
 /** router: Express metrics route collection mounted at /metrics. */
 const router = express.Router();
@@ -13,7 +14,7 @@ const router = express.Router();
  * GET /metrics/timeseries
  * Returns [{ t: ISO, count }, ...] from PostgreSQL review_created events.
  */
-router.get("/timeseries", async (req, res) => {
+router.get("/timeseries", requirePermission("metrics.read"), async (req, res) => {
   try {
     /** now: default upper bound for chart windows when `to` is omitted. */
     const now = Date.now();
@@ -43,7 +44,7 @@ router.get("/timeseries", async (req, res) => {
  * GET /metrics/status-breakdown
  * Counts status_changed events in PostgreSQL for the selected window.
  */
-router.get("/status-breakdown", async (req, res) => {
+router.get("/status-breakdown", requirePermission("metrics.read"), async (req, res) => {
   try {
     /** now: default upper bound for status chart windows. */
     const now = Date.now();

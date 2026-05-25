@@ -8,6 +8,12 @@ Companies receive a constant stream of email. Some messages are normal business 
 
 This project is a working example of that workflow. It is not “magic security”; it is a **triage desk tool** that organizes evidence, suggests next steps, and supports human judgment.
 
+## Sign in
+
+The website requires login. Your administrator creates accounts and assigns roles (analyst, manager, developer, and so on). Password recovery uses your email address. Details for staff and integrators are in `AUTHENTICATION_AND_RBAC.md`.
+
+The main areas (**Triage workspace**, **Analytics & graphs**, **Admin users**) each have a URL (for example `…/#analytics`). Refreshing the browser keeps you on the same area instead of returning to the triage form.
+
 ## The main actors
 
 - **Analyst / security reviewer** — Uses the website to submit an email for analysis, reads the results, and may record a manual override with a written reason.
@@ -37,7 +43,7 @@ You can adjust the **time range** and the **bucket size** (for example hourly vs
 
 In the **development** configuration, the product can optionally generate **synthetic test traffic** at a controlled rate. This helps engineers validate queues and dashboards without asking humans to repeatedly submit emails.
 
-Simulation is rate-limited on purpose so a laptop does not get overwhelmed. It should **never** be treated as “real incidents”; it is a lab feature.
+Simulation is rate-limited on purpose so a laptop does not get overwhelmed. It should **never** be treated as “real incidents”; it is a lab feature available only to users with the **developer** role in development configuration (`AUTHENTICATION_AND_RBAC.md`).
 
 Development mode also includes a **reset local databases & queues** action. It is meant for engineers and demo operators: it turns simulation off, clears local review data, clears chart statistics, empties queue state, and gives the local system a clean start.
 

@@ -61,7 +61,11 @@ Open:
 http://localhost:3001
 ```
 
-You should see the triage workspace, analytics graphs (with optional **Auto-refresh** for the rolling last 24 hours), and (because this is `dev`) the simulation controls.
+Sign in with a provisioned account (bootstrap admin: [dev_admin_credentials_and_recovery.md](dev_admin_credentials_and_recovery.md)). If login fails though `auth_users` shows your email, see [dev_auth_tables_reset_and_admin_recovery.md](dev_auth_tables_reset_and_admin_recovery.md).
+
+**Browser refresh (F5)** stays on the same tab (`#analytics`, `#admin`, or default workspace). See [windows_dev_startup_run_guide.md](windows_dev_startup_run_guide.md#browser).
+
+You should see the triage workspace, analytics graphs (with optional **Auto-refresh** for the rolling last 24 hours), and (for users with the **developer** role in `dev`) the simulation controls.
 
 ## Health checks
 

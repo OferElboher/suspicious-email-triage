@@ -7,11 +7,16 @@ This folder collects human-oriented explanations of the Suspicious Email Triage 
 - If you are **not a programmer** and need to understand what the product does for your company, start with `USER_GUIDE_BUSINESS.md`.
 - If you need **end-to-end technical depth** (architecture, technologies, flows, diagrams), read `SYSTEM_COMPREHENSIVE.md`.
 - If you need **exact commands** for dev/staging/prod builds, browser URLs, and the development simulation mode, read `VERSIONS_BUILDS_AND_SIMULATION.md`.
-- If you connect **GUI database clients on Windows 11** to the WSL/Docker dev stack, start with `windows_docker_databases_start_and_verify.md`, then `dbeaver_postgresql_windows_setup.md`, `mongodb_compass_windows_setup.md`, and `redis_insight_windows_setup.md`.
+- If you use **Windows 11 + WSL** and need to run the project after a reboot, start with `windows_dev_startup_run_guide.md` (which links database startup, GUI clients, and admin sign-in).
+- If you connect **GUI database clients on Windows 11** to the WSL/Docker dev stack, start with `windows_docker_databases_start_and_verify.md`, then `dbeaver_postgresql_windows_setup.md`. For **auth tables refresh** and **unified log viewing**, see `dbeaver_auth_tables_and_unified_log_viewing.md`.
+- If you need **bootstrap admin email/password, sign-in, or password recovery**, read `dev_admin_credentials_and_recovery.md`.
+- If login fails but **`auth_users` shows your email in DBeaver**, or you need to **reset auth tables** and recreate admin, read `dev_auth_tables_reset_and_admin_recovery.md`.
+- If you need **login, roles, password recovery, or authenticated API examples**, read `AUTHENTICATION_AND_RBAC.md`.
 - If you are confused by **older references to Django** in CI or legacy markdown, read `NODE_PYTHON_AND_LEGACY_DJANGO.md` first.
 
 ## What each major document is for
 
+- `AUTHENTICATION_AND_RBAC.md` — PostgreSQL-backed users, JWT login, roles/permissions, password recovery, admin provisioning, protected routes.
 - `architecture.md` — High-level component map, data movement, and MongoDB/PostgreSQL storage split.
 - `deployment.md` — Operational deployment concerns (containers, ports, dependencies).
 - `env_configuration_guide.md` — Environment variables and how they influence behavior.
@@ -19,7 +24,11 @@ This folder collects human-oriented explanations of the Suspicious Email Triage 
 - `full_stack_run_guide_mongo_db_node_worker_react.md` — Practical “bring the stack up” guidance (may overlap with the versions doc; both are maintained intentionally for different audiences).
 - `production_setup_guide.md` — Hardening and production-oriented notes.
 - `DEV_DATABASE_CREDENTIALS.md` — Local vs remote connection strings; see also the Windows GUI client guides below.
+- `windows_dev_startup_run_guide.md` — After Windows 11 startup: Docker, databases, full dev stack, GUI clients, UI sign-in.
 - `windows_docker_databases_start_and_verify.md` — Start dev DB containers in WSL Docker and verify ports before connecting from Windows.
+- `dev_admin_credentials_and_recovery.md` — Configure bootstrap admin email, temporary password, change/recover credentials (UI and API).
+- `dev_auth_tables_reset_and_admin_recovery.md` — Reset PostgreSQL auth tables, set admin email/password, recover when login fails despite visible email in DBeaver.
+- `dbeaver_auth_tables_and_unified_log_viewing.md` — Refresh DBeaver for `auth_*` tables; view/search unified `merged.log` (lnav, glogg, API).
 - `dbeaver_postgresql_windows_setup.md` — DBeaver on Windows → PostgreSQL (`triage_stats`).
 - `mongodb_compass_windows_setup.md` — MongoDB Compass on Windows → MongoDB (`triage` on port `27018`).
 - `redis_insight_windows_setup.md` — Redis Insight on Windows → Redis (broker DB `0`, results DB `1`).

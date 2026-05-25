@@ -59,7 +59,7 @@ To install prerequisites **and** build the dev Docker images in one step:
 bash scripts/setup-and-build-dev.sh
 ```
 
-After that script finishes, start the stack with `DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up` (see [Local development: recommended multi-terminal layout](#local-development-recommended-multi-terminal-layout) below).
+After that script finishes, start the stack — see [windows_dev_startup_run_guide.md](windows_dev_startup_run_guide.md) (Windows 11 + WSL) or run `DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up` from the repository root.
 
 If you prefer to do the checks manually, the commands below use the same idea. They are meant for Ubuntu/WSL-style development machines. If you use another OS, keep the same spirit: check first, then install only what is absent.
 
@@ -159,10 +159,18 @@ The local databases themselves do not need bare-metal installation. In `dev`, Mo
 
 The backend loads one profile file:
 
-- active local file: `backend/.env`, created as a dev copy by default
+- active local file: `backend/.env`, created as a dev copy by default (gitignored; holds your bootstrap admin email)
 - fallback default: `backend/.env.dev` when `backend/.env` is absent
 - staging: `DEPLOYMENT_ENV=staging` loads `backend/.env.staging`
 - prod: `DEPLOYMENT_ENV=prod` loads `backend/.env.prod`
+
+Configure bootstrap admin email before first run:
+
+```bash
+bash scripts/configure-dev-bootstrap-admin.sh YOUR_EMAIL@example.com
+```
+
+See [dev_admin_credentials_and_recovery.md](dev_admin_credentials_and_recovery.md) for sign-in, password change, and recovery. To reset auth tables and recreate admin, see [dev_auth_tables_reset_and_admin_recovery.md](dev_auth_tables_reset_and_admin_recovery.md).
 
 You can also override the exact file path:
 
@@ -171,78 +179,31 @@ You can also override the exact file path:
 ENV_FILE=backend/.env.private npm start --prefix backend
 ```
 
-## Local development: recommended multi-terminal layout
+## Local development: run the stack
 
-These commands assume you are at the repository root: `/home/ofer/suspicious-email-triage` (adjust paths if yours differ).
+**Windows 11 + WSL:** after every OS restart, follow [windows_dev_startup_run_guide.md](windows_dev_startup_run_guide.md) (Docker Desktop, databases, multi-terminal layout, DBeaver/Compass/Redis Insight, UI sign-in).
 
-### Terminal A — infrastructure + API + python workers (Docker)
+That guide links to [windows_docker_databases_start_and_verify.md](windows_docker_databases_start_and_verify.md) and [dev_admin_credentials_and_recovery.md](dev_admin_credentials_and_recovery.md).
 
-Command:
+Quick start from repository root (when Docker is already running):
 
 ```bash
-# Start local dev infrastructure and services. Docker Compose creates MongoDB,
-# PostgreSQL, Redis, Redpanda/Kafka, the Node API, the Celery worker, and the dispatcher.
-docker compose -f infra/docker/docker-compose.yml up --build
+DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up --build
 ```
 
-To use a different profile with Compose:
+Frontend (separate terminal):
 
 ```bash
-# Staging sample profile.
-DEPLOYMENT_ENV=staging docker compose -f infra/docker/docker-compose.yml up --build
-
-# Production sample profile.
-DEPLOYMENT_ENV=prod docker compose -f infra/docker/docker-compose.yml up --build
-```
-
-Expected output (high level, not byte-for-byte):
-
-- `mongo` starts and listens internally on `27017` (mapped to host `27018` in the provided compose file).
-- `postgres` starts and listens on host port `5432` for chart statistics.
-- `redis` starts on host port `6379`.
-- `redpanda` exposes Kafka protocol on host port `19092` (and internally on `9092` inside the compose network).
-- `backend` builds the Node image and prints `listening on 3000` (from the API logger).
-- `ai-celery` prints Celery worker boot logs.
-- `ai-kafka-dispatch` prints dispatcher logs like `consumer started`.
-
-### Terminal B — React UI (host machine)
-
-Command (from repository root):
-
-```bash
-# Install frontend libraries only if they were not installed already, then start the UI.
-test -d frontend/node_modules || npm install --prefix frontend && npm start --prefix frontend
-```
-
-Expected output:
-
-- CRA prints a local URL such as `http://localhost:3000` **or** it may choose another port if `3000` is taken.
-- If the API is on `http://localhost:3000` and CRA also wants `3000`, set `PORT=3001` for the frontend:
-
-```bash
-# Start the frontend on port 3001 if the backend already uses port 3000.
-PORT=3001 npm start --prefix frontend
-```
-
-Then set the API base for the UI:
-
-```bash
-# Point the frontend at the local Node API while serving the UI on port 3001.
 REACT_APP_API_URL=http://localhost:3000 PORT=3001 npm start --prefix frontend
 ```
 
-### Browser
+Open `http://localhost:3001` (workspace), `http://localhost:3001/#analytics`, or `http://localhost:3001/#admin`. Browser refresh (F5) keeps the current tab.
 
-Open the URL CRA printed (commonly `http://localhost:3000` or `http://localhost:3001`).
+Sign in with the email you configured via `configure-dev-bootstrap-admin.sh` and temporary password `temp-admin-pswd` — see [dev_admin_credentials_and_recovery.md](dev_admin_credentials_and_recovery.md). If login fails despite a row in `auth_users`, see [dev_auth_tables_reset_and_admin_recovery.md](dev_auth_tables_reset_and_admin_recovery.md).
 
-You should see:
+## Simulation mode (dev only, developer role)
 
-- **Triage workspace** tab for submissions
-- **Analytics & graphs** tab for charts (requires some PostgreSQL statistics events to look interesting). Use **Auto-refresh: on** for a live rolling 24-hour view, or **Auto-refresh: off** with **Apply range** for a custom window.
-
-## Simulation mode (dev only)
-
-Simulation creates synthetic `Review` documents at a capped rate and runs them through the same enqueue path as real submissions.
+Simulation creates synthetic `Review` documents at a capped rate and runs them through the same enqueue path as real submissions. The signed-in user must have the **`developer` role** (and `DEPLOYMENT_ENV=dev`). See `AUTHENTICATION_AND_RBAC.md`.
 
 ### Configure via UI
 

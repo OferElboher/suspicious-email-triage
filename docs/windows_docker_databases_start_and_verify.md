@@ -2,7 +2,17 @@
 
 This guide is the **prerequisite** for connecting GUI clients on **Windows 11** (DBeaver, MongoDB Compass, Redis Insight) to the dev databases that run in **Docker inside WSL**.
 
-All commands below assume your repository is checked out in WSL and you run them **from the repository root** (for example `/home/you/suspicious-email-triage`).
+It also covers the **full sequence after a Windows 11 restart**, when Docker Desktop and containers are usually stopped.
+
+All commands below assume your repository is checked out in WSL and you run bash commands **from the repository root** (for example `/home/you/suspicious-email-triage`). Adjust the path if yours differs.
+
+**Related guides**
+
+- Run the full app after startup: [windows_dev_startup_run_guide.md](windows_dev_startup_run_guide.md)
+- Admin login and password recovery: [dev_admin_credentials_and_recovery.md](dev_admin_credentials_and_recovery.md)
+- Reset auth tables / login blocked despite visible email: [dev_auth_tables_reset_and_admin_recovery.md](dev_auth_tables_reset_and_admin_recovery.md)
+
+---
 
 ## What runs where
 
@@ -31,7 +41,115 @@ Credentials match `backend/.env.dev`. Staging and production use remote services
 
 ---
 
+## After Windows 11 restarts (do this first)
+
+Windows restarts stop **Docker Desktop** and all containers. DBeaver, Compass, and Redis Insight will show **connection refused** until you complete the steps below.
+
+### Step 0a — Start Docker Desktop (Windows)
+
+**Option A — Start menu**
+
+1. Press the **Windows** key.
+2. Type **Docker Desktop**.
+3. Press **Enter**.
+4. Wait until the Docker whale icon in the system tray is steady and the app shows **Docker Desktop is running** (often 30–60 seconds).
+
+**Option B — PowerShell (Windows)**
+
+1. Press **Windows + X** → **Terminal** (or **PowerShell**).
+2. Run:
+
+```powershell
+Start-Process "C:\Program Files\Docker\Docker\Docker Desktop.exe"
+```
+
+3. Wait until Docker Desktop reports **running** (same as Option A, step 4).
+
+**Optional — start Docker automatically on sign-in**
+
+1. Open **Docker Desktop**.
+2. Go to **Settings** → **General**.
+3. Enable **Start Docker Desktop when you sign in to your computer**.
+4. Click **Apply & restart** if prompted.
+
+### Step 0b — Open a WSL terminal
+
+1. On Windows 11, open **Ubuntu** (or your WSL distro) from the Start menu or **Windows Terminal**.
+2. Go to the repository root:
+
+```bash
+cd ~/suspicious-email-triage
+```
+
+### Step 0c — Confirm Docker works (WSL)
+
+Run both commands:
+
+```bash
+docker --version
+docker compose version
+```
+
+**Expected:** each prints a version line (for example `Docker version 29.x.x`).
+
+**If you see** `The command 'docker' could not be found in this WSL 2 distro`:
+
+1. Ensure **Step 0a** finished (Docker Desktop must be running).
+2. Open **Docker Desktop** → **Settings** → **Resources** → **WSL integration**.
+3. Enable integration for your distro (for example **Ubuntu**).
+4. Click **Apply & restart**.
+5. Close and reopen the WSL terminal, then rerun the two commands above.
+
+If Docker is still missing, install [Docker Desktop for Windows](https://docs.docker.com/desktop/setup/install/windows-install/) and repeat Step 0a.
+
+### Step 0d — Start the database containers (WSL)
+
+From the repository root:
+
+```bash
+cd ~/suspicious-email-triage
+DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d mongo postgres redis
+```
+
+**Expected:** lines like `Container triage-postgres Running` or `Started`.
+
+Wait a few seconds, then list containers:
+
+```bash
+docker compose -f infra/docker/docker-compose.yml ps mongo postgres redis
+```
+
+**Expected:** three rows — `triage-mongo`, `triage-postgres`, `triage-redis` — all with state **running** or **Up**.
+
+### Step 0e — Health checks (WSL)
+
+Run each command from the repository root:
+
+```bash
+docker compose -f infra/docker/docker-compose.yml exec postgres pg_isready -U triage -d triage_stats
+```
+
+**Expected:** `/var/run/postgresql:5432 - accepting connections`
+
+```bash
+docker compose -f infra/docker/docker-compose.yml exec mongo mongosh --eval "db.runCommand({ ping: 1 })"
+```
+
+**Expected:** `{ ok: 1 }` (formatting may vary).
+
+```bash
+docker compose -f infra/docker/docker-compose.yml exec redis redis-cli ping
+```
+
+**Expected:** `PONG`
+
+When Step 0e succeeds, continue to [Step 3](#step-3--confirm-published-ports) (ports) and [Step 6](#step-6--configure-gui-clients-on-windows-11) (GUI clients), or proceed to [windows_dev_startup_run_guide.md](windows_dev_startup_run_guide.md) to start the API and UI.
+
+---
+
 ## Step 1 — Open a WSL terminal
+
+*(Same as [Step 0b](#step-0b--open-a-wsl-terminal) if you already completed the restart checklist.)*
 
 On Windows 11, open **Ubuntu** (or your WSL distro) from the Start menu or Windows Terminal.
 
@@ -42,7 +160,7 @@ docker --version
 docker compose version
 ```
 
-If either command fails, install [Docker Desktop for Windows](https://docs.docker.com/desktop/setup/install/windows-install/) and enable **WSL integration** for your distro (Docker Desktop → Settings → Resources → WSL integration).
+If either command fails, complete [After Windows 11 restarts](#after-windows-11-restarts-do-this-first) from Step 0a.
 
 ---
 
@@ -51,12 +169,14 @@ If either command fails, install [Docker Desktop for Windows](https://docs.docke
 From the repository root, start only the data stores (fastest path for GUI client setup):
 
 ```bash
+cd ~/suspicious-email-triage
 DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d mongo postgres redis
 ```
 
 To start the **full dev stack** (API, workers, Redpanda, and databases):
 
 ```bash
+cd ~/suspicious-email-triage
 DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --build
 ```
 
@@ -202,12 +322,17 @@ Use **`localhost`** as the host in all three unless troubleshooting (see below).
 
 ### Connection refused from Windows
 
-1. Confirm containers are running (Step 2).
-2. Confirm port mappings (Step 3).
-3. Ensure **Docker Desktop is running** and WSL integration is enabled.
-4. Temporarily try the WSL IP instead of `localhost`:
+1. Complete [After Windows 11 restarts](#after-windows-11-restarts-do-this-first) — especially **Step 0a** (Docker Desktop running).
+2. Confirm containers are running ([Step 2](#step-2--start-the-database-containers)).
+3. Confirm port mappings ([Step 3](#step-3--confirm-published-ports)).
+4. Ensure **WSL integration** is enabled (Docker Desktop → Settings → Resources → WSL integration).
+5. Temporarily try the WSL IP instead of `localhost`:
    - In WSL: `hostname -I | awk '{print $1}'`
    - Use that IP in DBeaver / Compass / Redis Insight (same ports).
+
+### `docker` not found in WSL after restart
+
+Docker Desktop is not running or WSL integration is disabled. Run **Step 0a** and **Step 0c** above.
 
 ### Port already in use
 
@@ -232,6 +357,7 @@ That is normal on a fresh dev stack. Submit a review in the UI or enable dev sim
 From the repository root:
 
 ```bash
+cd ~/suspicious-email-triage
 docker compose -f infra/docker/docker-compose.yml down
 ```
 

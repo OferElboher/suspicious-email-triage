@@ -7,5 +7,9 @@
 - `setup-local-dev.sh` — checks/install local prerequisites and project dependencies for dev.
 - `setup-and-build-dev.sh` — runs `setup-local-dev.sh`, then builds dev Docker Compose images.
 - `ensure-ai-service-venv.sh` — creates `ai_service/.venv` and installs Python requirements when imports are missing.
+- `bootstrap-auth-admin.sh` — seeds PostgreSQL auth tables/roles and creates bootstrap admin when `auth_users` is empty.
+- `configure-dev-bootstrap-admin.sh` — writes bootstrap admin email/password to gitignored `backend/.env`.
+
+Auth table reset and login recovery: [docs/dev_auth_tables_reset_and_admin_recovery.md](../docs/dev_auth_tables_reset_and_admin_recovery.md).
 
 These scripts are intended to be called from Husky hooks and local developer terminals.

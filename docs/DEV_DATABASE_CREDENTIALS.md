@@ -24,6 +24,8 @@ MongoDB stores review request documents and analysis results. PostgreSQL stores 
 
 **Windows GUI clients:** step-by-step DBeaver, MongoDB Compass, and Redis Insight setup is in [windows_docker_databases_start_and_verify.md](windows_docker_databases_start_and_verify.md) and the linked tool guides in this folder.
 
+**Auth tables** (`auth_users`, `auth_roles`, etc.) live in the same PostgreSQL database as chart statistics. User administration: [AUTHENTICATION_AND_RBAC.md](AUTHENTICATION_AND_RBAC.md). Reset auth and recreate admin: [dev_auth_tables_reset_and_admin_recovery.md](dev_auth_tables_reset_and_admin_recovery.md).
+
 ## Staging (`staging`) — remote
 
 Staging is the soft rehearsal environment. It should feel like production, but it should not contain production data.

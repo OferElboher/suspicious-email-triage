@@ -16,11 +16,11 @@ ensure_ai_service_venv() {
     fi
   fi
 
-  if ! "$python" - <<'PY' 2>/dev/null; then
-import celery, pymongo, kafka, requests, psycopg, pytest  # noqa: F401
-PY
-    echo "Installing ai_service Python dependencies into ai_service/.venv ..."
-    "$pip" install -r "$root/ai_service/requirements.txt"
+  if ! {
+    "$pip" show celery redis pymongo kafka-python requests psycopg pytest &>/dev/null
+  }; then
+    echo "Installing ai_service Python dependencies into ai_service/.venv ..." >&2
+    "$pip" install -r "$root/ai_service/requirements.txt" >&2
   fi
 
   printf '%s' "$python"

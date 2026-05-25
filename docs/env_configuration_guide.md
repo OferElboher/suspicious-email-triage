@@ -36,7 +36,12 @@ USE_KAFKA_INGEST=true
 USE_BULLMQ_ENQUEUE=false
 SIMULATION_MAX_EVENTS_PER_MIN=30
 MERGED_LOG_PATH=./logs/merged.log
+JWT_SECRET=dev-jwt-secret-change-before-staging-or-prod
+# Set via: bash scripts/configure-dev-bootstrap-admin.sh YOUR_EMAIL@example.com
+AUTH_BOOTSTRAP_ADMIN_PASSWORD=temp-admin-pswd
 ```
+
+Authentication variables are documented in `AUTHENTICATION_AND_RBAC.md`, [dev_admin_credentials_and_recovery.md](dev_admin_credentials_and_recovery.md), and [dev_auth_tables_reset_and_admin_recovery.md](dev_auth_tables_reset_and_admin_recovery.md).
 
 ---
 

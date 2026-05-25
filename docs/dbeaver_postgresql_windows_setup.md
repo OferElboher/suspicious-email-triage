@@ -2,7 +2,7 @@
 
 Connect **DBeaver** on Windows to the dev **PostgreSQL** statistics database used for analytics charts.
 
-**Prerequisite:** complete [windows_docker_databases_start_and_verify.md](windows_docker_databases_start_and_verify.md) through Step 5.
+**Prerequisite:** complete [windows_docker_databases_start_and_verify.md](windows_docker_databases_start_and_verify.md) through Step 5 (or the full [windows_dev_startup_run_guide.md](windows_dev_startup_run_guide.md) after a Windows restart).
 
 ## Values you will enter
 
@@ -85,8 +85,13 @@ If the test fails, see [Troubleshooting](#troubleshooting) below.
 ## Step 7 — Browse project data
 
 1. In the **Database Navigator**, expand your connection → **Databases** → `triage_stats` → **Schemas** → **public** → **Tables**.
-2. Open **`review_stats_events`** — chart/statistics events written by the API and workers.
-3. Right-click the table → **View data** to inspect rows.
+2. **`review_stats_events`** — chart statistics events.
+3. **`auth_users`**, **`auth_roles`**, and related **`auth_*`** tables — login accounts and RBAC (see `docs/AUTHENTICATION_AND_RBAC.md`). Passwords are bcrypt hashes — not readable in DBeaver; see [dev_auth_tables_reset_and_admin_recovery.md](dev_auth_tables_reset_and_admin_recovery.md) if login fails.
+3. Right-click a table → **View data** to inspect rows.
+
+**Auth tables not visible?** Start the `backend` container once, then refresh DBeaver (F5). Full steps: [dbeaver_auth_tables_and_unified_log_viewing.md](dbeaver_auth_tables_and_unified_log_viewing.md).
+
+**Login fails but email appears in `auth_users`?** [dev_auth_tables_reset_and_admin_recovery.md](dev_auth_tables_reset_and_admin_recovery.md).
 
 Optional SQL:
 
@@ -115,5 +120,7 @@ ORDER BY event_type, status;
 | Password authentication failed | Wrong user/password | Use `triage` / `triage`, not `.env` Docker hostnames |
 | Port in use | Another PostgreSQL on Windows/WSL | `netstat -ano \| findstr :5432` in PowerShell; stop conflicting service or remap compose port |
 | Table missing | Schema not initialized | `DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d backend` then refresh |
+| Backend crash `MODULE_NOT_FOUND` in `middleware/auth.js` | Stale image or bad deploy | `DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --build backend` then check logs for `listening on 3000` |
+| `auth_*` tables missing | Auth schema runs on API startup | Rebuild/restart `backend`; see steps above |
 
 For shared Docker/WSL checks, see [windows_docker_databases_start_and_verify.md](windows_docker_databases_start_and_verify.md).

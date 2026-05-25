@@ -2,7 +2,7 @@
 
 Connect **Redis Insight** on Windows to the dev **Redis** instance used for Celery broker/result backends and lightweight API state.
 
-**Prerequisite:** complete [windows_docker_databases_start_and_verify.md](windows_docker_databases_start_and_verify.md) through Step 5.
+**Prerequisite:** complete [windows_docker_databases_start_and_verify.md](windows_docker_databases_start_and_verify.md) through Step 5 (or the full [windows_dev_startup_run_guide.md](windows_dev_startup_run_guide.md) after a Windows restart).
 
 ## Values you will enter
 

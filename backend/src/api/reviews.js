@@ -8,6 +8,7 @@ const { extractLinks } = require("../lib/extractLinks");
 const { REVIEW_PAGE_SIZE } = require("../../../shared/config/pagination");
 const logger = require("../lib/logger");
 const { enqueueAfterCreate } = require("../services/reviewPipeline");
+const { requirePermission } = require("../http/middleware/auth");
 
 /** Default page index for GET /reviews pagination (zero-based). */
 const DEFAULT_PAGE = 0;
@@ -15,7 +16,7 @@ const DEFAULT_PAGE = 0;
 const DEFAULT_LIMIT = REVIEW_PAGE_SIZE;
 
 /** POST /reviews — persists a review and enqueues async analysis (Kafka/Celery primary path). */
-router.post("/", async (req, res) => {
+router.post("/", requirePermission("reviews.write"), async (req, res) => {
   try {
     const { senderName, senderEmail, subject, body, referenceSources } =
       req.body;
@@ -44,7 +45,7 @@ router.post("/", async (req, res) => {
 });
 
 /** POST /reviews/:id/override — analyst audit trail for manual verdict adjustments. */
-router.post("/:id/override", async (req, res) => {
+router.post("/:id/override", requirePermission("reviews.override"), async (req, res) => {
   try {
     const review = await Review.findById(req.params.id);
     if (!review) {
@@ -54,6 +55,7 @@ router.post("/:id/override", async (req, res) => {
       verdict: req.body.verdict,
       recommendedAction: req.body.recommendedAction,
       reason: req.body.reason,
+      analystEmail: req.auth.email,
       timestamp: new Date(),
     };
     await review.save();
@@ -66,7 +68,7 @@ router.post("/:id/override", async (req, res) => {
 });
 
 /** GET /reviews — paginated dashboard rows sorted by recent activity. */
-router.get("/", async (req, res) => {
+router.get("/", requirePermission("reviews.read"), async (req, res) => {
   try {
     const page = parseInt(req.query.page ?? DEFAULT_PAGE, 10);
     const limit = parseInt(req.query.limit ?? DEFAULT_LIMIT, 10);
@@ -92,7 +94,7 @@ router.get("/", async (req, res) => {
 });
 
 /** GET /reviews/:id — full document for polling and analyst deep-read. */
-router.get("/:id", async (req, res) => {
+router.get("/:id", requirePermission("reviews.read"), async (req, res) => {
   try {
     const review = await Review.findById(req.params.id);
     if (!review) {

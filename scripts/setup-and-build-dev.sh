@@ -8,13 +8,14 @@ COMPOSE_FILE="$ROOT/infra/docker/docker-compose.yml"
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
   echo "Usage: bash scripts/setup-and-build-dev.sh"
-  echo "Runs setup-local-dev.sh, then builds the dev Docker Compose images."
+  echo "Runs setup-local-dev.sh, prompts for bootstrap admin email, then builds the dev Docker Compose images."
   echo "Start the stack afterward with:"
   echo "  DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up"
   exit 0
 fi
 
 bash "$ROOT/scripts/setup-local-dev.sh"
+bash "$ROOT/scripts/configure-dev-bootstrap-admin.sh"
 
 cd "$ROOT"
 echo "Building dev Docker Compose images..."

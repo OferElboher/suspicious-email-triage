@@ -4,25 +4,53 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { postJson, getJson } from "./api/client";
+import { useAuth } from "./context/AuthContext";
+import { useAppScreen } from "./hooks/useAppScreen";
 import { useReviewPoller } from "./hooks/useReviewPoller";
 import AnalyticsView from "./views/AnalyticsView";
 import SimulationPanel from "./views/SimulationPanel";
+import AdminUsersView from "./views/AdminUsersView";
 
 /** Page size for the dashboard list; kept aligned with backend pagination limits. */
 const PAGE_SIZE = 20;
 
 export default function TriageApp() {
-  /** Active high-level screen: triage form vs analytics charts. */
-  const [screen, setScreen] = useState("workspace");
-  /** Feature flags from API (simulation allowed only in dev deployment). */
-  const [features, setFeatures] = useState({
+  const { user, logout, hasPermission } = useAuth();
+  /** Feature flags from API (simulation allowed only for developer role in dev deployment). */
+  const [features, setFeatures] = useState(() => ({
     simulation: false,
-    analytics: true,
+    analytics: hasPermission("metrics.read"),
+    adminUsers: hasPermission("admin.users"),
     simulationMaxEventsPerMin: 30,
-  });
+  }));
+  const [featuresLoaded, setFeaturesLoaded] = useState(false);
 
-  const [senderName, setSenderName] = useState("Analyst");
-  const [senderEmail, setSenderEmail] = useState("analyst@local.test");
+  const canReadReviews = hasPermission("reviews.read");
+  const canWrite = hasPermission("reviews.write");
+  const canOverride = hasPermission("reviews.override");
+
+  const canAccessScreen = useCallback(
+    (view) => {
+      if (view === "workspace") {
+        return canReadReviews;
+      }
+      if (view === "analytics") {
+        return features.analytics && hasPermission("metrics.read");
+      }
+      if (view === "admin") {
+        return features.adminUsers && hasPermission("admin.users");
+      }
+      return false;
+    },
+    [canReadReviews, features.analytics, features.adminUsers, hasPermission]
+  );
+
+  const [screen, setScreen] = useAppScreen(
+    featuresLoaded ? canAccessScreen : () => true
+  );
+
+  const [senderName, setSenderName] = useState(user?.email?.split("@")[0] || "Analyst");
+  const [senderEmail, setSenderEmail] = useState(user?.email || "");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [active, setActive] = useState(null);
@@ -30,20 +58,36 @@ export default function TriageApp() {
   const [reviews, setReviews] = useState([]);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const [totalReviews, setTotalReviews] = useState(0);
+
+  const lastPage = Math.max(0, Math.ceil(totalReviews / PAGE_SIZE) - 1);
+
+  useEffect(() => {
+    if (user?.email) {
+      setSenderEmail(user.email);
+      setSenderName(user.email.split("@")[0]);
+    }
+  }, [user]);
 
   useEffect(() => {
     getJson("/dev/features")
       .then((data) =>
         setFeatures({
           simulation: Boolean(data.simulation),
-          analytics: data.analytics !== false,
+          analytics: Boolean(data.analytics),
+          adminUsers: Boolean(data.adminUsers),
           simulationMaxEventsPerMin: Number(data.simulationMaxEventsPerMin) || 30,
         })
       )
       .catch(() => {
-        /* non-fatal: UI still works with conservative defaults */
-      });
-  }, []);
+        setFeatures((current) => ({
+          ...current,
+          analytics: hasPermission("metrics.read"),
+          adminUsers: hasPermission("admin.users"),
+        }));
+      })
+      .finally(() => setFeaturesLoaded(true));
+  }, [hasPermission]);
 
   const onPoll = useCallback((doc) => {
     setActive(doc);
@@ -55,11 +99,14 @@ export default function TriageApp() {
     const data = await getJson(`/reviews?limit=${PAGE_SIZE}&page=${page}`);
     setReviews(data.data || []);
     setHasMore(Boolean(data.hasMore));
+    setTotalReviews(Number(data.total) || 0);
   }, [page]);
 
   useEffect(() => {
-    fetchPage().catch(() => setReviews([]));
-  }, [fetchPage]);
+    if (hasPermission("reviews.read")) {
+      fetchPage().catch(() => setReviews([]));
+    }
+  }, [fetchPage, hasPermission]);
 
   const submit = async () => {
     setActive(null);
@@ -93,19 +140,28 @@ export default function TriageApp() {
       <header className="app-header">
         <div>
           <h1 className="app-title">Suspicious email triage</h1>
-          <div className="app-tag">Kafka ingest → Celery scoring · poll for status</div>
+          <div className="app-tag">
+            Signed in as {user?.email} · roles: {(user?.roles || []).join(", ") || "none"}
+          </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
-          <span className="pill">Professional workspace</span>
-          <nav className="nav-tabs" aria-label="Primary views">
-            <button
-              type="button"
-              className={screen === "workspace" ? "active" : ""}
-              onClick={() => setScreen("workspace")}
-            >
-              Triage workspace
+          <div className="toolbar">
+            <span className="pill">Authenticated workspace</span>
+            <button type="button" onClick={logout}>
+              Sign out
             </button>
-            {features.analytics && (
+          </div>
+          <nav className="nav-tabs" aria-label="Primary views">
+            {canReadReviews && (
+              <button
+                type="button"
+                className={screen === "workspace" ? "active" : ""}
+                onClick={() => setScreen("workspace")}
+              >
+                Triage workspace
+              </button>
+            )}
+            {features.analytics && hasPermission("metrics.read") && (
               <button
                 type="button"
                 className={screen === "analytics" ? "active" : ""}
@@ -114,52 +170,69 @@ export default function TriageApp() {
                 Analytics & graphs
               </button>
             )}
+            {features.adminUsers && hasPermission("admin.users") && (
+              <button
+                type="button"
+                className={screen === "admin" ? "active" : ""}
+                onClick={() => setScreen("admin")}
+              >
+                Admin users
+              </button>
+            )}
           </nav>
         </div>
       </header>
 
-      {screen === "analytics" && features.analytics && (
+      {screen === "analytics" && features.analytics && hasPermission("metrics.read") && (
         <main className="layout">
           <AnalyticsView />
         </main>
       )}
 
-      {screen === "workspace" && (
+      {screen === "admin" && features.adminUsers && hasPermission("admin.users") && (
         <main className="layout">
-          <section className="card">
-            <h2>New review</h2>
-            <div className="row">
-              <div>
-                <label className="field">Sender name</label>
-                <input value={senderName} onChange={(e) => setSenderName(e.target.value)} />
+          <AdminUsersView />
+        </main>
+      )}
+
+      {screen === "workspace" && canReadReviews && (
+        <main className="layout">
+          {canWrite && (
+            <section className="card">
+              <h2>New review</h2>
+              <div className="row">
+                <div>
+                  <label className="field">Sender name</label>
+                  <input value={senderName} onChange={(e) => setSenderName(e.target.value)} />
+                </div>
+                <div>
+                  <label className="field">Sender email</label>
+                  <input value={senderEmail} onChange={(e) => setSenderEmail(e.target.value)} />
+                </div>
               </div>
-              <div>
-                <label className="field">Sender email</label>
-                <input value={senderEmail} onChange={(e) => setSenderEmail(e.target.value)} />
+              <div style={{ marginTop: "0.65rem" }}>
+                <label className="field">Subject</label>
+                <input value={subject} onChange={(e) => setSubject(e.target.value)} />
               </div>
-            </div>
-            <div style={{ marginTop: "0.65rem" }}>
-              <label className="field">Subject</label>
-              <input value={subject} onChange={(e) => setSubject(e.target.value)} />
-            </div>
-            <div style={{ marginTop: "0.65rem" }}>
-              <label className="field">Body</label>
-              <textarea
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                placeholder="Paste headers + body…"
-              />
-            </div>
-            <div className="actions">
-              <button
-                className="primary"
-                type="button"
-                onClick={() => submit().catch((e) => window.alert(e.message))}
-              >
-                Queue analysis
-              </button>
-            </div>
-          </section>
+              <div style={{ marginTop: "0.65rem" }}>
+                <label className="field">Body</label>
+                <textarea
+                  value={body}
+                  onChange={(e) => setBody(e.target.value)}
+                  placeholder="Paste headers + body…"
+                />
+              </div>
+              <div className="actions">
+                <button
+                  className="primary"
+                  type="button"
+                  onClick={() => submit().catch((e) => window.alert(e.message))}
+                >
+                  Queue analysis
+                </button>
+              </div>
+            </section>
+          )}
 
           <section className="card">
             <h2>Result</h2>
@@ -205,21 +278,25 @@ export default function TriageApp() {
                         <li key={i}>{q}</li>
                       ))}
                     </ul>
-                    <div style={{ marginTop: "0.75rem" }}>
-                      <label className="field">Override reason</label>
-                      <input
-                        value={overrideReason}
-                        onChange={(e) => setOverrideReason(e.target.value)}
-                      />
-                    </div>
-                    <div className="actions">
-                      <button
-                        type="button"
-                        onClick={() => saveOverride().catch((e) => window.alert(e.message))}
-                      >
-                        Save override
-                      </button>
-                    </div>
+                    {canOverride && (
+                      <>
+                        <div style={{ marginTop: "0.75rem" }}>
+                          <label className="field">Override reason</label>
+                          <input
+                            value={overrideReason}
+                            onChange={(e) => setOverrideReason(e.target.value)}
+                          />
+                        </div>
+                        <div className="actions">
+                          <button
+                            type="button"
+                            onClick={() => saveOverride().catch((e) => window.alert(e.message))}
+                          >
+                            Save override
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </>
                 )}
               </>
@@ -236,13 +313,19 @@ export default function TriageApp() {
               <button type="button" onClick={() => fetchPage().catch(() => {})}>
                 Refresh
               </button>
+              <button type="button" disabled={page === 0} onClick={() => setPage(0)}>
+                First
+              </button>
               <button type="button" disabled={page === 0} onClick={() => setPage((p) => Math.max(p - 1, 0))}>
                 Prev
               </button>
               <button type="button" disabled={!hasMore} onClick={() => setPage((p) => p + 1)}>
                 Next
               </button>
-              <span className="muted">Page {page}</span>
+              <button type="button" disabled={page >= lastPage} onClick={() => setPage(lastPage)}>
+                Last
+              </button>
+              <span className="muted">Page {page + 1}{totalReviews > 0 ? ` of ${lastPage + 1}` : ""}</span>
             </div>
             <ul className="dashboard-list">
               {reviews.map((r) => (

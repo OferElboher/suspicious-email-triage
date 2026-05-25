@@ -68,6 +68,9 @@ services:
     env_file:
       # Profile env: defaults to backend/.env.dev; set DEPLOYMENT_ENV=staging|prod to switch.
       - ../../backend/.env.${DEPLOYMENT_ENV:-dev}
+      # Optional gitignored overrides (bootstrap admin email, private secrets).
+      - path: ../../backend/.env
+        required: false
     volumes:
       - triage-logs:/var/log/triage
     depends_on:

@@ -2,11 +2,11 @@
 from bson import ObjectId
 
 from app.celery_app import celery_app
+from app.llm_ollama import analyze_with_ollama
 from app.logutil import log_line
+from app.merge import merge_results
 from app.mongo import get_db
 from app.rule_engine import run_rule_engine
-from app.llm_ollama import analyze_with_ollama
-from app.merge import merge_results
 from app.stats import record_status
 
 
