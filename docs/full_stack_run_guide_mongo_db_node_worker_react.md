@@ -63,7 +63,7 @@ http://localhost:3001
 
 Sign in with a provisioned account (bootstrap admin: [dev_admin_credentials_and_recovery.md](dev_admin_credentials_and_recovery.md)). If login fails though `auth_users` shows your email, see [dev_auth_tables_reset_and_admin_recovery.md](dev_auth_tables_reset_and_admin_recovery.md).
 
-**Browser refresh (F5)** stays on the same tab (`#analytics`, `#admin`, or default workspace). See [windows_dev_startup_run_guide.md](windows_dev_startup_run_guide.md#browser).
+**Browser refresh (F5)** stays on the same tab (`#analytics` or default workspace). Admins use Django admin for user management. See [windows_dev_startup_run_guide.md](windows_dev_startup_run_guide.md#browser) and [django_admin_user_management.md](django_admin_user_management.md).
 
 You should see the triage workspace, analytics graphs (with optional **Auto-refresh** for the rolling last 24 hours), and (for users with the **developer** role in `dev`) the simulation controls.
 

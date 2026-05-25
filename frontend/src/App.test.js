@@ -31,20 +31,13 @@ beforeEach(() => {
           Promise.resolve({
             simulation: false,
             analytics: true,
-            adminUsers: true,
             simulationMaxEventsPerMin: 30,
           }),
       });
     }
-    if (u.includes("/admin/users")) {
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ users: [] }),
-      });
-    }
     return Promise.resolve({
       ok: true,
-      json: () => Promise.resolve({ data: [], hasMore: false }),
+      json: () => Promise.resolve({ data: [], hasMore: false, total: 0 }),
     });
   });
 });
@@ -61,11 +54,17 @@ test("renders triage header when authenticated", async () => {
   });
 });
 
-test("restores admin view after refresh hash", async () => {
-  window.location.hash = "#admin";
+test("shows django admin link for admin role", async () => {
   render(<App />);
   await waitFor(() => {
-    expect(screen.getByRole("button", { name: /Admin users/i })).toHaveClass("active");
+    expect(screen.getByRole("link", { name: /User administration/i })).toBeInTheDocument();
   });
-  expect(screen.getByRole("heading", { name: /User provisioning/i })).toBeInTheDocument();
+});
+
+test("restores analytics view after refresh hash", async () => {
+  window.location.hash = "#analytics";
+  render(<App />);
+  await waitFor(() => {
+    expect(screen.getByRole("button", { name: /Analytics & graphs/i })).toHaveClass("active");
+  });
 });

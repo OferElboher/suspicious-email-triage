@@ -135,41 +135,15 @@ Password must be at least **8 characters**.
 
 ## Admin user provisioning
 
-Admins use the **Admin users** tab in the UI or the REST API.
+Admins manage users in **Django admin** (not the React triage tabs). See [django_admin_user_management.md](django_admin_user_management.md) for step-by-step create, update, delete, and navigation between the triage app and admin UI.
 
-### UI
+Summary:
 
-1. Sign in as a user with the `admin` role.
-2. Open **Admin users**.
-3. Enter email, temporary password, select roles, click **Create user**.
-4. Edit roles/active flag on existing users and click **Save**.
-
-### API
-
-List users:
-
-```bash
-curl -sS "http://localhost:3000/admin/users" \
-  -H "authorization: Bearer ${TOKEN}"
-```
-
-Create user:
-
-```bash
-curl -sS -X POST "http://localhost:3000/admin/users" \
-  -H "authorization: Bearer ${TOKEN}" \
-  -H "content-type: application/json" \
-  -d '{"email":"analyst@local.test","password":"AnalystPass1!","roles":["analyst"]}'
-```
-
-Update roles / active flag:
-
-```bash
-curl -sS -X PATCH "http://localhost:3000/admin/users/2" \
-  -H "authorization: Bearer ${TOKEN}" \
-  -H "content-type: application/json" \
-  -d '{"roles":["developer","analyst"],"isActive":true}'
-```
+1. Sign in to the triage app with the **`admin` role**.
+2. Click **User administration** (header) → `http://localhost:8000/admin/`.
+3. Sign in with the same email/password.
+4. Use **Users** to create, edit, or delete accounts (you cannot delete yourself).
+5. Click **View site** in Django admin to return to the triage app.
 
 ## Protected routes summary
 
@@ -183,8 +157,9 @@ curl -sS -X PATCH "http://localhost:3000/admin/users/2" \
 | `GET /metrics/*` | `metrics.read` |
 | `GET /dev/features` | authenticated (returns flags for current user) |
 | `GET/POST /dev/simulation`, `POST /dev/reset-local-state` | `dev.*` permission + **`developer` role** + dev deployment |
-| `GET /admin/users`, `POST /admin/users`, `PATCH /admin/users/:id` | `admin.users` |
 | `GET /logs/search` | `logs.read` |
+
+User CRUD is handled in **Django admin** (`/admin/` on port 8000 in dev), not Node REST routes. See [django_admin_user_management.md](django_admin_user_management.md).
 
 ## Environment variables
 
@@ -221,7 +196,8 @@ See `backend/.env.dev` for local defaults.
 ## Related docs
 
 - [windows_dev_startup_run_guide.md](windows_dev_startup_run_guide.md) — run the stack after Windows 11 startup
-- [dev_auth_tables_reset_and_admin_recovery.md](dev_auth_tables_reset_and_admin_recovery.md) — reset auth tables, set admin email/password, recover login
+- [django_admin_user_management.md](django_admin_user_management.md) — Django admin user CRUD
+- [analytics_and_graphs_guide.md](analytics_and_graphs_guide.md) — Analytics & graphs charts
 - [dev_admin_credentials_and_recovery.md](dev_admin_credentials_and_recovery.md) — configure email, change/recover password
 - `VERSIONS_BUILDS_AND_SIMULATION.md` — dev simulation (developer role)
 - `env_configuration_guide.md` — broader environment variable reference

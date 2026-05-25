@@ -9,18 +9,17 @@ import { useAppScreen } from "./hooks/useAppScreen";
 import { useReviewPoller } from "./hooks/useReviewPoller";
 import AnalyticsView from "./views/AnalyticsView";
 import SimulationPanel from "./views/SimulationPanel";
-import AdminUsersView from "./views/AdminUsersView";
+import { djangoAdminUrl } from "./lib/appUrls";
 
 /** Page size for the dashboard list; kept aligned with backend pagination limits. */
 const PAGE_SIZE = 20;
 
 export default function TriageApp() {
-  const { user, logout, hasPermission } = useAuth();
+  const { user, logout, hasPermission, hasRole } = useAuth();
   /** Feature flags from API (simulation allowed only for developer role in dev deployment). */
   const [features, setFeatures] = useState(() => ({
     simulation: false,
     analytics: hasPermission("metrics.read"),
-    adminUsers: hasPermission("admin.users"),
     simulationMaxEventsPerMin: 30,
   }));
   const [featuresLoaded, setFeaturesLoaded] = useState(false);
@@ -37,12 +36,9 @@ export default function TriageApp() {
       if (view === "analytics") {
         return features.analytics && hasPermission("metrics.read");
       }
-      if (view === "admin") {
-        return features.adminUsers && hasPermission("admin.users");
-      }
       return false;
     },
-    [canReadReviews, features.analytics, features.adminUsers, hasPermission]
+    [canReadReviews, features.analytics, hasPermission]
   );
 
   const [screen, setScreen] = useAppScreen(
@@ -75,7 +71,6 @@ export default function TriageApp() {
         setFeatures({
           simulation: Boolean(data.simulation),
           analytics: Boolean(data.analytics),
-          adminUsers: Boolean(data.adminUsers),
           simulationMaxEventsPerMin: Number(data.simulationMaxEventsPerMin) || 30,
         })
       )
@@ -83,7 +78,6 @@ export default function TriageApp() {
         setFeatures((current) => ({
           ...current,
           analytics: hasPermission("metrics.read"),
-          adminUsers: hasPermission("admin.users"),
         }));
       })
       .finally(() => setFeaturesLoaded(true));
@@ -147,6 +141,16 @@ export default function TriageApp() {
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
           <div className="toolbar">
             <span className="pill">Authenticated workspace</span>
+            {hasRole("admin") && (
+              <a
+                className="button-link"
+                href={djangoAdminUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                User administration
+              </a>
+            )}
             <button type="button" onClick={logout}>
               Sign out
             </button>
@@ -170,15 +174,6 @@ export default function TriageApp() {
                 Analytics & graphs
               </button>
             )}
-            {features.adminUsers && hasPermission("admin.users") && (
-              <button
-                type="button"
-                className={screen === "admin" ? "active" : ""}
-                onClick={() => setScreen("admin")}
-              >
-                Admin users
-              </button>
-            )}
           </nav>
         </div>
       </header>
@@ -186,12 +181,6 @@ export default function TriageApp() {
       {screen === "analytics" && features.analytics && hasPermission("metrics.read") && (
         <main className="layout">
           <AnalyticsView />
-        </main>
-      )}
-
-      {screen === "admin" && features.adminUsers && hasPermission("admin.users") && (
-        <main className="layout">
-          <AdminUsersView />
         </main>
       )}
 

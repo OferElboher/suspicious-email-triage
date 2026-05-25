@@ -12,6 +12,8 @@ This folder collects human-oriented explanations of the Suspicious Email Triage 
 - If you need **bootstrap admin email/password, sign-in, or password recovery**, read `dev_admin_credentials_and_recovery.md`.
 - If login fails but **`auth_users` shows your email in DBeaver**, or you need to **reset auth tables** and recreate admin, read `dev_auth_tables_reset_and_admin_recovery.md`.
 - If you need **login, roles, password recovery, or authenticated API examples**, read `AUTHENTICATION_AND_RBAC.md`.
+- If you need to **create, update, or delete users as admin**, read `django_admin_user_management.md`.
+- If you need to understand **Analytics & graphs** charts, read `analytics_and_graphs_guide.md`.
 - If you are confused by **older references to Django** in CI or legacy markdown, read `NODE_PYTHON_AND_LEGACY_DJANGO.md` first.
 
 ## What each major document is for
@@ -27,7 +29,8 @@ This folder collects human-oriented explanations of the Suspicious Email Triage 
 - `windows_dev_startup_run_guide.md` — After Windows 11 startup: Docker, databases, full dev stack, GUI clients, UI sign-in.
 - `windows_docker_databases_start_and_verify.md` — Start dev DB containers in WSL Docker and verify ports before connecting from Windows.
 - `dev_admin_credentials_and_recovery.md` — Configure bootstrap admin email, temporary password, change/recover credentials (UI and API).
-- `dev_auth_tables_reset_and_admin_recovery.md` — Reset PostgreSQL auth tables, set admin email/password, recover when login fails despite visible email in DBeaver.
+- `django_admin_user_management.md` — Django admin: watch, create, update, delete users; switch between triage app and admin UI.
+- `analytics_and_graphs_guide.md` — What each analytics chart shows and how to read status bars.
 - `dbeaver_auth_tables_and_unified_log_viewing.md` — Refresh DBeaver for `auth_*` tables; view/search unified `merged.log` (lnav, glogg, API).
 - `dbeaver_postgresql_windows_setup.md` — DBeaver on Windows → PostgreSQL (`triage_stats`).
 - `mongodb_compass_windows_setup.md` — MongoDB Compass on Windows → MongoDB (`triage` on port `27018`).

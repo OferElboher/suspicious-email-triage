@@ -82,6 +82,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "core",
     "health",
+    "triage_auth",
 ]
 
 # Middleware stack.
@@ -176,6 +177,13 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
+
+# Django admin authenticates against Node-owned auth_users via triage_auth backend.
+AUTHENTICATION_BACKENDS = ["triage_auth.backends.TriageAuthBackend"]
+
+# Link shown in admin UI back to the React triage app (override in env for staging/prod).
+TRIAGE_APP_PUBLIC_URL = os.getenv("APP_PUBLIC_URL", "http://localhost:3001")
+DJANGO_ADMIN_PUBLIC_URL = os.getenv("DJANGO_ADMIN_PUBLIC_URL", "http://localhost:8000/admin/")
 
 # Internationalization.
 LANGUAGE_CODE = "en-us"

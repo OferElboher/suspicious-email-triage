@@ -19,9 +19,9 @@ describe("useAppScreen", () => {
   });
 
   test("reads initial screen from hash on mount", () => {
-    window.location.hash = "#admin";
+    window.location.hash = "#analytics";
     const canAccess = () => true;
     const { result } = renderHook(() => useAppScreen(canAccess));
-    expect(result.current[0]).toBe("admin");
+    expect(result.current[0]).toBe("analytics");
   });
 });

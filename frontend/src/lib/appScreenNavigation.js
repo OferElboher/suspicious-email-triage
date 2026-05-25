@@ -1,5 +1,5 @@
 /** Primary SPA views mounted by TriageApp. */
-export const APP_SCREENS = ["workspace", "analytics", "admin"];
+export const APP_SCREENS = ["workspace", "analytics"];
 
 /** Read the active view from the location hash (e.g. #analytics). */
 export function readScreenFromLocation() {

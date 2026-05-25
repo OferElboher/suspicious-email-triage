@@ -80,6 +80,24 @@ services:
       - redpanda
     restart: unless-stopped
 
+  # django-admin: Django admin UI for auth_users CRUD (admin role only).
+  django-admin:
+    container_name: triage-django-admin
+    build:
+      context: ../../
+      dockerfile: backend/Dockerfile.django
+    ports:
+      - "8000:8000"
+    env_file:
+      - ../../backend/.env.${DEPLOYMENT_ENV:-dev}
+      - path: ../../backend/.env
+        required: false
+    environment:
+      - ENVIRONMENT=dev
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
   # worker: optional legacy Node BullMQ worker, started only with the legacy-bullmq profile.
   worker:
     container_name: triage-worker

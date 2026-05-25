@@ -127,8 +127,8 @@ Expected output:
 2. **Sign in** with the email you configured and temporary password `temp-admin-pswd` — see [dev_admin_credentials_and_recovery.md](dev_admin_credentials_and_recovery.md).
 3. You should see:
    - **Triage workspace** tab for submissions
-   - **Analytics & graphs** tab for charts (requires some PostgreSQL statistics events to look interesting). Use **Auto-refresh: on** for a live rolling 24-hour view, or **Auto-refresh: off** with **Apply range** for a custom window.
-   - **Admin users** tab (admin role only)
+   - **Analytics & graphs** tab for charts — see [analytics_and_graphs_guide.md](analytics_and_graphs_guide.md)
+   - **User administration** button (admin role only) → Django admin — see [django_admin_user_management.md](django_admin_user_management.md)
 
 **Browser refresh (F5)** keeps the current tab. The UI stores the active view in the URL hash:
 
@@ -136,7 +136,7 @@ Expected output:
 |-----|-------------|
 | Triage workspace | `http://localhost:3001/` |
 | Analytics & graphs | `http://localhost:3001/#analytics` |
-| Admin users | `http://localhost:3001/#admin` |
+| Django user admin | `http://localhost:8000/admin/` (admin role; also via **User administration** button) |
 
 You can bookmark or share these URLs; after sign-in, opening one lands on that tab directly.
 
@@ -168,7 +168,8 @@ Stop the React dev server with **Ctrl+C** in Terminal B.
 ## Related docs
 
 - [windows_docker_databases_start_and_verify.md](windows_docker_databases_start_and_verify.md) — Docker Desktop after restart, DB ports, health checks
-- [dev_admin_credentials_and_recovery.md](dev_admin_credentials_and_recovery.md) — bootstrap admin email/password, recovery, provisioning
+- [django_admin_user_management.md](django_admin_user_management.md) — Django admin user CRUD
+- [analytics_and_graphs_guide.md](analytics_and_graphs_guide.md) — analytics charts
 - [dev_auth_tables_reset_and_admin_recovery.md](dev_auth_tables_reset_and_admin_recovery.md) — reset auth tables, fix login when password unknown
 - [VERSIONS_BUILDS_AND_SIMULATION.md](VERSIONS_BUILDS_AND_SIMULATION.md) — dev/staging/prod profiles, simulation mode, build-only commands
 - [AUTHENTICATION_AND_RBAC.md](AUTHENTICATION_AND_RBAC.md) — roles, permissions, protected routes

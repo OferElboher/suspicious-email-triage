@@ -9,11 +9,11 @@ describe("appScreenNavigation", () => {
     expect(readScreenFromLocation()).toBe("workspace");
   });
 
-  test("readScreenFromLocation reads analytics and admin hashes", () => {
+  test("readScreenFromLocation reads analytics hash", () => {
     window.location.hash = "#analytics";
     expect(readScreenFromLocation()).toBe("analytics");
-    window.location.hash = "#admin";
-    expect(readScreenFromLocation()).toBe("admin");
+    window.location.hash = "#legacy-admin";
+    expect(readScreenFromLocation()).toBe("workspace");
   });
 
   test("writeScreenToLocation updates hash for non-workspace views", () => {

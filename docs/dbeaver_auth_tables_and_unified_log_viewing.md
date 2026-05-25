@@ -160,7 +160,7 @@ Also: `review_stats_events` (chart statistics).
 
 ### Step 3 — Create the bootstrap admin user
 
-The **`admin` role** has **all permissions**: every UI tab (triage, analytics, admin users, dev simulation when in `dev`) and every protected HTTP route (`/reviews`, `/metrics`, `/admin/users`, `/logs/search`, `/dev/*`, etc.).
+The **`admin` role** has **all permissions**: every UI tab (triage, analytics, dev simulation when in `dev`), Django user administration, and every protected HTTP route (`/reviews`, `/metrics`, `/logs/search`, `/dev/*`, etc.). User CRUD is in Django admin — see [django_admin_user_management.md](django_admin_user_management.md).
 
 **Symptom:** `\dt auth_*` shows 6 tables but `SELECT ... FROM auth_users` returns **(0 rows)**. The schema ran; bootstrap did not. The API may still be crash-looping on Mongo — bootstrap can run **without a healthy API**.
 
@@ -256,7 +256,7 @@ Expected: JSON with `"token"` and `"user"` containing `"roles": ["admin"]` and a
 1. Start frontend: `REACT_APP_API_URL=http://localhost:3000 PORT=3001 npm start --prefix frontend`
 2. Open `http://localhost:3001`
 3. Sign in with **your email** / **`temp-admin-pswd`**
-4. You should see **Triage workspace**, **Analytics & graphs**, and **Admin users** tabs.
+4. You should see **Triage workspace** and **Analytics & graphs** tabs, plus **User administration** (admin role).
 
 #### Admin already exists but you forgot the password
 
@@ -264,7 +264,7 @@ Use **Forgot password** on the sign-in screen. Step-by-step: [dev_admin_credenti
 
 #### Create additional admins (after first login)
 
-Sign in as admin → **Admin users** → create user → assign role **`admin`**. Or use the API (`POST /admin/users` with `"roles":["admin"]`).
+Sign in as admin → **User administration** → create user → assign role **`admin`**. See [django_admin_user_management.md](django_admin_user_management.md).
 
 ---
 

@@ -197,7 +197,7 @@ Frontend (separate terminal):
 REACT_APP_API_URL=http://localhost:3000 PORT=3001 npm start --prefix frontend
 ```
 
-Open `http://localhost:3001` (workspace), `http://localhost:3001/#analytics`, or `http://localhost:3001/#admin`. Browser refresh (F5) keeps the current tab.
+Open `http://localhost:3001` (workspace), `http://localhost:3001/#analytics`, or Django admin at `http://localhost:8000/admin/` (admin role). Browser refresh (F5) keeps the current triage tab.
 
 Sign in with the email you configured via `configure-dev-bootstrap-admin.sh` and temporary password `temp-admin-pswd` — see [dev_admin_credentials_and_recovery.md](dev_admin_credentials_and_recovery.md). If login fails despite a row in `auth_users`, see [dev_auth_tables_reset_and_admin_recovery.md](dev_auth_tables_reset_and_admin_recovery.md).
 

@@ -55,7 +55,6 @@ router.get("/features", (req, res) => {
     simulation: canSimulate,
     analytics: hasPermission(req.auth, "metrics.read"),
     resetLocalState: canReset,
-    adminUsers: hasPermission(req.auth, "admin.users"),
     simulationMaxEventsPerMin: MAX_EVENTS_PER_MIN,
     roles: req.auth.roles,
     permissions: req.auth.permissions,

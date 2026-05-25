@@ -160,7 +160,7 @@ REACT_APP_API_URL=http://localhost:3000 PORT=3001 npm start --prefix frontend
 3. Enter **your email** and password **`temp-admin-pswd`**.
 4. Click **Sign in**.
 
-**Expected:** Triage workspace, Analytics & graphs, and **Admin users** tabs visible.
+**Expected:** Triage workspace and **Analytics & graphs** tabs visible; **User administration** button in the header (admin role only).
 
 ---
 
@@ -281,10 +281,10 @@ docker compose -f infra/docker/docker-compose.yml exec postgres \
 
 ### Operation 4c — Alternative: add a second admin, retire the old one
 
-1. Sign in as admin → **Admin users**.
+1. Sign in as admin → click **User administration** → Django admin.
 2. Create a new user with role **`admin`** and a temporary password.
 3. Sign in as the new admin.
-4. Deactivate or remove the old account via **Admin users** (toggle active / adjust roles), or run SQL:
+4. Deactivate or delete the old account in Django admin (you cannot delete your own account while signed in), or run SQL:
 
 ```sql
 UPDATE auth_users SET is_active = false WHERE email = 'oldemail@example.com';
@@ -300,7 +300,7 @@ Use the same flow as [Part 3](#part-3--change-the-admin-password).
 |--------|-------|
 | **UI** | Sign-in → **Forgot password** → email → reset link from logs or SMTP → new password |
 | **API** | `POST /auth/forgot-password` → read token from logs → `POST /auth/reset-password` |
-| **Another admin** | Ask a colleague with `admin` role to create a new admin account in **Admin users** |
+| **Another admin** | Ask a colleague with `admin` role to create a new admin account in **Django admin** — see [django_admin_user_management.md](django_admin_user_management.md) |
 
 There is **no** “admin reset other user’s password” button in the UI today. Admins create users with a temporary password; users change it via forgot-password, or you update via SQL:
 
@@ -313,42 +313,13 @@ There is **no** “admin reset other user’s password” button in the UI today
 
 ## Part 6 — Provision additional users (admin)
 
-### Operation 6a — Via UI
+Use **Django admin** — full guide: [django_admin_user_management.md](django_admin_user_management.md).
 
-1. Sign in as a user with the **`admin`** role.
-2. Open **Admin users**.
-3. Enter email, temporary password (min 8 chars), select roles, click **Create user**.
-4. Tell the user to sign in and use **Forgot password** to set their own password (recommended).
-
-### Operation 6b — Via API
-
-**Step 1 — Login as admin and save token**
-
-```bash
-TOKEN=$(curl -sS -X POST "http://localhost:3000/auth/login" \
-  -H "content-type: application/json" \
-  -d '{"email":"you@example.com","password":"YOUR_CURRENT_PASSWORD"}' \
-  | python3 -c "import sys,json; print(json.load(sys.stdin)['token'])")
-echo "Token length: ${#TOKEN}"
-```
-
-**Step 2 — Create user**
-
-```bash
-curl -sS -X POST "http://localhost:3000/admin/users" \
-  -H "authorization: Bearer ${TOKEN}" \
-  -H "content-type: application/json" \
-  -d '{"email":"analyst@example.com","password":"AnalystPass1!","roles":["analyst"]}' | python3 -m json.tool
-```
-
-**Expected:** `"user"` object with the new email.
-
-**Step 3 — List users**
-
-```bash
-curl -sS "http://localhost:3000/admin/users" \
-  -H "authorization: Bearer ${TOKEN}" | python3 -m json.tool
-```
+1. Sign in to the triage app as a user with the **`admin`** role.
+2. Click **User administration** (or open `http://localhost:8000/admin/`).
+3. Sign in with the same email/password.
+4. Under **Users**, add a user (email, password, roles, active flag).
+5. Tell the user to sign in and use **Forgot password** to set their own password (recommended).
 
 ---
 

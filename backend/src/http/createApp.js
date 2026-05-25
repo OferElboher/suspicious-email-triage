@@ -5,7 +5,6 @@ const logger = require("../lib/logger");
 const reviewRoutes = require("../api/reviews");
 const metricsRoutes = require("../api/metrics");
 const authRoutes = require("../api/auth");
-const adminUserRoutes = require("../api/adminUsers");
 const devRoutes = require("../dev/devRoutes");
 const { searchLogs } = require("../lib/logSearch");
 const { enqueueAfterCreate } = require("../services/reviewPipeline");
@@ -35,9 +34,6 @@ function createApp() {
 
   /** All routes below require a valid bearer token. */
   app.use(authenticate);
-
-  /** Admin-managed user provisioning and role assignment. */
-  app.use("/admin/users", adminUserRoutes);
 
   /** Core review lifecycle endpoints (create/list/get/override). */
   app.use("/reviews", reviewRoutes);

@@ -41,7 +41,7 @@ The UI **Reset local databases & queues** button (`POST /dev/reset-local-state`)
 ```text
 Can you sign in?
   |
-  +-- YES → change password via Forgot password (Part 2A) or Admin users
+  +-- YES → change password via Forgot password (Part 2A) or Django admin — see [django_admin_user_management.md](django_admin_user_management.md)
   |
   +-- NO → Do you know the admin email shown in auth_users?
             |
@@ -420,7 +420,7 @@ REACT_APP_API_URL=http://localhost:3000 PORT=3001 npm start --prefix frontend
 3. Password: `temp-admin-pswd` (or the password you set in `configure-dev-bootstrap-admin.sh`).
 4. Click **Sign in**.
 
-**Expected tabs:** Triage workspace, Analytics & graphs, Admin users.
+**Expected tabs:** Triage workspace, Analytics & graphs; **User administration** button for admin role. See [django_admin_user_management.md](django_admin_user_management.md).
 
 ### Step 4 — Final login verification (API)
 

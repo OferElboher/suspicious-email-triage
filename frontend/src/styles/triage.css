@@ -251,3 +251,19 @@ button:disabled {
   align-items: center;
   margin-bottom: 0.75rem;
 }
+
+.toolbar .button-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--border, #c9d3e6);
+  background: #fff;
+  color: var(--text, #1a2332);
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+
+.toolbar .button-link:hover {
+  background: #f3f6fb;
+}

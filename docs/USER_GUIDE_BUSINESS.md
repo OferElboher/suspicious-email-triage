@@ -12,7 +12,7 @@ This project is a working example of that workflow. It is not “magic security�
 
 The website requires login. Your administrator creates accounts and assigns roles (analyst, manager, developer, and so on). Password recovery uses your email address. Details for staff and integrators are in `AUTHENTICATION_AND_RBAC.md`.
 
-The main areas (**Triage workspace**, **Analytics & graphs**, **Admin users**) each have a URL (for example `…/#analytics`). Refreshing the browser keeps you on the same area instead of returning to the triage form.
+The main areas (**Triage workspace**, **Analytics & graphs**) each have a URL (for example `…/#analytics`). Refreshing the browser keeps you on the same area. Admins manage users in **Django admin** — see `django_admin_user_management.md`.
 
 ## The main actors
 
@@ -37,7 +37,7 @@ The website includes an **Analytics & graphs** area. It is meant to answer quest
 - “Are we seeing spikes at certain times of day?”
 - “What fraction of items are still pending versus completed?”
 
-You can adjust the **time range** and the **bucket size** (for example hourly vs daily) to match the question you are asking. Turn **Auto-refresh** on to keep the charts on the rolling **last 24 hours** and update them automatically from PostgreSQL every 30 seconds; turn it off to pick a custom range and click **Apply range**. The charts are based on lightweight statistics stored in PostgreSQL, while the detailed email review records stay in MongoDB. This keeps the charts responsive as review history grows.
+You can adjust the **time range** and the **bucket size** (for example hourly vs daily) to match the question you are asking. Turn **Auto-refresh** on to keep the charts on the rolling **last 24 hours** and update them automatically from PostgreSQL every 30 seconds; turn it off to pick a custom range and click **Apply range**. The charts are based on lightweight statistics stored in PostgreSQL, while the detailed email review records stay in MongoDB. This keeps the charts responsive as review history grows. For a full explanation of each chart (including why status bars may look equal in height), see `analytics_and_graphs_guide.md`.
 
 ## Simulation mode (development only)
 
