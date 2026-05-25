@@ -165,6 +165,7 @@ Permission codes (`reviews.read`, `metrics.read`, …) are defined in Node (`bac
 | Django admin login fails | Same credentials as triage app; confirm `admin` role in DBeaver: `auth_user_roles`. |
 | `Connection refused` / `ERR_CONNECTION_REFUSED` on port 8000 | **`django-admin` is not running.** Check `docker compose -f infra/docker/docker-compose.yml ps django-admin` — status must be **Up**, not **Restarting** or missing. Start or rebuild: `DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --build django-admin`. Then verify with `curl -sS -o /dev/null -w '%{http_code}\n' http://localhost:8000/admin/login/` → `200`. |
 | `django-admin` container **Restarting** | Read logs: `docker compose -f infra/docker/docker-compose.yml logs django-admin --tail 50`. Rebuild the image after pulling latest code: `up -d --build django-admin`. |
+| Login page error mentioning **`last_login`** | Pull latest code and rebuild `django-admin` — the app disables Django's last-login update because `auth_users` has no such column. |
 | Password works in Django but not triage (or vice versa) | Re-save password in Django admin (bcrypt) or use forgot-password flow. |
 | Cannot delete a user | You may be trying to delete yourself; use another admin or SQL. |
 
