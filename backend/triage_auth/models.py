@@ -33,7 +33,7 @@ class TriageUser(models.Model):
     )
 
     class Meta:
-        managed = False
+        managed = False  # Node API owns DDL for auth_users; Django only reads/writes rows.
         db_table = "auth_users"
         verbose_name = "User"
         verbose_name_plural = "Users"

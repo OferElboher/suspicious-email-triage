@@ -154,6 +154,8 @@ Expected tables:
 
 Also: `review_stats_events` (chart statistics).
 
+**Not in PostgreSQL:** Django admin sessions and Django contrib.auth tables (`auth_user` singular, `django_session`, …) live in the **django-admin container’s SQLite volume**. If you see duplicate Django tables in Postgres from an older build, run `bash scripts/cleanup-postgres-django-auth-tables.sh` — see [django_admin_user_management.md](django_admin_user_management.md).
+
 **Important:** Tables can exist with **zero rows in `auth_users`**. Schema creation and admin bootstrap are separate steps. If your query returns `(0 rows)` for users, run [Step 3](#step-3--create-the-bootstrap-admin-user) below — do not assume the admin was created automatically.
 
 ---

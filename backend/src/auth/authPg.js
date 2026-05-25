@@ -19,6 +19,7 @@ let ensurePromise;
 
 async function ensureAuthSchema() {
   if (!ensurePromise) {
+    // Node API owns auth DDL in Postgres; Django admin reads/writes these tables via triage_auth (unmanaged models).
     ensurePromise = pool.query(`
       CREATE TABLE IF NOT EXISTS auth_roles (
         id SERIAL PRIMARY KEY,

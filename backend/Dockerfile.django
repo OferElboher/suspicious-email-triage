@@ -14,7 +14,9 @@ COPY backend /app/backend
 ENV PYTHONPATH=/app
 ENV DJANGO_SETTINGS_MODULE=triage_auth.django_admin_settings
 ENV ENVIRONMENT=dev
+ENV DJANGO_ADMIN_SQLITE_PATH=/app/backend/data/django_admin.sqlite3
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "python backend/manage.py migrate --noinput && python backend/manage.py runserver 0.0.0.0:8000"]
+# Migrate only the SQLite default DB (sessions/admin); triage_auth uses existing Postgres tables.
+CMD ["sh", "-c", "mkdir -p /app/backend/data && python backend/manage.py migrate --noinput && python backend/manage.py runserver 0.0.0.0:8000"]

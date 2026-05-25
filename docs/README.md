@@ -14,6 +14,7 @@ This folder collects human-oriented explanations of the Suspicious Email Triage 
 - If you need **login, roles, password recovery, or authenticated API examples**, read `AUTHENTICATION_AND_RBAC.md`.
 - If you need to **create, update, or delete users as admin**, read `django_admin_user_management.md`.
 - If you need to understand **Analytics & graphs** charts, read `analytics_and_graphs_guide.md`.
+- For **pre-push tests** and live stack verification, read `pre_push_tests_and_stack_verification.md`.
 - If you are confused by **older references to Django** in CI or legacy markdown, read `NODE_PYTHON_AND_LEGACY_DJANGO.md` first.
 
 ## What each major document is for
@@ -31,6 +32,7 @@ This folder collects human-oriented explanations of the Suspicious Email Triage 
 - `dev_admin_credentials_and_recovery.md` — Configure bootstrap admin email, temporary password, change/recover credentials (UI and API).
 - `django_admin_user_management.md` — Django admin: watch, create, update, delete users; switch between triage app and admin UI.
 - `analytics_and_graphs_guide.md` — What each analytics chart shows and how to read status bars.
+- `pre_push_tests_and_stack_verification.md` — Jest, CRA, pytest, and optional live DB/HTTP checks on git push.
 - `dbeaver_auth_tables_and_unified_log_viewing.md` — Refresh DBeaver for `auth_*` tables; view/search unified `merged.log` (lnav, glogg, API).
 - `dbeaver_postgresql_windows_setup.md` — DBeaver on Windows → PostgreSQL (`triage_stats`).
 - `mongodb_compass_windows_setup.md` — MongoDB Compass on Windows → MongoDB (`triage` on port `27018`).

@@ -76,6 +76,7 @@ class TriageUserAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
     def delete_model(self, request, obj):
+        # Prevent lock-out: admin must use another account or SQL to remove themselves.
         if obj.pk == request.user.pk:
             messages.error(request, "You cannot delete your own admin account.")
             return

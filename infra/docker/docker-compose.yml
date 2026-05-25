@@ -95,6 +95,9 @@ services:
     environment:
       - ENVIRONMENT=dev
       - DJANGO_SETTINGS_MODULE=triage_auth.django_admin_settings
+      - DJANGO_ADMIN_SQLITE_PATH=/app/backend/data/django_admin.sqlite3
+    volumes:
+      - django-admin-state:/app/backend/data
     depends_on:
       - postgres
     restart: unless-stopped
@@ -157,3 +160,5 @@ services:
 volumes:
   # triage-logs: shared dev volume so API and workers append to one merged log.
   triage-logs:
+  # django-admin-state: SQLite for Django sessions/admin log (keeps Postgres free of duplicate auth tables).
+  django-admin-state:

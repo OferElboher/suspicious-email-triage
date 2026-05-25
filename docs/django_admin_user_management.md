@@ -16,6 +16,22 @@ User accounts for the Suspicious Email Triage app live in PostgreSQL (`auth_user
 
 Django admin reads and writes the **same** PostgreSQL tables as the Node API (`auth_users`, `auth_user_roles`, …). Passwords are **bcrypt** hashes compatible with Node login.
 
+### Two stores (no duplicate auth in Postgres)
+
+| Database | Used for |
+|----------|----------|
+| **PostgreSQL** `triage_stats` | Node/triage data: `auth_users`, `auth_roles`, `auth_permissions`, `review_stats_events`, … |
+| **SQLite** (inside `django-admin` container) | Django sessions, admin log, unused contrib.auth internals |
+
+The admin UI lists **Triage accounts → Users / Roles** only. If you still see **Authentication and Authorization → Users / Groups** in DBeaver **and** extra tables like `auth_user` (singular) in Postgres, run once:
+
+```bash
+bash scripts/cleanup-postgres-django-auth-tables.sh
+DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --build django-admin
+```
+
+Pre-push tests verify this layout when the stack is running — see [pre_push_tests_and_stack_verification.md](pre_push_tests_and_stack_verification.md).
+
 ---
 
 ## Step 1 — Start the stack including Django admin
@@ -168,6 +184,7 @@ Permission codes (`reviews.read`, `metrics.read`, …) are defined in Node (`bac
 | Login page error mentioning **`last_login`** | Pull latest code and rebuild `django-admin` — the app disables Django's last-login update because `auth_users` has no such column. |
 | Password works in Django but not triage (or vice versa) | Re-save password in Django admin (bcrypt) or use forgot-password flow. |
 | Cannot delete a user | You may be trying to delete yourself; use another admin or SQL. |
+| Duplicate **Users/Groups** in admin or `auth_user` table in DBeaver | Old Django migrations in Postgres — run `scripts/cleanup-postgres-django-auth-tables.sh` and rebuild `django-admin`. |
 
 ---
 
@@ -187,4 +204,4 @@ Set in `backend/.env.dev` and `frontend/.env.development`.
 
 - [windows_dev_startup_run_guide.md](windows_dev_startup_run_guide.md) — full startup after Windows reboot
 - [analytics_and_graphs_guide.md](analytics_and_graphs_guide.md) — Analytics & graphs page
-- [dev_auth_tables_reset_and_admin_recovery.md](dev_auth_tables_reset_and_admin_recovery.md) — reset auth tables / recover login
+- [pre_push_tests_and_stack_verification.md](pre_push_tests_and_stack_verification.md) — pre-push / integration tests

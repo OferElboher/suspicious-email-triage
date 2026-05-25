@@ -3,6 +3,9 @@ Minimal Django settings for the django-admin container.
 
 Uses only triage_auth and Django built-ins — no Celery, REST framework, or legacy core apps.
 The full backend.config.settings stack is for the historical Django API/worker image.
+
+Postgres holds Node/triage data; SQLite holds Django admin sessions and internal tables so we
+do not duplicate auth tables in PostgreSQL.
 """
 
 import os
@@ -57,16 +60,26 @@ TEMPLATES = [
     },
 ]
 
+# Default SQLite: Django sessions, admin log, contrib.auth (unused UI — see apps.py).
+_sqlite_dir = Path(os.getenv("DJANGO_ADMIN_SQLITE_PATH", str(BASE_DIR / "data" / "django_admin.sqlite3")))
+_sqlite_dir.parent.mkdir(parents=True, exist_ok=True)
+
 DATABASES = {
     "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": str(_sqlite_dir),
+    },
+    "triage": {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": os.getenv("POSTGRES_DB", "triage_stats"),
         "USER": os.getenv("POSTGRES_USER", "triage"),
         "PASSWORD": os.getenv("POSTGRES_PASSWORD", "triage"),
         "HOST": os.getenv("POSTGRES_HOST", "postgres"),
         "PORT": os.getenv("POSTGRES_PORT", "5432"),
-    }
+    },
 }
+
+DATABASE_ROUTERS = ["triage_auth.db_router.TriageAuthRouter"]
 
 AUTHENTICATION_BACKENDS = ["triage_auth.backends.TriageAuthBackend"]
 
