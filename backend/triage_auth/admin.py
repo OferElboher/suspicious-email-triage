@@ -5,6 +5,7 @@ from django import forms
 from django.contrib import admin, messages
 from django.utils import timezone
 
+from .admin_logging import TriageAdminLoggingMixin
 from .models import (
     TriagePasswordResetToken,
     TriagePermission,
@@ -112,7 +113,7 @@ class TriageUserAdminForm(forms.ModelForm):
 
 
 @admin.register(TriageUser)
-class TriageUserAdmin(admin.ModelAdmin):
+class TriageUserAdmin(TriageAdminLoggingMixin, admin.ModelAdmin):
     """Create, update, delete users; assign roles via the main form (not inlines)."""
 
     form = TriageUserAdminForm
@@ -154,7 +155,7 @@ class TriageUserAdmin(admin.ModelAdmin):
 
 
 @admin.register(TriageRole)
-class TriageRoleAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
+class TriageRoleAdmin(TriageAdminLoggingMixin, ReadOnlyAdminMixin, admin.ModelAdmin):
     """
     View roles and permission codes (read-only).
 
@@ -179,7 +180,7 @@ class TriageRoleAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
 
 
 @admin.register(TriagePermission)
-class TriagePermissionAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
+class TriagePermissionAdmin(TriageAdminLoggingMixin, ReadOnlyAdminMixin, admin.ModelAdmin):
     """Reference list of permission codes (``backend/src/auth/constants.js`` seeds these)."""
 
     list_display = ("code", "description")
@@ -188,7 +189,7 @@ class TriagePermissionAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
 
 
 @admin.register(TriagePasswordResetToken)
-class TriagePasswordResetTokenAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
+class TriagePasswordResetTokenAdmin(TriageAdminLoggingMixin, ReadOnlyAdminMixin, admin.ModelAdmin):
     """Audit active/recent forgot-password tokens (Node API creates and consumes these)."""
 
     list_display = ("user", "expires_at", "used_at", "created_at")

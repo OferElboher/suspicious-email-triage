@@ -11,6 +11,7 @@
 - `ensure-ai-service-venv.sh` — creates `ai_service/.venv` and installs Python requirements when imports are missing.
 - `bootstrap-auth-admin.sh` — seeds PostgreSQL auth tables/roles and creates bootstrap admin when `auth_users` is empty.
 - `configure-dev-bootstrap-admin.sh` — writes bootstrap admin email/password to gitignored `backend/.env`.
+- `configure-dev-smtp.sh` — switch forgot-password email between Mailpit (local) and real SMTP (external).
 
 Auth table reset and login recovery: [docs/dev_auth_tables_reset_and_admin_recovery.md](../docs/dev_auth_tables_reset_and_admin_recovery.md).
 

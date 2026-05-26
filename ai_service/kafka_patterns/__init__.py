@@ -1,1 +1,1 @@
-"""Kafka interview-demo helpers: topic design, consumer groups, offsets, reliability."""
+"""Kafka event-stream helpers: topic design, consumer groups, offsets, reliability."""

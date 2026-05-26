@@ -171,9 +171,10 @@ User CRUD is handled in **Django admin** (`/admin/` on port 8000 in dev), not No
 | `AUTH_BOOTSTRAP_ADMIN_PASSWORD` | First admin password |
 | `AUTH_RESET_TOKEN_TTL_MINUTES` | Password reset link lifetime (default `60`) |
 | `APP_PUBLIC_URL` | Base URL embedded in reset emails (default `http://localhost:3001`) |
+| `SMTP_DELIVERY` | `mailpit` (local inbox) or `external` (real SMTP via `backend/.env`) |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | Outbound email (dev default: Mailpit at `mailpit:1025`, UI `:8025`) |
 
-See `backend/.env.dev` for local defaults.
+See `backend/.env.dev` for local defaults. For real inbox delivery in dev, see [dev_smtp_password_recovery_email.md](dev_smtp_password_recovery_email.md).
 
 ## PostgreSQL tables (reference)
 
@@ -191,7 +192,7 @@ See `backend/.env.dev` for local defaults.
 | `403 dev_only` | Route mutator called outside `DEPLOYMENT_ENV=dev` |
 | Cannot sign in after fresh install | Use bootstrap admin credentials; confirm Postgres is up |
 | Email in `auth_users` but login fails | Password is hashed — use forgot-password or [dev_auth_tables_reset_and_admin_recovery.md](dev_auth_tables_reset_and_admin_recovery.md) |
-| No reset email in dev | Open Mailpit at `http://localhost:8025` or run `bash scripts/reset-dev-admin-password.sh` — [dev_manual_admin_password_reset.md](dev_manual_admin_password_reset.md) |
+| No reset email in dev | Mailpit: `http://localhost:8025`; real SMTP: [dev_smtp_password_recovery_email.md](dev_smtp_password_recovery_email.md); or `bash scripts/reset-dev-admin-password.sh` |
 
 ## Related docs
 

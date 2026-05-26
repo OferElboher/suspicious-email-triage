@@ -89,3 +89,40 @@ else:
     if "SKIP_NO_DATA" in out:
         pytest.skip("Need at least one user and role in Postgres")
     assert "OK" in out, out
+
+
+@requires_stack
+def test_django_admin_log_change_does_not_write_sqlite_audit_row():
+    """
+    Regression: password/role save must not call LogEntry (FK to SQLite auth_user fails).
+
+    Exercises TriageAdminLoggingMixin.log_change as a no-op.
+    """
+    script = """
+from triage_auth.admin import TriageUserAdmin
+from triage_auth.admin_logging import TriageAdminLoggingMixin
+from triage_auth.models import TriageUser
+
+assert issubclass(TriageUserAdmin, TriageAdminLoggingMixin)
+user = TriageUser.objects.order_by("id").first()
+if user is None:
+    print("SKIP_NO_USERS")
+else:
+    class Req:
+        pass
+    req = Req()
+    req.user = user
+    admin = TriageUserAdmin(TriageUser, None)
+    admin.log_change(req, user, "test-no-op")
+    print("OK")
+"""
+    result = _django_shell(script)
+    if result.returncode != 0:
+        pytest.fail(
+            f"django-admin audit-log smoke test failed (exit {result.returncode}):\n"
+            f"{result.stderr or result.stdout}"
+        )
+    out = (result.stdout or "").strip()
+    if "SKIP_NO_USERS" in out:
+        pytest.skip("No users in auth_users")
+    assert "OK" in out, out

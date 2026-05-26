@@ -1,4 +1,4 @@
-"""Unit tests for Kafka interview-demo helpers (no broker required)."""
+"""Unit tests for Kafka event-stream helpers (no broker required)."""
 
 from kafka_patterns.offsets import should_auto_commit
 from kafka_patterns.reliability import validate_ingest_payload

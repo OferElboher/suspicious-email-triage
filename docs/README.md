@@ -10,8 +10,9 @@ This folder collects human-oriented explanations of the Suspicious Email Triage 
 - If you use **Windows 11 + WSL** and need to run the project after a reboot, start with `windows_dev_startup_run_guide.md` (which links database startup, GUI clients, and admin sign-in).
 - If you connect **GUI database clients on Windows 11** to the WSL/Docker dev stack, start with `windows_docker_databases_start_and_verify.md`, then `dbeaver_postgresql_windows_setup.md`. For **auth tables refresh** and **unified log viewing**, see `dbeaver_auth_tables_and_unified_log_viewing.md`.
 - If you need **bootstrap admin email/password, sign-in, or password recovery**, read `dev_admin_credentials_and_recovery.md`.
+- For **password-reset email (Mailpit vs real SMTP)**, read `dev_smtp_password_recovery_email.md`.
 - To **manually reset an admin password on a dev workstation**, read `dev_manual_admin_password_reset.md`.
-- For **Kafka interview topics** (consumer groups, offsets, DLQ), read `kafka_patterns_interview_demo.md`.
+- For **Kafka event streaming** (consumer groups, offsets, DLQ), read `kafka_event_stream_guide.md`.
 - For **Prefect/dbt orchestration demos**, read `data_orchestration_prefect_dbt_demo.md`.
 - If login fails but **`auth_users` shows your email in DBeaver**, or you need to **reset auth tables** and recreate admin, read `dev_auth_tables_reset_and_admin_recovery.md`.
 - If you need **login, roles, password recovery, or authenticated API examples**, read `AUTHENTICATION_AND_RBAC.md`.
@@ -36,7 +37,8 @@ This folder collects human-oriented explanations of the Suspicious Email Triage 
 - `django_admin_user_management.md` — Django admin: watch, create, update, delete users; switch between triage app and admin UI.
 - `analytics_and_graphs_guide.md` — What each analytics chart shows and how to read status bars.
 - `dev_manual_admin_password_reset.md` — script/API/Django admin ways to set a dev user password.
-- `kafka_patterns_interview_demo.md` — topic design, consumer groups, offsets, DLQ reliability demo.
+- `dev_smtp_password_recovery_email.md` — Mailpit local inbox vs real SMTP for forgot-password.
+- `kafka_event_stream_guide.md` — topic design, consumer groups, offsets, DLQ reliability patterns.
 - `data_orchestration_prefect_dbt_demo.md` — Prefect flow + dbt model demos over `review_stats_events`.
 - `dbeaver_auth_tables_and_unified_log_viewing.md` — Refresh DBeaver for `auth_*` tables; view/search unified `merged.log` (lnav, glogg, API).
 - `dbeaver_postgresql_windows_setup.md` — DBeaver on Windows → PostgreSQL (`triage_stats`).

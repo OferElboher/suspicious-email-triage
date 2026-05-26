@@ -22,7 +22,7 @@ def validate_ingest_payload(payload: dict | None) -> tuple[str | None, str | Non
 
 def publish_dlq(producer: Any, original_message: Any, reason: str) -> None:
     """
-    Send poison/failed message to DLQ with error metadata (reliability interview talking point).
+    Send poison/failed message to DLQ with error metadata for replay and debugging.
 
     Preserves original value and adds reason + source offset for replay/debug.
     """

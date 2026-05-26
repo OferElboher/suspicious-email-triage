@@ -21,7 +21,9 @@ Django admin reads and writes the **same** PostgreSQL tables as the Node API (`a
 | Database | Used for |
 |----------|----------|
 | **PostgreSQL** `triage_stats` | Node/triage data: `auth_users`, `auth_roles`, `auth_permissions`, `review_stats_events`, … |
-| **SQLite** (inside `django-admin` container) | Django sessions, admin log, unused contrib.auth internals |
+| **SQLite** (inside `django-admin` container) | Django sessions and unused contrib.auth internals |
+
+Django’s built-in **admin audit log** (`django_admin_log`) is **not used** for triage user changes. The signed-in operator is a `TriageUser` row in PostgreSQL, but `LogEntry.user_id` expects a row in SQLite `auth_user`. Writing an audit row after a password save caused `IntegrityError: FOREIGN KEY constraint failed`. All triage auth ModelAdmin classes mix in `TriageAdminLoggingMixin`, which no-ops `log_addition`, `log_change`, and `log_deletion` (see `backend/triage_auth/admin_logging.py`).
 
 The admin UI lists **Triage accounts → Users / Roles** only. If you still see **Authentication and Authorization → Users / Groups** in DBeaver **and** extra tables like `auth_user` (singular) in Postgres, run once:
 

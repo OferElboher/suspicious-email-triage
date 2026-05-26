@@ -59,3 +59,17 @@ def test_user_admin_avoids_composite_pk_inlines():
     assert "inlines = [" not in admin_src
     assert "_sync_user_roles" in admin_src
     assert "ModelMultipleChoiceField" in admin_src
+
+
+def test_triage_admin_disables_sqlite_audit_log():
+    """
+    LogEntry.user_id FK targets SQLite auth_user; signed-in admins are TriageUser rows in Postgres.
+
+    Saving audit rows caused IntegrityError on password update — mixin must no-op log_* methods.
+    """
+    admin_src = (ROOT / "backend/triage_auth/admin.py").read_text(encoding="utf-8")
+    logging_src = (ROOT / "backend/triage_auth/admin_logging.py").read_text(encoding="utf-8")
+    assert "TriageAdminLoggingMixin" in admin_src
+    assert "class TriageAdminLoggingMixin" in logging_src
+    assert "def log_change" in logging_src
+    assert "TriageUserAdmin(TriageAdminLoggingMixin" in admin_src
