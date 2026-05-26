@@ -1,0 +1,13 @@
+name: triage_dbt_demo
+version: 1.0.0
+config-version: 2
+
+profile: triage_dbt_demo
+
+model-paths: ["models"]
+target-path: "target"
+clean-targets: ["target"]
+
+models:
+  triage_dbt_demo:
+    +materialized: view

@@ -1,10 +1,17 @@
+/**
+ * Optional SMTP delivery for password-reset emails.
+ * Dev Compose includes Mailpit (SMTP :1025, UI :8025) — see backend/.env.dev SMTP_* defaults.
+ */
 const nodemailer = require("nodemailer");
 const logger = require("../lib/logger");
+const { isDevDeployment } = require("../config/runtime");
 
+/** Return true when SMTP_HOST is set (Mailpit or real SMTP). */
 function smtpConfigured() {
   return Boolean(process.env.SMTP_HOST);
 }
 
+/** Build a nodemailer transport from SMTP_* env vars (no auth for Mailpit). */
 function buildTransport() {
   if (!smtpConfigured()) {
     return null;
@@ -19,6 +26,10 @@ function buildTransport() {
   });
 }
 
+/**
+ * Send forgot-password email. Returns { delivered, resetUrl? }.
+ * When SMTP is off, resetUrl is still returned for dev logging (see logger + auth route).
+ */
 async function sendPasswordResetEmail({ email, resetToken }) {
   const appUrl = (process.env.APP_PUBLIC_URL || "http://localhost:3001").replace(/\/$/, "");
   const resetUrl = `${appUrl}/reset-password?token=${encodeURIComponent(resetToken)}`;
@@ -46,8 +57,8 @@ async function sendPasswordResetEmail({ email, resetToken }) {
     subject,
     text,
   });
-  logger.info("auth", "password reset email sent", { email });
-  return { delivered: true };
+  logger.info("auth", "password reset email sent", { email, resetUrl: isDevDeployment() ? resetUrl : undefined });
+  return { delivered: true, resetUrl };
 }
 
-module.exports = { sendPasswordResetEmail, smtpConfigured };
+module.exports = { sendPasswordResetEmail, smtpConfigured, buildTransport };

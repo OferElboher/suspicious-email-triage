@@ -104,6 +104,15 @@ function kafkaBrokers() {
 const kafkaTopicIngest =
   process.env.KAFKA_TOPIC_REVIEW_INGEST || "email.review.ingested";
 
+/** Dead-letter topic for poison / invalid ingest messages (reliability demo). */
+const kafkaTopicDlq =
+  process.env.KAFKA_TOPIC_REVIEW_DLQ || "email.review.ingested.dlq";
+
+/** Partition count for ingest topic (consumer-group demo in dev). */
+function kafkaTopicPartitions() {
+  return Number(process.env.KAFKA_TOPIC_PARTITIONS || 3);
+}
+
 /** USE_KAFKA_INGEST: when true, API publishes after each persisted review (primary async path). */
 function useKafkaIngest() {
   return String(process.env.USE_KAFKA_INGEST || "true").toLowerCase() === "true";
@@ -126,6 +135,8 @@ module.exports = {
   redisOptions,
   kafkaBrokers,
   kafkaTopicIngest,
+  kafkaTopicDlq,
+  kafkaTopicPartitions,
   useKafkaIngest,
   useBullEnqueue,
   port,

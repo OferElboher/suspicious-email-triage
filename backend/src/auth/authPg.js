@@ -301,6 +301,17 @@ async function updateUserPassword(userId, newPassword) {
   );
 }
 
+/** Dev/script helper: set password by email (returns updated row or null if not found). */
+async function setUserPasswordByEmail(email, newPassword) {
+  await ensureAuthSchema();
+  const user = await findUserByEmail(email);
+  if (!user) {
+    return null;
+  }
+  await updateUserPassword(user.id, newPassword);
+  return findUserById(user.id);
+}
+
 async function createPasswordResetToken(email) {
   await ensureAuthSchema();
   const user = await findUserByEmail(email);
@@ -378,6 +389,7 @@ module.exports = {
   setUserActive,
   setUserRoles,
   updateUserPassword,
+  setUserPasswordByEmail,
   createPasswordResetToken,
   resetPasswordWithToken,
   listRoles,

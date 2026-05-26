@@ -17,7 +17,7 @@ ensure_ai_service_venv() {
   fi
 
   if ! {
-    "$pip" show celery redis pymongo kafka-python requests psycopg pytest &>/dev/null
+    "$pip" show celery redis pymongo kafka-python requests psycopg pytest six &>/dev/null
   }; then
     echo "Installing ai_service Python dependencies into ai_service/.venv ..." >&2
     "$pip" install -r "$root/ai_service/requirements.txt" >&2

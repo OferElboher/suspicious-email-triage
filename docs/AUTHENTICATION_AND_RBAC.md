@@ -107,7 +107,7 @@ See [dev_admin_credentials_and_recovery.md](dev_admin_credentials_and_recovery.m
 1. On the sign-in screen, click **Forgot password**.
 2. Enter your account email and submit.
 3. If SMTP is configured, check email for a reset link pointing to `/reset-password?token=...`.
-4. In **dev without SMTP**, the API logs the reset URL (look for `dev password reset link` in backend container logs):
+4. In **dev**, Mailpit catches outbound mail — open **`http://localhost:8025`**, or read API logs (`dev password reset link` includes `resetUrl=` on the console line).
 
 ```bash
 docker compose -f infra/docker/docker-compose.yml logs backend --tail 50 | grep "dev password reset link"
@@ -171,7 +171,7 @@ User CRUD is handled in **Django admin** (`/admin/` on port 8000 in dev), not No
 | `AUTH_BOOTSTRAP_ADMIN_PASSWORD` | First admin password |
 | `AUTH_RESET_TOKEN_TTL_MINUTES` | Password reset link lifetime (default `60`) |
 | `APP_PUBLIC_URL` | Base URL embedded in reset emails (default `http://localhost:3001`) |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | Optional outbound email for password recovery |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | Outbound email (dev default: Mailpit at `mailpit:1025`, UI `:8025`) |
 
 See `backend/.env.dev` for local defaults.
 
@@ -191,7 +191,7 @@ See `backend/.env.dev` for local defaults.
 | `403 dev_only` | Route mutator called outside `DEPLOYMENT_ENV=dev` |
 | Cannot sign in after fresh install | Use bootstrap admin credentials; confirm Postgres is up |
 | Email in `auth_users` but login fails | Password is hashed — use forgot-password or [dev_auth_tables_reset_and_admin_recovery.md](dev_auth_tables_reset_and_admin_recovery.md) |
-| No reset email in dev | Configure SMTP or read reset URL from API logs |
+| No reset email in dev | Open Mailpit at `http://localhost:8025` or run `bash scripts/reset-dev-admin-password.sh` — [dev_manual_admin_password_reset.md](dev_manual_admin_password_reset.md) |
 
 ## Related docs
 

@@ -86,7 +86,13 @@ export function ForgotPasswordView({ onBackToLogin }) {
     <div className="auth-shell">
       <form className="card auth-card" onSubmit={submit}>
         <h1>Recover credentials</h1>
-        <p className="muted">Enter your account email. If SMTP is not configured in dev, check API logs for the reset link.</p>
+        <p className="muted">
+          Enter your account email. Dev stack sends reset mail to Mailpit — open{" "}
+          <a href="http://localhost:8025" target="_blank" rel="noreferrer">
+            localhost:8025
+          </a>
+          .
+        </p>
         <label className="field">
           Email
           <input

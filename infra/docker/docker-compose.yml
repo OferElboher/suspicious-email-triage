@@ -78,6 +78,16 @@ services:
       - postgres
       - redis
       - redpanda
+      - mailpit
+    restart: unless-stopped
+
+  # mailpit: dev SMTP sink + web UI for password-reset and other outbound email testing.
+  mailpit:
+    container_name: triage-mailpit
+    image: axllent/mailpit:v1.21
+    ports:
+      - "1025:1025"
+      - "8025:8025"
     restart: unless-stopped
 
   # django-admin: Django admin UI for auth_users CRUD (admin role only).

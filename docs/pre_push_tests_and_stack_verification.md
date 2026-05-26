@@ -47,7 +47,9 @@ bash scripts/test-all.sh
 
 ## Layer 2 — Live stack checks (skipped if services are down)
 
-Files: `integration_tests/test_postgres_schema.py`, `test_http_endpoints.py`, `test_databases.py`, `test_django_orm.py`.
+Files: `integration_tests/test_postgres_schema.py`, `test_http_endpoints.py`, `test_databases.py`, `test_django_orm.py`, `test_password_reset_email.py`.
+
+Python unit tests also cover `ai_service/tests/test_kafka_patterns.py` and `orchestration/tests/` (Prefect + dbt layout).
 
 Guardrails in `test_repo_guardrails.py` (always run) assert junction models declare `CompositePrimaryKey` and that user admin **does not** use TabularInline (composite PK POST → JSONDecodeError on save).
 

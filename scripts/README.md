@@ -4,6 +4,7 @@
 
 - `lint-all.sh` — runs backend eslint, frontend eslint, and `ruff` for Python sources.
 - `test-all.sh` — runs backend Jest, frontend CRA tests (CI mode), and pytest (`ai_service/tests` + `integration_tests`; see [pre_push_tests_and_stack_verification.md](../docs/pre_push_tests_and_stack_verification.md)).
+- `reset-dev-admin-password.sh` — set a user's password in PostgreSQL via bcrypt (dev script).
 - `cleanup-postgres-django-auth-tables.sh` — removes mistaken Django contrib.auth tables from PostgreSQL after the SQLite admin split.
 - `setup-local-dev.sh` — checks/install local prerequisites and project dependencies for dev.
 - `setup-and-build-dev.sh` — runs `setup-local-dev.sh`, then builds dev Docker Compose images.

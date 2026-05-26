@@ -11,6 +11,8 @@ const {
   isDevDeployment,
   kafkaBrokers,
   kafkaTopicIngest,
+  kafkaTopicDlq,
+  kafkaTopicPartitions,
 } = require("../config/runtime");
 const { resetStats } = require("../stats/statsPg");
 const { writeSimulation, readSimulation, MAX_EVENTS_PER_MIN } = require("./simulationStore");
@@ -20,7 +22,7 @@ const { requirePermission, hasPermission } = require("../http/middleware/auth");
 /** router: dev-only Express routes mounted at /dev. */
 const router = express.Router();
 
-/** resetKafkaTopic clears local dev Kafka backlog by recreating the ingest topic. */
+/** resetKafkaTopic clears local dev Kafka backlog by recreating ingest + DLQ topics. */
 async function resetKafkaTopic() {
   const kafka = new Kafka({
     clientId: "triage-dev-reset",
@@ -29,14 +31,19 @@ async function resetKafkaTopic() {
   });
   const admin = kafka.admin();
   await admin.connect();
+  const partitions = kafkaTopicPartitions();
   try {
     const topics = await admin.listTopics();
-    if (topics.includes(kafkaTopicIngest)) {
-      await admin.deleteTopics({ topics: [kafkaTopicIngest] });
+    const toDelete = [kafkaTopicIngest, kafkaTopicDlq].filter((t) => topics.includes(t));
+    if (toDelete.length) {
+      await admin.deleteTopics({ topics: toDelete });
     }
     await admin.createTopics({
       waitForLeaders: true,
-      topics: [{ topic: kafkaTopicIngest, numPartitions: 1, replicationFactor: 1 }],
+      topics: [
+        { topic: kafkaTopicIngest, numPartitions: partitions, replicationFactor: 1 },
+        { topic: kafkaTopicDlq, numPartitions: 1, replicationFactor: 1 },
+      ],
     });
   } finally {
     await admin.disconnect();

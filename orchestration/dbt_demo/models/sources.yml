@@ -1,0 +1,7 @@
+version: 2
+
+sources:
+  - name: triage_stats
+    schema: public
+    tables:
+      - name: review_stats_events
