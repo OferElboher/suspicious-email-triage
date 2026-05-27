@@ -1,8 +1,14 @@
-# Password recovery email — Mailpit (local) and real SMTP (external)
+# Password recovery email — Mailpit, Google OAuth, or legacy SMTP
 
-Forgot-password sends email through **nodemailer** (`backend/src/auth/email.js`), a Node.js library that speaks SMTP — the standard protocol mail servers use to accept outbound messages. By default the dev stack delivers to **Mailpit**, a local fake mail server with a web inbox. You can switch to **real outbound SMTP** so reset links arrive in Gmail, Outlook, or your company mail server.
+Forgot-password sends email through `backend/src/auth/email.js`. **Recommended paths:**
 
-**Related:** [dev_admin_credentials_and_recovery.md](dev_admin_credentials_and_recovery.md), [AUTHENTICATION_AND_RBAC.md](AUTHENTICATION_AND_RBAC.md).
+| Mode | Best for | Setup |
+|------|----------|-------|
+| **Mailpit** (default) | Local dev, zero config | Included in Docker Compose — UI `http://localhost:8025` |
+| **Google OAuth** | Real Gmail inbox **without App Passwords** | [google_oauth_email_and_signin.md](google_oauth_email_and_signin.md) |
+| **Legacy SMTP** | SendGrid / corporate SMTP with username+password | `configure-dev-smtp.sh external` |
+
+**Related:** [google_oauth_email_and_signin.md](google_oauth_email_and_signin.md), [dev_admin_credentials_and_recovery.md](dev_admin_credentials_and_recovery.md), [AUTHENTICATION_AND_RBAC.md](AUTHENTICATION_AND_RBAC.md).
 
 ---
 

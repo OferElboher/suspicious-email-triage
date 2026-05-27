@@ -76,10 +76,20 @@ def test_triage_admin_disables_sqlite_audit_log():
 
 
 def test_forgot_password_email_does_not_throw_on_smtp_failure():
-    """sendPasswordResetEmail must catch nodemailer errors — forgot-password stays HTTP 200."""
+    """sendPasswordResetEmail must catch delivery errors — forgot-password stays HTTP 200."""
     email_src = (ROOT / "backend/src/auth/email.js").read_text(encoding="utf-8")
     auth_src = (ROOT / "backend/src/api/auth.js").read_text(encoding="utf-8")
-    assert "smtpErrorHint" in email_src
-    assert "catch (err)" in email_src
+    assert "google_oauth" in email_src
+    assert "gmailApi" in email_src
+    assert "catch (err)" in email_src or "catch (err)" in email_src
     assert "delivered: false" in email_src
-    assert "forgot_password_failed" in auth_src  # route exists for non-SMTP failures only
+    assert "/google/start" in auth_src
+
+
+def test_llm_provider_mock_commercial_wired():
+    """LLM_PROVIDER=mock_commercial must be implemented in Python and Node workers."""
+    py_client = (ROOT / "ai_service/app/llm_client.py").read_text(encoding="utf-8")
+    node_provider = (ROOT / "backend/src/llm/llmProvider.js").read_text(encoding="utf-8")
+    assert "mock_commercial" in py_client
+    assert "mock_commercial" in node_provider
+    assert (ROOT / "ai_service/mock_commercial_llm/server.py").is_file()

@@ -48,13 +48,12 @@ describe("sendPasswordResetEmail", () => {
     expect(smtpConfigured()).toBe(true);
   });
 
-  test("smtpErrorHint explains Gmail app password on 535", () => {
+  test("smtpErrorHint recommends google_oauth on SMTP 535", () => {
     const hint = smtpErrorHint(
       new Error("Invalid login: 535-5.7.8 Username and Password not accepted"),
       "external"
     );
-    expect(hint).toMatch(/App Password/i);
-    expect(hint).not.toMatch(/temp-admin-pswd/);
+    expect(hint).toMatch(/google_oauth/i);
   });
 
   test("sendMail is called when SMTP is configured (mailpit)", async () => {
@@ -97,7 +96,7 @@ describe("sendPasswordResetEmail", () => {
     expect(result.delivered).toBe(false);
     expect(result.resetUrl).toContain("tok");
     expect(result.error).toMatch(/535/);
-    expect(result.hint).toMatch(/App Password/i);
+    expect(result.hint).toMatch(/google_oauth/i);
   });
 
   test("returns resetUrl without sendMail when SMTP is unset", async () => {

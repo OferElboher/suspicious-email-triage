@@ -140,6 +140,8 @@ services:
     env_file:
       # Profile env: defaults to backend/.env.dev; set DEPLOYMENT_ENV=staging|prod to switch.
       - ../../backend/.env.${DEPLOYMENT_ENV:-dev}
+      - path: ../../backend/.env
+        required: false
     volumes:
       - triage-logs:/var/log/triage
     extra_hosts:
@@ -148,6 +150,7 @@ services:
       - mongo
       - postgres
       - redis
+      - mock-llm
     restart: unless-stopped
 
   # ai-kafka-dispatch: Python Kafka consumer that schedules Celery tasks.
@@ -160,11 +163,30 @@ services:
     env_file:
       # Profile env: defaults to backend/.env.dev; set DEPLOYMENT_ENV=staging|prod to switch.
       - ../../backend/.env.${DEPLOYMENT_ENV:-dev}
+      - path: ../../backend/.env
+        required: false
     volumes:
       - triage-logs:/var/log/triage
     depends_on:
       - redpanda
       - redis
+      - mock-llm
+    restart: unless-stopped
+
+  # mock-llm: OpenAI-compatible mock API (zero cost) for LLM_PROVIDER=mock_commercial demos.
+  mock-llm:
+    build:
+      context: ../../
+      dockerfile: ai_service/Dockerfile
+    container_name: triage-mock-llm
+    command: ["python", "-m", "mock_commercial_llm.server"]
+    ports:
+      - "8090:8090"
+    environment:
+      - MOCK_LLM_PORT=8090
+      - LLM_API_KEY=dev-mock-key
+    env_file:
+      - ../../backend/.env.${DEPLOYMENT_ENV:-dev}
     restart: unless-stopped
 
 volumes:

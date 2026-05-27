@@ -33,6 +33,20 @@ export function AuthProvider({ children }) {
     refreshProfile().catch(() => setLoading(false));
   }, [refreshProfile]);
 
+  /** Handle redirect from GET /auth/google/callback (?googleToken= JWT in query string). */
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const googleToken = params.get("googleToken");
+    if (!googleToken) return;
+    setStoredToken(googleToken);
+    params.delete("googleToken");
+    params.delete("expiresIn");
+    const clean = params.toString();
+    const nextUrl = `${window.location.pathname}${clean ? `?${clean}` : ""}`;
+    window.history.replaceState({}, "", nextUrl);
+    refreshProfile().catch(() => setLoading(false));
+  }, [refreshProfile]);
+
   const login = useCallback(async (email, password) => {
     const data = await postJson("/auth/login", { email, password }, { auth: false });
     setStoredToken(data.token);

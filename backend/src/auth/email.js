@@ -1,63 +1,73 @@
 /**
- * Password-reset email delivery via SMTP (nodemailer).
+ * Password-reset email delivery.
  *
- * SMTP_DELIVERY=mailpit — local Mailpit sink (default dev, UI :8025).
- * SMTP_DELIVERY=external — real provider (Gmail App Password, SendGrid, etc.) via backend/.env.
+ * EMAIL_DELIVERY modes (EMAIL_DELIVERY or legacy SMTP_DELIVERY):
+ *   mailpit      — local Mailpit sink (default dev)
+ *   google_oauth — Gmail API via Sign in with Google OAuth (no App Passwords)
+ *   external     — legacy SMTP username/password (discouraged for Gmail)
  */
 const nodemailer = require("nodemailer");
 const logger = require("../lib/logger");
 const { isDevDeployment } = require("../config/runtime");
+const { googleOAuthEmailConfigured, sendViaGmailApi } = require("./gmailApi");
 
-/** @returns {"mailpit"|"external"} Delivery mode from SMTP_DELIVERY (default mailpit). */
-function smtpDeliveryMode() {
-  const raw = String(process.env.SMTP_DELIVERY || "mailpit").toLowerCase();
-  return raw === "external" ? "external" : "mailpit";
+/** @returns {"mailpit"|"google_oauth"|"external"} Active delivery mode. */
+function emailDeliveryMode() {
+  const raw = String(
+    process.env.EMAIL_DELIVERY || process.env.SMTP_DELIVERY || "mailpit"
+  ).toLowerCase();
+  if (raw === "google_oauth" || raw === "google-oauth") return "google_oauth";
+  if (raw === "external") return "external";
+  return "mailpit";
 }
 
-/** Return true when outbound SMTP is configured for the active delivery mode. */
-function smtpConfigured() {
-  if (smtpDeliveryMode() === "external") {
+/** Back-compat alias used by tests and guardrails. */
+function smtpDeliveryMode() {
+  return emailDeliveryMode();
+}
+
+/** Return true when the selected delivery mode has required configuration. */
+function emailConfigured() {
+  const mode = emailDeliveryMode();
+  if (mode === "google_oauth") return googleOAuthEmailConfigured();
+  if (mode === "external") {
     return Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
   }
   return Boolean(process.env.SMTP_HOST);
 }
 
-/**
- * Human-readable hint when SMTP send fails (Gmail app password vs triage password confusion).
- * @param {Error|{message?: string}} err
- * @param {"mailpit"|"external"} mode
- */
+/** Back-compat alias. */
+function smtpConfigured() {
+  return emailConfigured();
+}
+
+/** Hint text when SMTP password auth fails (Gmail App Password confusion). */
 function smtpErrorHint(err, mode) {
   const msg = String(err?.message || err || "");
-  if (mode !== "external") {
-    return undefined;
-  }
+  if (mode !== "external") return undefined;
   if (/535|BadCredentials|EAUTH|authentication/i.test(msg)) {
     return (
-      "SMTP authentication failed. For Gmail use a 16-character App Password " +
-      "(Google Account → Security → 2-Step Verification → App passwords), " +
-      "not AUTH_BOOTSTRAP_ADMIN_PASSWORD or your triage login password."
+      "SMTP password auth failed. Prefer EMAIL_DELIVERY=google_oauth " +
+      "(bash scripts/configure-dev-google-oauth.sh email) or Mailpit for local dev."
     );
   }
   if (/self signed|certificate|TLS/i.test(msg)) {
-    return "TLS/ certificate issue — try SMTP_PORT=587 with SMTP_SECURE=false (STARTTLS).";
+    return "TLS issue — try SMTP_PORT=587 with SMTP_SECURE=false, or switch to google_oauth.";
   }
   return undefined;
 }
 
-/** Build a nodemailer transport from SMTP_* env vars. Mailpit needs no auth; Gmail uses STARTTLS on 587. */
+/** Build nodemailer transport for mailpit/external SMTP modes only. */
 function buildTransport() {
-  if (!smtpConfigured()) {
-    return null;
-  }
-  const isMailpit = smtpDeliveryMode() === "mailpit";
+  const mode = emailDeliveryMode();
+  if (mode === "google_oauth" || !emailConfigured()) return null;
+  const isMailpit = mode === "mailpit";
   const port = Number(process.env.SMTP_PORT || (isMailpit ? 1025 : 587));
   const secure = String(process.env.SMTP_SECURE || "false").toLowerCase() === "true";
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port,
     secure,
-    // Port 587: upgrade plain connection with STARTTLS (Gmail, SendGrid, most providers).
     requireTLS: !isMailpit && !secure && port === 587,
     auth: process.env.SMTP_USER
       ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || "" }
@@ -66,9 +76,7 @@ function buildTransport() {
 }
 
 /**
- * Send forgot-password email.
- * @returns {Promise<{delivered: boolean, resetUrl: string, deliveryMode: string, error?: string, hint?: string}>}
- * Never throws on SMTP failure — callers keep HTTP 200 for forgot-password (no account enumeration).
+ * Send forgot-password email. Never throws — callers return HTTP 200 (no enumeration).
  */
 async function sendPasswordResetEmail({ email, resetToken }) {
   const appUrl = (process.env.APP_PUBLIC_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -82,10 +90,9 @@ async function sendPasswordResetEmail({ email, resetToken }) {
     "If you did not request this, you can ignore this email.",
   ].join("\n");
 
-  const mode = smtpDeliveryMode();
-  const transport = buildTransport();
-  if (!transport) {
-    logger.warn("auth", "password reset email not sent (SMTP not configured)", {
+  const mode = emailDeliveryMode();
+  if (!emailConfigured()) {
+    logger.warn("auth", "password reset email not sent (email not configured)", {
       email,
       resetUrl,
       deliveryMode: mode,
@@ -94,6 +101,12 @@ async function sendPasswordResetEmail({ email, resetToken }) {
   }
 
   try {
+    if (mode === "google_oauth") {
+      await sendViaGmailApi({ to: email, subject, text });
+      return { delivered: true, resetUrl, deliveryMode: mode };
+    }
+
+    const transport = buildTransport();
     await transport.sendMail({
       from: process.env.SMTP_FROM || process.env.SMTP_USER || "noreply@local.test",
       to: email,
@@ -107,27 +120,26 @@ async function sendPasswordResetEmail({ email, resetToken }) {
     });
     return { delivered: true, resetUrl, deliveryMode: mode };
   } catch (err) {
-    const hint = smtpErrorHint(err, mode);
+    const hint =
+      mode === "external"
+        ? smtpErrorHint(err, mode)
+        : "Run bash scripts/configure-dev-google-oauth.sh email to refresh Google OAuth tokens.";
     logger.error("auth", "password reset email delivery failed", {
       email,
       deliveryMode: mode,
       error: err.message,
       hint,
     });
-    return {
-      delivered: false,
-      resetUrl,
-      deliveryMode: mode,
-      error: err.message,
-      hint,
-    };
+    return { delivered: false, resetUrl, deliveryMode: mode, error: err.message, hint };
   }
 }
 
 module.exports = {
   sendPasswordResetEmail,
-  smtpConfigured,
+  emailDeliveryMode,
+  emailConfigured,
   smtpDeliveryMode,
+  smtpConfigured,
   smtpErrorHint,
   buildTransport,
 };

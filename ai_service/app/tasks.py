@@ -2,7 +2,7 @@
 from bson import ObjectId
 
 from app.celery_app import celery_app
-from app.llm_ollama import analyze_with_ollama
+from app.llm_client import analyze_with_llm
 from app.logutil import log_line
 from app.merge import merge_results
 from app.mongo import get_db
@@ -28,7 +28,7 @@ def analyze_review(review_id: str) -> str:
     record_status(review_id, "processing")
     try:
         rules = run_rule_engine(review)
-        llm = analyze_with_ollama(review)
+        llm = analyze_with_llm(review)
         result = merge_results(rules, llm)
         db.reviews.update_one(
             {"_id": oid},

@@ -53,7 +53,7 @@ requires_mailpit = pytest.mark.skipif(
 
 requires_mailpit_delivery = pytest.mark.skipif(
     backend_smtp_delivery_mode() != "mailpit",
-    reason="backend SMTP_DELIVERY is not mailpit — run: bash scripts/configure-dev-smtp.sh mailpit",
+    reason="backend delivery mode is not mailpit — run: bash scripts/configure-dev-smtp.sh mailpit",
 )
 
 

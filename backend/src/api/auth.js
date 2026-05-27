@@ -9,10 +9,66 @@ const {
   resetPasswordWithToken,
 } = require("../auth/authPg");
 const { sendPasswordResetEmail } = require("../auth/email");
+const {
+  googleLoginEnabled,
+  buildGoogleLoginUrl,
+  consumeOAuthState,
+  exchangeCodeForProfile,
+  loginWithGoogleProfile,
+} = require("../auth/googleLogin");
 const { isDevDeployment } = require("../config/runtime");
 const { authenticate } = require("../http/middleware/auth");
 
 const router = express.Router();
+
+/** Public auth capabilities for the SPA (Google button visibility, delivery mode hints). */
+router.get("/config", (req, res) => {
+  res.json({
+    googleLoginEnabled: googleLoginEnabled(),
+    emailDelivery: process.env.EMAIL_DELIVERY || process.env.SMTP_DELIVERY || "mailpit",
+  });
+});
+
+/** Redirect browser to Google OAuth consent (Sign in with Google). */
+router.get("/google/start", (req, res) => {
+  if (!googleLoginEnabled()) {
+    return res.status(503).json({
+      error: "google_login_disabled",
+      hint: "Run bash scripts/configure-dev-google-oauth.sh login",
+    });
+  }
+  const { url } = buildGoogleLoginUrl();
+  res.redirect(url);
+});
+
+/** Google OAuth callback — issue JWT and redirect to SPA with token. */
+router.get("/google/callback", async (req, res) => {
+  try {
+    if (!googleLoginEnabled()) {
+      return res.status(503).json({ error: "google_login_disabled" });
+    }
+    const code = String(req.query.code || "");
+    const state = String(req.query.state || "");
+    if (!code || !consumeOAuthState(state)) {
+      return res.status(400).json({ error: "invalid_oauth_state" });
+    }
+    const profile = await exchangeCodeForProfile(code);
+    const result = await loginWithGoogleProfile(profile);
+    const appUrl = (process.env.APP_PUBLIC_URL || "http://localhost:3001").replace(/\/$/, "");
+    if (result.error) {
+      const q = new URLSearchParams({ error: result.error, email: result.email || "" });
+      return res.redirect(`${appUrl}/?${q.toString()}`);
+    }
+    const q = new URLSearchParams({
+      googleToken: result.token,
+      expiresIn: String(result.expiresIn),
+    });
+    res.redirect(`${appUrl}/?${q.toString()}`);
+  } catch (err) {
+    logger.error("auth", "google callback failed", { error: err.message });
+    res.status(500).json({ error: "google_login_failed" });
+  }
+});
 
 router.post("/login", async (req, res) => {
   try {

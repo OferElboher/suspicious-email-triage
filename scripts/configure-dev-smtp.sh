@@ -16,8 +16,9 @@ usage() {
   echo "  bash scripts/configure-dev-smtp.sh mailpit"
   echo "  bash scripts/configure-dev-smtp.sh external smtp.gmail.com you@gmail.com 'xxxx-xxxx-xxxx-xxxx' you@gmail.com"
   echo ""
-  echo "Gmail: SMTP_PASS must be a Google App Password (16 chars), NOT temp-admin-pswd or your triage login."
-  echo "See docs/dev_smtp_password_recovery_email.md"
+  echo "Gmail: do NOT use temp-admin-pswd. Prefer Google OAuth instead:"
+  echo "  bash scripts/configure-dev-google-oauth.sh email CLIENT_ID CLIENT_SECRET you@gmail.com"
+  echo "See docs/google_oauth_email_and_signin.md"
   exit "${1:-0}"
 }
 

@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import { postJson } from "../api/client";
+import { getJson, postJson } from "../api/client";
+
+const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:3000";
 
 export default function LoginView({ onForgotPassword }) {
   const { login } = useAuth();
@@ -8,6 +10,13 @@ export default function LoginView({ onForgotPassword }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [googleLoginEnabled, setGoogleLoginEnabled] = useState(false);
+
+  useEffect(() => {
+    getJson("/auth/config", { auth: false })
+      .then((cfg) => setGoogleLoginEnabled(Boolean(cfg.googleLoginEnabled)))
+      .catch(() => setGoogleLoginEnabled(false));
+  }, []);
 
   const submit = async (event) => {
     event.preventDefault();
@@ -52,6 +61,11 @@ export default function LoginView({ onForgotPassword }) {
           <button type="submit" className="primary" disabled={submitting}>
             {submitting ? "Signing in…" : "Sign in"}
           </button>
+          {googleLoginEnabled && (
+            <a className="button" href={`${API_BASE}/auth/google/start`}>
+              Sign in with Google
+            </a>
+          )}
           <button type="button" onClick={onForgotPassword}>
             Forgot password
           </button>
