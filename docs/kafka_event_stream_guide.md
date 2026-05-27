@@ -1,102 +1,145 @@
 # Kafka event stream guide — topics, consumer groups, offsets, and reliability
 
-This document explains how the Suspicious Email Triage project uses **Redpanda** (a Kafka-compatible broker) to move work from the Node API to the Python scoring pipeline. You do not need prior Kafka experience: each section builds on the previous one and points to the code you can read in this repository.
+This document explains how the Suspicious Email Triage project uses **Apache Kafka APIs** through **Redpanda** (a Kafka-compatible broker) to decouple the Node API from Python background scoring. No prior Kafka experience required — we define terms, show which files implement each pattern, and describe trade-offs in plain language.
+
+**Technologies:** Redpanda (broker), kafka-python (Python consumer/producer), Node producer (`backend/src/kafka/`), Celery + Redis (task queue after dispatch).
 
 **Related:** [worker-architecture.md](worker-architecture.md), [VERSIONS_BUILDS_AND_SIMULATION.md](VERSIONS_BUILDS_AND_SIMULATION.md), [pre_push_tests_and_stack_verification.md](pre_push_tests_and_stack_verification.md).
 
----
+**Code package:** `ai_service/kafka_patterns/` — topic names, offset commits, validation, DLQ helpers.
 
-## Why Kafka is here at all
-
-When an analyst submits a suspicious email for review, the API must:
-
-1. Save the review quickly so the UI feels responsive.
-2. Hand off heavy work (LLM scoring, enrichment) to background workers without blocking the HTTP request.
-
-Kafka (via Redpanda in local dev) is the **buffer and contract** between those two steps. The API publishes a small JSON event; a Python **dispatcher** consumes it and enqueues a Celery task. If workers are slow or temporarily down, messages wait safely in the topic instead of being lost.
-
-Think of a topic as a **durable append-only log** that many services can read independently.
+**Tests:** `ai_service/tests/test_kafka_patterns.py` (unit, no broker).
 
 ---
 
-## Core vocabulary (plain language)
+## Why a message broker sits between API and workers
 
-| Term | What it means in this project |
-|------|-------------------------------|
-| **Broker** | Redpanda container (`redpanda:9092` inside Docker; `localhost:19092` from your host). Holds topics and serves clients. |
-| **Topic** | Named stream of messages, like `email.review.ingested`. Producers append; consumers read. |
-| **Partition** | A topic is split into partitions for parallelism. Messages with the same **key** land on the same partition, preserving order *for that key*. |
-| **Producer** | Publishes messages. Here: Node `reviewIngestProducer.js` after a review is stored. |
-| **Consumer** | Reads messages. Here: Python `kafka_dispatcher.py`. |
-| **Consumer group** | Label shared by competing consumers. The broker assigns each partition to **at most one** consumer in the group so work is divided without duplicate processing. |
-| **Offset** | Position of the next message to read in a partition. Committed offsets are bookmarks: “I have finished processing up to here.” |
-| **DLQ (dead-letter queue)** | Separate topic for messages that cannot be processed (bad JSON, missing fields). Keeps poison messages from blocking the main stream. |
+When an analyst submits a review:
 
----
+1. The **HTTP request** must finish quickly — save to MongoDB/Postgres and return to the UI.
+2. **Scoring** (LLM, rules, enrichment) can take seconds and should not block the browser.
 
-## Topic design in this repo
+**Pattern: transactional outbox / event-driven handoff**
 
-We use two topics:
-
-| Topic | Purpose | Partitions (dev default) |
-|-------|---------|--------------------------|
-| `email.review.ingested` | “A review was saved; please score it asynchronously.” | `KAFKA_TOPIC_PARTITIONS` (default **3**) |
-| `email.review.ingested.dlq` | Invalid or poison messages with error metadata for debugging/replay | **1** |
-
-**Message key:** `reviewId` (set by the Node producer). Using the review ID as the key means all events for one review go to the **same partition**, which gives you ordering per review even when multiple partitions exist.
-
-**Message value (JSON):**
-
-```json
-{"reviewId":"507f1f77bcf86cd799439011","at":"2026-05-24T12:00:00.000Z"}
+```
+[Node API]  --publish-->  [Kafka topic]  --consume-->  [Python dispatcher]  --enqueue-->  [Celery worker]
 ```
 
-**Code locations:**
-
-- Node producer: `backend/src/kafka/reviewIngestProducer.js`
-- Python constants and partition helper: `ai_service/kafka_patterns/topics.py`
-
-**Why more than one partition?** With three partitions and one dispatcher, one consumer reads all three. If you run **two dispatchers** with the same consumer group name, Kafka **rebalances**: each dispatcher owns a subset of partitions. That is the standard way to scale consumption horizontally.
+Kafka stores messages durably. If Celery workers are down, messages accumulate in the topic instead of being lost. When workers recover, the consumer group catches up.
 
 ---
 
-## Consumer groups in practice
+## Vocabulary (with implementation mapping)
 
-| Group ID (env) | Service | Role |
-|----------------|---------|------|
-| `triage-dispatcher` (`KAFKA_GROUP_DISPATCHER`) | `ai-kafka-dispatch` container | Reads `email.review.ingested`, validates payload, enqueues Celery `analyze_review` |
-
-**Experiment (local):** set `KAFKA_TOPIC_PARTITIONS=3`, start two `ai-kafka-dispatch` containers with the same `KAFKA_GROUP_DISPATCHER`, submit several reviews, and watch logs — each container should handle different partitions.
-
-Environment variables: `KAFKA_GROUP_DISPATCHER`, `KAFKA_BROKERS` / `KAFKA_BOOTSTRAP_SERVERS`.
-
----
-
-## Offsets: auto vs manual commit
-
-An **offset** is how far a consumer has read in each partition. **Committing** an offset tells the broker: “Do not redeliver messages at or before this position to my consumer group.”
-
-| Mode | Environment | Behavior | Trade-off |
-|------|-------------|----------|-----------|
-| **Manual commit (default)** | `KAFKA_AUTO_COMMIT=false` | Commit **only after** Celery enqueue succeeds | Safer: crash before commit → message redelivered (at-least-once toward workers) |
-| Auto commit | `KAFKA_AUTO_COMMIT=true` | Broker commits on a timer while polling | Simpler but can lose work if the process dies after poll but before enqueue |
-
-**Code:** `ai_service/kafka_patterns/offsets.py`, `ai_service/kafka_dispatcher.py`.
-
-**Dev reset:** `POST /dev/reset-local-state` (requires developer role) recreates ingest and DLQ topics with the configured partition count — useful after experiments left bad state.
+| Term | Plain meaning | This repo |
+|------|---------------|-----------|
+| **Broker** | Server that stores topics | Redpanda container `redpanda:9092` (host port `19092`) |
+| **Topic** | Named log of messages | `email.review.ingested`, `email.review.ingested.dlq` |
+| **Partition** | Shard of a topic for parallelism | Default **3** on ingest (`KAFKA_TOPIC_PARTITIONS`) |
+| **Producer** | Client that appends messages | `backend/src/kafka/reviewIngestProducer.js` |
+| **Consumer** | Client that reads messages | `ai_service/kafka_dispatcher.py` |
+| **Consumer group** | Set of consumers sharing load | `triage-dispatcher` (`KAFKA_GROUP_DISPATCHER`) |
+| **Offset** | Read cursor per partition | Committed manually after Celery enqueue (default) |
+| **Key** | Optional bytes hashed to partition | `reviewId` — ordering per review |
+| **DLQ** | Dead-letter queue topic | Invalid messages → `email.review.ingested.dlq` |
 
 ---
 
-## Reliability patterns implemented here
+## Topic design
 
-1. **Validation** — `validate_ingest_payload()` in `ai_service/kafka_patterns/reliability.py` rejects empty bodies and messages missing `reviewId`.
-2. **DLQ routing** — invalid messages are copied to `email.review.ingested.dlq` with reason, source topic/partition/offset, and original bytes for forensics.
-3. **Partition key** — same `reviewId` → same partition → ordered handling per review.
-4. **Soft-fail publish** — if Kafka is unreachable, the API logs and continues (optional BullMQ fallback when enabled).
+### Primary ingest topic
 
-These patterns mirror production systems: validate early, isolate poison messages, commit offsets only after successful handoff.
+| Setting | Value |
+|---------|-------|
+| Name | `email.review.ingested` (`KAFKA_TOPIC_REVIEW_INGEST`) |
+| Purpose | Signal: “review persisted, please score asynchronously” |
+| Partitions | 3 in dev (env `KAFKA_TOPIC_PARTITIONS`) |
+| Key | `reviewId` (MongoDB ObjectId string) |
+| Value | JSON: `{"reviewId":"...","at":"ISO8601"}` |
 
-**Unit tests (no broker required):** `ai_service/tests/test_kafka_patterns.py`.
+**Pattern: partition key for per-entity ordering**
+
+Messages with the same key go to the same partition. All events for one review stay ordered even with multiple partitions. Implementation: `partition_for_key()` in `ai_service/kafka_patterns/topics.py`.
+
+### Dead-letter topic
+
+| Setting | Value |
+|---------|-------|
+| Name | `email.review.ingested.dlq` |
+| Partitions | 1 (ordering less important; forensics focus) |
+| Payload | Wrapper JSON with `reason`, source offset, original bytes |
+
+**Pattern: poison message isolation**
+
+Bad JSON or missing `reviewId` must not block the main consumer loop forever. `publish_dlq()` in `reliability.py` copies the failure context for replay or debugging.
+
+---
+
+## Consumer groups
+
+**Pattern: competing consumers**
+
+Consumers with the same `group_id` coordinate partition ownership. Each partition is assigned to **at most one** consumer in the group at a time.
+
+| Group | Service | Container |
+|-------|---------|-----------|
+| `triage-dispatcher` | Kafka → Celery bridge | `ai-kafka-dispatch` |
+
+Scale-out experiment: run two dispatchers with the same group and 3 partitions — Kafka **rebalances** so each dispatcher owns ~1–2 partitions.
+
+Env vars: `KAFKA_GROUP_DISPATCHER`, `KAFKA_BROKERS`.
+
+---
+
+## Offset management (reliability critical)
+
+An **offset** is the next message position to read. **Committing** tells the broker: “this consumer group has finished processing up to here.”
+
+| Mode | Env | Implementation | Semantics |
+|------|-----|----------------|-----------|
+| **Manual commit (default)** | `KAFKA_AUTO_COMMIT=false` | `commit_message_offset()` after successful `analyze_review.delay()` | **At-least-once** toward Celery — crash before commit → redelivery |
+| Auto commit | `KAFKA_AUTO_COMMIT=true` | Broker commits on poll interval | Risk: message considered done before Celery enqueue |
+
+**Pattern: commit after side effect**
+
+Only commit Kafka offset **after** the downstream handoff (Celery enqueue) succeeds. See `kafka_dispatcher.py` loop and `offsets.py`.
+
+Dev reset: `POST /dev/reset-local-state` (developer role) recreates topics with configured partition count.
+
+---
+
+## Reliability patterns (checklist)
+
+| # | Pattern | File | Behavior |
+|---|---------|------|----------|
+| 1 | Payload validation | `reliability.validate_ingest_payload()` | Reject missing `reviewId` |
+| 2 | DLQ routing | `reliability.publish_dlq()` | Poison messages off main topic |
+| 3 | Partition key | Node producer + `topics.partition_for_key()` | Per-review ordering |
+| 4 | Manual offset commit | `offsets.commit_message_offset()` | Retry on dispatcher crash |
+| 5 | Soft-fail publish | Node producer | API logs if broker down; optional BullMQ fallback |
+
+---
+
+## End-to-end flow (one review)
+
+```mermaid
+sequenceDiagram
+    participant UI as React UI
+    participant API as Node API
+    participant K as Redpanda
+    participant D as kafka_dispatcher
+    participant C as Celery
+
+    UI->>API: POST /reviews
+    API->>API: Save review (MongoDB)
+    API->>K: produce email.review.ingested key=reviewId
+    API-->>UI: 201 Created
+    D->>K: poll consumer group triage-dispatcher
+    D->>D: validate_ingest_payload
+    D->>C: analyze_review.delay(reviewId)
+    D->>K: commit offset (manual mode)
+    C->>C: Score / enrich review
+```
 
 ---
 
@@ -108,6 +151,10 @@ DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d redpa
 docker compose -f infra/docker/docker-compose.yml logs -f ai-kafka-dispatch
 ```
 
-Submit a review from the UI or `POST /reviews`, then confirm dispatcher and Celery logs show the handoff.
+Submit a review from the UI or API — watch dispatcher log `dispatched` and Celery `task start`.
 
-Pre-push tests include Python unit coverage for validators and partition helpers — see [pre_push_tests_and_stack_verification.md](pre_push_tests_and_stack_verification.md).
+---
+
+## Pre-push tests
+
+Unit tests validate payload rules and partition hashing without a broker — `ai_service/tests/test_kafka_patterns.py`. Full stack tests are optional when Docker is up — see [pre_push_tests_and_stack_verification.md](pre_push_tests_and_stack_verification.md).

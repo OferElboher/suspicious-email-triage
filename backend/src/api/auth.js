@@ -54,10 +54,22 @@ router.post("/forgot-password", async (req, res) => {
         email: reset.email,
         resetToken: reset.token,
       });
+      // Dev convenience: log reset link when Mailpit is off or external SMTP failed (token still created in Postgres).
       if (isDevDeployment() && !delivery.delivered && delivery.resetUrl) {
         logger.warn("auth", "dev password reset link", {
           email: reset.email,
           resetUrl: delivery.resetUrl,
+          deliveryMode: delivery.deliveryMode,
+          smtpError: delivery.error,
+          hint: delivery.hint,
+        });
+      }
+      if (!delivery.delivered && delivery.error) {
+        logger.warn("auth", "password reset token created but email not delivered", {
+          email: reset.email,
+          deliveryMode: delivery.deliveryMode,
+          error: delivery.error,
+          hint: delivery.hint,
         });
       }
     }

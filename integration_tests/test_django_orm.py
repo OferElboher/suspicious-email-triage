@@ -1,8 +1,9 @@
-"""Optional live-stack ORM smoke tests via django-admin container."""
+"""Optional live-stack ORM and auth smoke tests via django-admin / backend containers."""
 
 import subprocess
 
 import pytest
+import requests
 
 from integration_tests.conftest import COMPOSE_FILE, ROOT, requires_stack
 
@@ -126,3 +127,21 @@ else:
     if "SKIP_NO_USERS" in out:
         pytest.skip("No users in auth_users")
     assert "OK" in out, out
+
+
+@requires_stack
+def test_forgot_password_returns_ok_even_when_smtp_credentials_invalid():
+    """
+    Regression: SMTP failure must not return 500 (e.g. Gmail 535 with wrong App Password).
+
+    API always returns generic ok message; token is created and dev logs may include resetUrl.
+    """
+    resp = requests.post(
+        "http://127.0.0.1:3000/auth/forgot-password",
+        json={"email": "admin@local.test"},
+        timeout=10,
+    )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body.get("ok") is True
+    assert "error" not in body

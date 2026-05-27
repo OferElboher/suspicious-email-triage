@@ -9,6 +9,7 @@ const {
   sendPasswordResetEmail,
   smtpConfigured,
   smtpDeliveryMode,
+  smtpErrorHint,
 } = require("../src/auth/email");
 
 describe("sendPasswordResetEmail", () => {
@@ -47,6 +48,15 @@ describe("sendPasswordResetEmail", () => {
     expect(smtpConfigured()).toBe(true);
   });
 
+  test("smtpErrorHint explains Gmail app password on 535", () => {
+    const hint = smtpErrorHint(
+      new Error("Invalid login: 535-5.7.8 Username and Password not accepted"),
+      "external"
+    );
+    expect(hint).toMatch(/App Password/i);
+    expect(hint).not.toMatch(/temp-admin-pswd/);
+  });
+
   test("sendMail is called when SMTP is configured (mailpit)", async () => {
     process.env.SMTP_DELIVERY = "mailpit";
     process.env.SMTP_HOST = "mailpit";
@@ -67,6 +77,27 @@ describe("sendPasswordResetEmail", () => {
     expect(sendMail.mock.calls[0][0].text).toContain("abc123token");
     expect(result.delivered).toBe(true);
     expect(result.deliveryMode).toBe("mailpit");
+  });
+
+  test("returns delivered false without throwing when sendMail fails", async () => {
+    process.env.SMTP_DELIVERY = "external";
+    process.env.SMTP_HOST = "smtp.gmail.com";
+    process.env.SMTP_USER = "user@gmail.com";
+    process.env.SMTP_PASS = "wrong";
+    process.env.APP_PUBLIC_URL = "http://localhost:3001";
+
+    const sendMail = jest.fn().mockRejectedValue(new Error("535 BadCredentials"));
+    nodemailer.createTransport.mockReturnValue({ sendMail });
+
+    const result = await sendPasswordResetEmail({
+      email: "user@gmail.com",
+      resetToken: "tok",
+    });
+
+    expect(result.delivered).toBe(false);
+    expect(result.resetUrl).toContain("tok");
+    expect(result.error).toMatch(/535/);
+    expect(result.hint).toMatch(/App Password/i);
   });
 
   test("returns resetUrl without sendMail when SMTP is unset", async () => {

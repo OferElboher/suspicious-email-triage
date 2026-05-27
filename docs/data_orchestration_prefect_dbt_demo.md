@@ -1,37 +1,65 @@
 # Data orchestration with Prefect and dbt
 
-This guide walks through two common data-engineering tools included as **educational demos** in this repository. They sit beside the main triage application: the app keeps running if you never touch Prefect or dbt, but the examples show how you might **orchestrate checks** and **transform analytics SQL** on the same PostgreSQL statistics table the Node API already writes.
+This guide explains two **data orchestration / analytics engineering** tools included as educational demos. They read the same PostgreSQL **`review_stats_events`** table the Node API writes for charts. The main triage app does not depend on them — they illustrate patterns you would use in a data platform team.
 
 **Related:** [analytics_and_graphs_guide.md](analytics_and_graphs_guide.md), [architecture.md](architecture.md), [pre_push_tests_and_stack_verification.md](pre_push_tests_and_stack_verification.md).
 
----
-
-## The shared data source
-
-The Node API inserts narrow rows into PostgreSQL table **`review_stats_events`** (database `triage_stats`). Each row records something chart-friendly: which review changed, what kind of event it was, and when it happened. The React **Analytics** screen reads aggregated views of this data.
-
-Prefect and dbt demos both **read** that table. They do not replace the API or change how reviews are triaged.
+**Learning tests:** `orchestration/tests/test_prefect_demo.py` and `orchestration/tests/test_dbt_demo.py` include beginner-oriented comments explaining each pattern.
 
 ---
 
-## Prefect — workflow orchestration in plain terms
+## Shared context: where the data comes from
 
-**Prefect** is a Python library for defining **tasks** and **flows**. A task is one unit of work (query the database, send an alert). A flow wires tasks together and can be scheduled, retried, and observed in a Prefect UI when you run a full Prefect server (not required for this demo).
+When analysts use the triage UI, the Node API records compact analytics events in PostgreSQL:
 
-### Why it appears in this repo
+| Piece | Technology | Role |
+|-------|------------|------|
+| Application database | PostgreSQL 16 (`triage_stats`) | Stores `review_stats_events` rows |
+| Writer | Node/Express (`backend/src/...`) | Inserts on review lifecycle changes |
+| Reader (product) | React Analytics + API metrics | Charts and status bars |
+| Reader (demos) | Prefect task + dbt models | Health checks and SQL rollups |
 
-Operations teams often want automated questions such as: “Did we receive any stats events in the last 24 hours?” or “If the count is zero, page someone.” Prefect expresses that as code instead of a one-off cron script with no structure.
+Each event row typically includes **`occurred_at`** (timestamp) and fields the charts aggregate. Prefect counts rows in a time window; dbt rolls them up by day.
 
-### What we ship
+---
 
-| Path | Purpose |
-|------|---------|
-| `orchestration/prefect_demo/stats_task.py` | Pure function `count_review_stats_events(hours)` — easy to unit test without Prefect installed |
-| `orchestration/prefect_demo/flows.py` | Wraps the function in a `@flow` when Prefect is available; otherwise calls the function directly |
+## Part 1 — Prefect (workflow orchestration)
 
-The flow accepts `hours` (look-back window) and returns how many events matched. That is intentionally small so you can read the entire demo in a few minutes.
+### What Prefect is
 
-### Run it yourself (Postgres must be up)
+[Prefect](https://docs.prefect.io/) is a Python **workflow orchestrator**. You define:
+
+- **`@task`** — a retriable unit of work (query DB, call API, send alert)
+- **`@flow`** — a composition of tasks; the thing you schedule, monitor, and retry
+
+Prefect adds observability (run history, logs, retries) on top of plain Python. Alternatives in industry include Airflow, Dagster, and Temporal; Prefect was chosen here for readable decorators and low ceremony in small demos.
+
+### Pattern implemented in this repo
+
+We use the **“testable core + thin orchestration wrapper”** pattern:
+
+```
+review_stats_flow (@flow)
+    └── prefect_count_task (@task)   [optional when Prefect installed]
+            └── count_review_stats_events()   [plain function — always used]
+```
+
+| File | Pattern | Why |
+|------|---------|-----|
+| `orchestration/prefect_demo/stats_task.py` | Pure function, psycopg3 SQL | CI/tests run without Prefect server or agent |
+| `orchestration/prefect_demo/flows.py` | `try: import prefect` / `except ImportError` fallback | Same entrypoint whether or not `pip install prefect` |
+
+The task executes:
+
+```sql
+SELECT COUNT(*) FROM review_stats_events WHERE occurred_at >= :window_start
+```
+
+That answers an ops question: **“Did we ingest analytics events in the last N hours?”**
+
+### Run locally
+
+Postgres must be reachable (Docker dev stack exposes `localhost:5432`):
 
 ```bash
 cd ~/suspicious-email-triage
@@ -41,55 +69,94 @@ print(review_stats_flow(24))
 "
 ```
 
-Install Prefect optionally for decorators and future scheduling: `pip install prefect`. Tests do **not** require it.
+Example output shape: `{'hours': 24, 'eventCount': 150, 'windowStart': '2026-05-27T...'}`.
 
-**Tests:** `orchestration/tests/test_prefect_demo.py`.
+Optional: `pip install prefect` then run the same — Prefect registers the flow name `review-stats-health-check` for future scheduling in Prefect Cloud.
+
+### What you would add in production
+
+- Schedule the flow (cron: every hour)
+- Alert if `eventCount == 0` when simulation or live traffic is expected
+- Run the flow on a worker with network access to Postgres (not in the web container)
 
 ---
 
-## dbt — analytics transformations in plain terms
+## Part 2 — dbt (data build tool)
 
-**dbt (data build tool)** lets analysts and engineers write **SELECT** statements as versioned **models**, document them, and compile a directed graph of dependencies (model A feeds model B). dbt runs against your warehouse — here, the same PostgreSQL dev instance.
+### What dbt is
 
-### Why it appears in this repo
+[dbt](https://docs.getdbt.com/) compiles **versioned SQL models** against your warehouse. Key ideas:
 
-Chart APIs often start with ad-hoc SQL in application code. dbt shows how to move rollups (daily counts, funnel metrics) into a maintainable project with tests and documentation — a pattern common in analytics engineering teams.
+| Concept | Meaning in this demo |
+|---------|----------------------|
+| **Project** | Folder with `dbt_project.yml` — name `triage_dbt_demo` |
+| **Profile** | Connection info in `profiles.yml` — Postgres via `POSTGRES_*` env vars |
+| **Source** | Raw table owned elsewhere — `review_stats_events` declared in `models/sources.yml` |
+| **Model** | A `SELECT` dbt materializes as view/table — `models/review_stats_daily.sql` |
+| **Materialization** | How dbt stores the model — default `view` in `dbt_project.yml` |
 
-### What we ship
+dbt does **not** extract or load data (no EL). It **transforms** data already in Postgres — the “T” in ELT pipelines.
 
-| Path | Purpose |
-|------|---------|
-| `orchestration/dbt_demo/dbt_project.yml` | Mini project named `triage_dbt_demo` |
-| `orchestration/dbt_demo/models/review_stats_daily.sql` | Daily `event_count` grouped from `review_stats_events` |
-| `orchestration/dbt_demo/models/sources.yml` | Declares `review_stats_events` as a dbt **source** |
-| `orchestration/dbt_demo/profiles.yml` | Postgres connection via environment variables (`POSTGRES_HOST`, etc.) |
+### Pattern: raw events → daily rollup
 
-The daily model is a starting point: in a real deployment you would add tests (`unique`, `not_null`), exposures, and run `dbt run` on a schedule.
+`review_stats_daily.sql` groups events by calendar day using PostgreSQL **`date_trunc('day', occurred_at)`**. That is a standard analytics pattern:
 
-### Parse / compile locally (requires `dbt-postgres`)
+```
+review_stats_events (raw, written by Node)
+        ↓  dbt model
+review_stats_daily (one row per day with event_count)
+        ↓  BI tool / Metabase / internal dashboard
+Charts and reports
+```
+
+### Run locally (parse only)
+
+Install adapter: `pip install dbt-postgres`
 
 ```bash
 cd ~/suspicious-email-triage/orchestration/dbt_demo
-POSTGRES_HOST=localhost dbt parse --profiles-dir .
+POSTGRES_HOST=localhost POSTGRES_USER=triage POSTGRES_PASSWORD=triage POSTGRES_DB=triage_stats \
+  dbt parse --profiles-dir .
 ```
 
-CI runs layout and SQL content tests without executing dbt against a live database.
+To materialize models against dev Postgres: `dbt run --profiles-dir .` (creates views in `public` schema).
 
-**Tests:** `orchestration/tests/test_dbt_demo.py`.
+### What you would add in production
+
+- dbt tests (`unique`, `not_null` on daily keys)
+- Documentation blocks in YAML for column descriptions
+- CI job: `dbt build` on merge to main
+- Separate target in `profiles.yml` for staging/production warehouses
 
 ---
 
-## How this relates to production
+## How Prefect and dbt fit together (conceptually)
 
-These folders are **demos**, not production schedulers for the triage app:
+In a mature analytics stack:
 
-- Prefect could run on a timer in Kubernetes or Prefect Cloud to monitor stats freshness.
-- dbt could publish `review_stats_daily` to a BI tool while the API keeps serving real-time charts.
+1. **Application** writes raw events (Node → Postgres) — *this repo already does this*
+2. **dbt** builds clean rollups and dimensions nightly or hourly
+3. **Prefect** orchestrates dbt runs, freshness checks, and alerts if pipelines fail
 
-Neither is wired into Docker Compose by default; enabling them is a deliberate ops choice.
+This repository implements steps 1–2 in miniature and shows Prefect checking step 1 directly (row count) without running dbt in CI.
+
+---
+
+## Tests as learning material
+
+| Test file | What it teaches |
+|-----------|-----------------|
+| `test_prefect_demo.py` | Mock psycopg to see SQL; flow fallback without Prefect installed |
+| `test_dbt_demo.py` | Read `dbt_project.yml`, `sources.yml`, `profiles.yml` structure |
+
+Run:
+
+```bash
+ai_service/.venv/bin/pytest orchestration/tests/ -v
+```
 
 ---
 
 ## Pre-push verification
 
-`pytest` includes `orchestration/tests/` alongside `ai_service/tests` and `integration_tests`. See [pre_push_tests_and_stack_verification.md](pre_push_tests_and_stack_verification.md) for the full matrix.
+`pytest` includes `orchestration/tests/` — see [pre_push_tests_and_stack_verification.md](pre_push_tests_and_stack_verification.md).

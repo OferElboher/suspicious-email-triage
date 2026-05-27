@@ -40,9 +40,17 @@ function writeLine(level, topic, message, meta = {}) {
   const consoleFn =
     level === "error" || level === "critical" ? console.error : console.log;
   let consoleLine = `[${entry.ts}] [${level}] [${entry.topic}] ${entry.message}`;
-  // Dev convenience: print resetUrl on console when SMTP/Mailpit path logs metadata only in JSON file.
-  if (meta.resetUrl && process.env.DEPLOYMENT_ENV !== "prod") {
-    consoleLine += ` resetUrl=${meta.resetUrl}`;
+  // Dev convenience: surface resetUrl and SMTP hints on console (JSON file still has full meta).
+  if (process.env.DEPLOYMENT_ENV !== "prod") {
+    if (meta.resetUrl) {
+      consoleLine += ` resetUrl=${meta.resetUrl}`;
+    }
+    if (meta.hint) {
+      consoleLine += ` hint=${meta.hint}`;
+    }
+    if (meta.error && (level === "error" || level === "warn")) {
+      consoleLine += ` error=${meta.error}`;
+    }
   }
   consoleFn(consoleLine);
 }

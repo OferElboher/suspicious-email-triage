@@ -73,3 +73,13 @@ def test_triage_admin_disables_sqlite_audit_log():
     assert "class TriageAdminLoggingMixin" in logging_src
     assert "def log_change" in logging_src
     assert "TriageUserAdmin(TriageAdminLoggingMixin" in admin_src
+
+
+def test_forgot_password_email_does_not_throw_on_smtp_failure():
+    """sendPasswordResetEmail must catch nodemailer errors — forgot-password stays HTTP 200."""
+    email_src = (ROOT / "backend/src/auth/email.js").read_text(encoding="utf-8")
+    auth_src = (ROOT / "backend/src/api/auth.js").read_text(encoding="utf-8")
+    assert "smtpErrorHint" in email_src
+    assert "catch (err)" in email_src
+    assert "delivered: false" in email_src
+    assert "forgot_password_failed" in auth_src  # route exists for non-SMTP failures only

@@ -1,4 +1,12 @@
-"""Prefect flow demo — orchestrates stats aggregation (optional Prefect runtime)."""
+"""
+Prefect flow demo — orchestrates stats health checks (optional Prefect runtime).
+
+Prefect patterns used:
+  @task  — unit of retriable work (here: count Postgres events)
+  @flow  — composes tasks; becomes the schedulable entrypoint in Prefect Cloud/UI
+
+When Prefect is not installed, review_stats_flow falls back to the plain function.
+"""
 
 from orchestration.prefect_demo.stats_task import count_review_stats_events
 
@@ -7,16 +15,16 @@ try:
 
     @task(name="count-review-stats-events")
     def prefect_count_task(hours: int = 24) -> dict:
-        """Prefect task wrapper around the testable stats function."""
+        """Prefect @task wrapper — same logic as stats_task, observable in Prefect UI."""
         return count_review_stats_events(hours)
 
     @flow(name="review-stats-health-check")
     def review_stats_flow(hours: int = 24) -> dict:
-        """Demo flow: scheduled health check on analytics Postgres table."""
+        """Prefect @flow entrypoint: 'did analytics events arrive in the last N hours?'"""
         return prefect_count_task(hours)
 
-except ImportError:  # Prefect not installed — use plain function for tests/CI.
+except ImportError:  # Prefect optional — CI/tests use plain function path.
 
     def review_stats_flow(hours: int = 24) -> dict:
-        """Fallback when Prefect is not installed (same behavior, no orchestrator)."""
+        """Fallback when prefect package is not installed (identical behavior, no orchestrator)."""
         return count_review_stats_events(hours)
