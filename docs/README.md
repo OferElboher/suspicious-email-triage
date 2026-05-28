@@ -12,6 +12,7 @@ This folder collects human-oriented explanations of the Suspicious Email Triage 
 - If you need **bootstrap admin email/password, sign-in, or password recovery**, read `dev_admin_credentials_and_recovery.md`.
 - For **password-reset email (Mailpit, Google OAuth, or SMTP)**, read [dev_smtp_password_recovery_email.md](dev_smtp_password_recovery_email.md) and [google_oauth_email_and_signin.md](google_oauth_email_and_signin.md).
 - For **mock commercial LLM scoring (OpenAI-shaped, zero cost)**, read [mock_commercial_llm_guide.md](mock_commercial_llm_guide.md).
+- For **Neo4j phishing relationship graph (campaigns, shared indicators, visualization)**, read [neo4j_phishing_graph_guide.md](neo4j_phishing_graph_guide.md).
 - To **manually reset an admin password on a dev workstation**, read `dev_manual_admin_password_reset.md`.
 - For **Kafka event streaming** (consumer groups, offsets, DLQ), read `kafka_event_stream_guide.md`.
 - For **Prefect/dbt orchestration demos**, read `data_orchestration_prefect_dbt_demo.md`.
@@ -41,7 +42,8 @@ This folder collects human-oriented explanations of the Suspicious Email Triage 
 - `dev_manual_admin_password_reset.md` — script/API/Django admin ways to set a dev user password.
 - `dev_smtp_password_recovery_email.md` — Mailpit local inbox vs SMTP; links to Google OAuth for Gmail.
 - `google_oauth_email_and_signin.md` — Sign in with Google for login and Gmail API password-reset email (no App Passwords).
-- `mock_commercial_llm_guide.md` — OpenAI-compatible mock LLM, env vars, Celery integration, tests.
+- `mock_commercial_llm_guide.md` — OpenAI-compatible mock LLM, env vars, Celery integration, **how Mongo + PostgreSQL data is assembled into each prompt**, tests.
+- `neo4j_phishing_graph_guide.md` — Neo4j graph model (sender/review/url/domain/campaign), sync flow, API, React visualization, Docker.
 - `kafka_event_stream_guide.md` — topic design, consumer groups, offsets, DLQ reliability patterns.
 - `data_orchestration_prefect_dbt_demo.md` — Prefect flow + dbt model demos over `review_stats_events`.
 - `dbeaver_auth_tables_and_unified_log_viewing.md` — Refresh DBeaver for `auth_*` tables; view/search unified `merged.log` (lnav, glogg, API).

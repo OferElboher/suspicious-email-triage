@@ -93,3 +93,19 @@ def test_llm_provider_mock_commercial_wired():
     assert "mock_commercial" in py_client
     assert "mock_commercial" in node_provider
     assert (ROOT / "ai_service/mock_commercial_llm/server.py").is_file()
+
+
+def test_neo4j_graph_module_wired():
+    """Neo4j phishing graph must ship driver, sync, API routes, and Celery callback."""
+    compose = (ROOT / "infra/docker/docker-compose.yml").read_text(encoding="utf-8")
+    assert "neo4j:" in compose
+    assert (ROOT / "backend/src/graph/syncReview.js").is_file()
+    assert (ROOT / "backend/src/api/graph.js").is_file()
+    assert (ROOT / "backend/src/api/graphInternal.js").is_file()
+    assert (ROOT / "ai_service/app/graph_sync.py").is_file()
+    constants = (ROOT / "backend/src/auth/constants.js").read_text(encoding="utf-8")
+    assert "graph.read" in constants
+    create_app = (ROOT / "backend/src/http/createApp.js").read_text(encoding="utf-8")
+    assert "/graph/internal" in create_app
+    tasks = (ROOT / "ai_service/app/tasks.py").read_text(encoding="utf-8")
+    assert "sync_review_graph" in tasks

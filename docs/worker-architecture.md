@@ -8,7 +8,7 @@ Email analysis is intentionally slower than saving a web form, so the system gen
 Node API -> Kafka/Redpanda -> Python dispatcher -> Celery/Redis -> Python worker
 ```
 
-The Node API stores the review in MongoDB, records a compact PostgreSQL statistics event, and publishes a Kafka ingest message. The Python worker later reads the MongoDB review, updates the result, and writes status statistics to PostgreSQL for charts.
+The Node API stores the review in MongoDB, records a compact PostgreSQL statistics event, publishes a Kafka ingest message, and **schedules a Neo4j graph sync**. The Python worker later reads the MongoDB review, updates the result, writes status statistics to PostgreSQL, and **calls the backend internal graph sync** so verdicts and campaigns are updated.
 
 ## Why separate processes
 

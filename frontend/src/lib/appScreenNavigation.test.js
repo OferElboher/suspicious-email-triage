@@ -12,6 +12,8 @@ describe("appScreenNavigation", () => {
   test("readScreenFromLocation reads analytics hash", () => {
     window.location.hash = "#analytics";
     expect(readScreenFromLocation()).toBe("analytics");
+    window.location.hash = "#graph";
+    expect(readScreenFromLocation()).toBe("graph");
     window.location.hash = "#legacy-admin";
     expect(readScreenFromLocation()).toBe("workspace");
   });

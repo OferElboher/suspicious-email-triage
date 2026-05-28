@@ -111,6 +111,17 @@ These enhancements were added to improve system robustness, maintainability, obs
 
 ---
 
+## 9. Neo4j phishing relationship graph
+
+- Graph database models **Sender → Review → Url → Domain** relationships
+- Detects **campaigns** when multiple suspicious reviews share a domain indicator
+- React **Phishing graph** tab visualizes nodes and edges (SVG)
+- Celery re-syncs graph after analysis via internal service token
+
+See [neo4j_phishing_graph_guide.md](neo4j_phishing_graph_guide.md).
+
+---
+
 ## Summary
 
 The system extends beyond the assignment by introducing:

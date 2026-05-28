@@ -39,9 +39,41 @@ def test_mock_commercial_parses_openai_response(monkeypatch):
 
     with patch("app.llm_client.requests.post", return_value=mock_response):
         result = analyze_with_mock_commercial(
-            {"_id": "1", "senderEmail": "x", "subject": "password", "body": "verify password"}
+            {
+                "_id": "1",
+                "senderEmail": "x",
+                "subject": "password",
+                "body": "verify password",
+                "links": ["https://evil.example/reset"],
+            }
         )
 
     assert result["verdict"] == "likely_phishing"
     assert result["_llmMeta"]["provider"] == "mock_commercial"
     assert result["_llmMeta"]["mockCostUsd"] == 0.0
+
+
+def test_build_user_prompt_includes_links_and_pg_context(monkeypatch):
+    """User message must include Mongo links[] and optional PostgreSQL stats snippet."""
+    from app.llm_client import _build_user_prompt
+
+    monkeypatch.setenv("DISABLE_LLM", "true")
+
+    with patch(
+        "app.llm_client._fetch_pg_context",
+        return_value="PostgreSQL stats (recent events):\n  status=processing",
+    ):
+        prompt = _build_user_prompt(
+            {
+                "_id": "99",
+                "senderEmail": "a@b.com",
+                "subject": "Urgent",
+                "body": "Click now",
+                "links": ["https://phish.test/login"],
+            }
+        )
+
+    assert "https://phish.test/login" in prompt
+    assert "Extracted links:" in prompt
+    assert "PostgreSQL stats" in prompt
+    assert "Sender: a@b.com" in prompt

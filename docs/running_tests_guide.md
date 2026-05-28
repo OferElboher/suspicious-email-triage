@@ -69,6 +69,10 @@ Examples:
 | `gmailApi.test.js` | Google OAuth Gmail API send (mocked) |
 | `llmProvider.test.js` | Mock commercial LLM fetch |
 | `extractLinks.test.js` | URL extraction utility |
+| `domainFromUrl.test.js` | Hostname parsing for graph domains |
+| `graphSync.test.js` | Neo4j sync payload + mocked Cypher |
+| `graphApi.test.js` | Authenticated `/graph` routes |
+| `graphInternal.test.js` | Celery internal sync token |
 
 ---
 

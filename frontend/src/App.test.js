@@ -10,6 +10,7 @@ const mockUser = {
     "reviews.write",
     "reviews.override",
     "metrics.read",
+    "graph.read",
     "admin.users",
   ],
 };

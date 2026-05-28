@@ -23,13 +23,15 @@ React browser
 
 ### React frontend (`frontend/`)
 
-The frontend is what users see. It offers a triage form, live status updates, recent review browsing, analytics graphs, and a dev-only simulation panel.
+The frontend is what users see. It offers a triage form, live status updates, recent review browsing, analytics graphs, a **Neo4j phishing relationship graph** view, and a dev-only simulation panel.
 
 ### Node.js API (`backend/src/`)
 
 The Node API is the main browser-facing backend. It receives review submissions, stores them, publishes Kafka ingest events, exposes polling endpoints, and provides metrics for charts.
 
 Metrics are read from PostgreSQL rather than MongoDB. This avoids repeatedly scanning large review documents just to draw graphs.
+
+**Neo4j** stores sender, review, URL, domain, and campaign relationships for phishing graph analysis (see [neo4j_phishing_graph_guide.md](neo4j_phishing_graph_guide.md)).
 
 ### Python AI service (`ai_service/`)
 
@@ -68,6 +70,7 @@ sequenceDiagram
   D->>C: Enqueue analyze_review
   C->>M: Read review, score, save result
   C->>P: Insert status_changed statistic
+  C->>Neo: Sync graph via internal API
   U->>A: Poll GET /reviews/:id
   A->>M: Read current status/result
   A-->>U: Show pending/processing/completed

@@ -2,6 +2,7 @@
 from bson import ObjectId
 
 from app.celery_app import celery_app
+from app.graph_sync import sync_review_graph
 from app.llm_client import analyze_with_llm
 from app.logutil import log_line
 from app.merge import merge_results
@@ -36,6 +37,7 @@ def analyze_review(review_id: str) -> str:
         )
         # Persist final chart status without scanning the Mongo review collection later.
         record_status(review_id, "completed", result.get("verdict"))
+        sync_review_graph(review_id)
         log_line("info", "celery", "task done", reviewId=review_id)
         return "completed"
     except Exception as exc:  # noqa: BLE001 — surface failure to Mongo + logs

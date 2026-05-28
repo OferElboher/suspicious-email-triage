@@ -64,14 +64,25 @@ def _fetch_pg_context(review_id: str | None) -> str:
         return f"PostgreSQL stats unavailable: {exc}"
 
 
+def _format_links(review: dict[str, Any]) -> str:
+    """Render Mongo links[] as a readable bullet list for the LLM user message."""
+    links = review.get("links") or []
+    if not links:
+        return "Extracted links: (none)"
+    lines = [f"  - {link}" for link in links if link]
+    return "Extracted links:\n" + "\n".join(lines)
+
+
 def _build_user_prompt(review: dict[str, Any]) -> str:
     """Combine Mongo review fields + optional SQL stats for the model user message."""
     review_id = str(review.get("_id") or review.get("id") or "")
     pg_ctx = _fetch_pg_context(review_id)
+    links_ctx = _format_links(review)
     return (
         f"Sender: {review.get('senderEmail')}\n"
         f"Subject: {review.get('subject')}\n"
-        f"Body: {review.get('body')}\n\n"
+        f"Body: {review.get('body')}\n"
+        f"{links_ctx}\n\n"
         f"{pg_ctx}\n"
         "Return STRICT JSON with keys: verdict, recommendedAction, summary, "
         "findings[], followUpQuestions[]."

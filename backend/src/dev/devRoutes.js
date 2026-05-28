@@ -15,6 +15,7 @@ const {
   kafkaTopicPartitions,
 } = require("../config/runtime");
 const { resetStats } = require("../stats/statsPg");
+const { resetGraph } = require("../graph/neo4jClient");
 const { writeSimulation, readSimulation, MAX_EVENTS_PER_MIN } = require("./simulationStore");
 const { applySimulationFromStore, clearLoop } = require("./simulationLoop");
 const { requirePermission, hasPermission } = require("../http/middleware/auth");
@@ -120,6 +121,7 @@ router.post("/reset-local-state", requirePermission("dev.reset"), async (req, re
     postgresStats: "pending",
     redis: "pending",
     kafka: "pending",
+    neo4j: "pending",
   };
 
   try {
@@ -141,6 +143,14 @@ router.post("/reset-local-state", requirePermission("dev.reset"), async (req, re
     } catch (err) {
       summary.kafka = "reset_failed";
       logger.warn("dev", "kafka reset failed", { error: err.message });
+    }
+
+    try {
+      const cleared = await resetGraph();
+      summary.neo4j = cleared ? "cleared" : "disabled_or_unavailable";
+    } catch (err) {
+      summary.neo4j = "reset_failed";
+      logger.warn("dev", "neo4j reset failed", { error: err.message });
     }
 
     logger.warn("dev", "local state reset", summary);

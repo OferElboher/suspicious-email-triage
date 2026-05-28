@@ -43,6 +43,10 @@ AUTH_BOOTSTRAP_ADMIN_PASSWORD=temp-admin-pswd
 
 Authentication variables are documented in `AUTHENTICATION_AND_RBAC.md`, [dev_admin_credentials_and_recovery.md](dev_admin_credentials_and_recovery.md), and [dev_auth_tables_reset_and_admin_recovery.md](dev_auth_tables_reset_and_admin_recovery.md).
 
+Neo4j graph variables (`NEO4J_*`, `GRAPH_INTERNAL_TOKEN`, `BACKEND_INTERNAL_URL`) are documented in [neo4j_phishing_graph_guide.md](neo4j_phishing_graph_guide.md).
+
+LLM and PostgreSQL prompt context variables (`DISABLE_LLM`, `LLM_*`, `STATISTICS_PG_URL`) are documented in [mock_commercial_llm_guide.md](mock_commercial_llm_guide.md).
+
 ---
 
 ## Backend usage

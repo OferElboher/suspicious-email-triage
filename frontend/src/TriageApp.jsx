@@ -8,6 +8,7 @@ import { useAuth } from "./context/AuthContext";
 import { useAppScreen } from "./hooks/useAppScreen";
 import { useReviewPoller } from "./hooks/useReviewPoller";
 import AnalyticsView from "./views/AnalyticsView";
+import GraphView from "./views/GraphView";
 import SimulationPanel from "./views/SimulationPanel";
 import { djangoAdminUrl } from "./lib/appUrls";
 
@@ -25,6 +26,7 @@ export default function TriageApp() {
   const [featuresLoaded, setFeaturesLoaded] = useState(false);
 
   const canReadReviews = hasPermission("reviews.read");
+  const canReadGraph = hasPermission("graph.read");
   const canWrite = hasPermission("reviews.write");
   const canOverride = hasPermission("reviews.override");
 
@@ -36,9 +38,12 @@ export default function TriageApp() {
       if (view === "analytics") {
         return features.analytics && hasPermission("metrics.read");
       }
+      if (view === "graph") {
+        return canReadGraph;
+      }
       return false;
     },
-    [canReadReviews, features.analytics, hasPermission]
+    [canReadGraph, canReadReviews, features.analytics, hasPermission]
   );
 
   const [screen, setScreen] = useAppScreen(
@@ -174,6 +179,15 @@ export default function TriageApp() {
                 Analytics & graphs
               </button>
             )}
+            {canReadGraph && (
+              <button
+                type="button"
+                className={screen === "graph" ? "active" : ""}
+                onClick={() => setScreen("graph")}
+              >
+                Phishing graph
+              </button>
+            )}
           </nav>
         </div>
       </header>
@@ -181,6 +195,12 @@ export default function TriageApp() {
       {screen === "analytics" && features.analytics && hasPermission("metrics.read") && (
         <main className="layout">
           <AnalyticsView />
+        </main>
+      )}
+
+      {screen === "graph" && canReadGraph && (
+        <main className="layout">
+          <GraphView />
         </main>
       )}
 

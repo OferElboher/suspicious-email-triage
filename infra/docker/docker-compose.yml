@@ -33,6 +33,19 @@ services:
       - "5432:5432"
     restart: unless-stopped
 
+  # neo4j: graph database for sender/url/domain relationships and campaign clustering.
+  neo4j:
+    container_name: triage-neo4j
+    image: neo4j:5.26-community
+    environment:
+      - NEO4J_AUTH=neo4j/triage-neo4j-dev
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - neo4j-data:/data
+    restart: unless-stopped
+
   # redpanda: local Kafka-compatible broker used by the async ingest event stream.
   redpanda:
     image: docker.redpanda.com/redpandadata/redpanda:v24.2.11
@@ -79,6 +92,7 @@ services:
       - redis
       - redpanda
       - mailpit
+      - neo4j
     restart: unless-stopped
 
   # mailpit: dev SMTP sink + web UI for password-reset and other outbound email testing.
@@ -151,6 +165,7 @@ services:
       - postgres
       - redis
       - mock-llm
+      - neo4j
     restart: unless-stopped
 
   # ai-kafka-dispatch: Python Kafka consumer that schedules Celery tasks.
@@ -192,5 +207,7 @@ services:
 volumes:
   # triage-logs: shared dev volume so API and workers append to one merged log.
   triage-logs:
+  # neo4j-data: persisted graph state for phishing relationship analysis.
+  neo4j-data:
   # django-admin-state: SQLite for Django sessions/admin log (keeps Postgres free of duplicate auth tables).
   django-admin-state:

@@ -4,6 +4,8 @@ const cors = require("cors");
 const logger = require("../lib/logger");
 const reviewRoutes = require("../api/reviews");
 const metricsRoutes = require("../api/metrics");
+const graphRoutes = require("../api/graph");
+const graphInternalRoutes = require("../api/graphInternal");
 const authRoutes = require("../api/auth");
 const devRoutes = require("../dev/devRoutes");
 const { searchLogs } = require("../lib/logSearch");
@@ -32,6 +34,9 @@ function createApp() {
   /** Public authentication routes (login, password recovery). */
   app.use("/auth", authRoutes);
 
+  /** Worker-only graph sync (service token, no JWT) — must stay before authenticate(). */
+  app.use("/graph/internal", graphInternalRoutes);
+
   /** All routes below require a valid bearer token. */
   app.use(authenticate);
 
@@ -40,6 +45,9 @@ function createApp() {
 
   /** Dashboard metrics endpoints backed by PostgreSQL statistics. */
   app.use("/metrics", metricsRoutes);
+
+  /** Neo4j phishing relationship graph (campaigns, neighborhoods, visualization). */
+  app.use("/graph", graphRoutes);
 
   /** Dev controls + capability advertisement for the SPA (role-gated inside router). */
   app.use("/dev", devRoutes);
