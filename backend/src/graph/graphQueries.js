@@ -34,6 +34,7 @@ function nodeToJson(node) {
 
 /** Fetch a bounded subgraph around one review for analyst drill-down. */
 async function getReviewNeighborhood(reviewId, depth = 2) {
+  // depth is capped by the API (max 4) before interpolation — avoids unbounded Cypher cost.
   const rows = await runRead(
     `
     MATCH (r:Review {id: $reviewId})

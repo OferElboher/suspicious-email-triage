@@ -109,3 +109,16 @@ def test_neo4j_graph_module_wired():
     assert "/graph/internal" in create_app
     tasks = (ROOT / "ai_service/app/tasks.py").read_text(encoding="utf-8")
     assert "sync_review_graph" in tasks
+
+
+def test_neo4j_setup_and_demo_docs_exist():
+    """WSL/Windows setup and hands-on demo guides must be indexed from docs/README.md."""
+    readme = (ROOT / "docs/README.md").read_text(encoding="utf-8")
+    assert (ROOT / "docs/neo4j_wsl_windows_setup_guide.md").is_file()
+    assert (ROOT / "docs/neo4j_phishing_graph_demo_guide.md").is_file()
+    assert "neo4j_wsl_windows_setup_guide.md" in readme
+    assert "neo4j_phishing_graph_demo_guide.md" in readme
+    setup = (ROOT / "docs/neo4j_wsl_windows_setup_guide.md").read_text(encoding="utf-8")
+    assert "NEO4J_PASSWORD" in setup
+    assert "triage-neo4j-dev" not in setup
+    assert "dev-graph-sync-token" not in setup

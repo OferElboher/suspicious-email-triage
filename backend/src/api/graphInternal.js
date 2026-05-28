@@ -8,6 +8,7 @@ const logger = require("../lib/logger");
 
 /** Compare X-Graph-Internal-Token header to GRAPH_INTERNAL_TOKEN env (shared secret). */
 function internalTokenValid(req) {
+  // Fallback string matches dev .env.dev only — production must set GRAPH_INTERNAL_TOKEN explicitly.
   const expected = process.env.GRAPH_INTERNAL_TOKEN || "dev-graph-sync-token";
   const provided = req.get("X-Graph-Internal-Token") || "";
   return expected && provided === expected;

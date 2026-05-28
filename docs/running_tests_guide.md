@@ -73,6 +73,9 @@ Examples:
 | `graphSync.test.js` | Neo4j sync payload + mocked Cypher |
 | `graphApi.test.js` | Authenticated `/graph` routes |
 | `graphInternal.test.js` | Celery internal sync token |
+| `integration_tests/test_neo4j_graph.py` | Live Bolt (skipped if Neo4j down) |
+
+Neo4j hands-on demo: [neo4j_phishing_graph_demo_guide.md](neo4j_phishing_graph_demo_guide.md).
 
 ---
 

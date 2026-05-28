@@ -36,8 +36,9 @@ Inside Docker, services talk to each other by **service name** (`mongo`, `postgr
 | PostgreSQL | `localhost` | `5432` | `triage_stats` | `triage` | `triage` | Chart statistics (`review_stats_events`) |
 | MongoDB | `localhost` | `27018` | `triage` | *(none in default dev)* | *(none)* | Review documents |
 | Redis | `localhost` | `6379` | `0` broker, `1` Celery results | *(none in default dev)* | *(none)* | Queues / dev state |
+| Neo4j | `localhost` | `7474` / `7687` | default graph `neo4j` | see `NEO4J_USER` in `backend/.env.dev` | see `NEO4J_PASSWORD` locally | Phishing relationship graph |
 
-Credentials match `backend/.env.dev`. Staging and production use remote services; this guide is for **local dev only**.
+Credentials for PostgreSQL/Mongo/Redis match `backend/.env.dev`. **Neo4j and service tokens:** read `NEO4J_*` and `GRAPH_*` from your local env files — do not paste secrets into docs. Staging and production use remote services; this guide is for **local dev only**.
 
 ---
 
@@ -313,8 +314,9 @@ When Steps 4–5 succeed, open the tool-specific guides:
 - [DBeaver → PostgreSQL](dbeaver_postgresql_windows_setup.md)
 - [MongoDB Compass → MongoDB](mongodb_compass_windows_setup.md)
 - [Redis Insight → Redis](redis_insight_windows_setup.md)
+- [Neo4j Browser / DBeaver → Neo4j graph](neo4j_wsl_windows_setup_guide.md)
 
-Use **`localhost`** as the host in all three unless troubleshooting (see below).
+Use **`localhost`** as the host in all clients unless troubleshooting (see below).
 
 ---
 

@@ -26,8 +26,8 @@ Minimum commands (WSL, repository root) once Docker Desktop is running:
 cd ~/suspicious-email-triage
 docker --version
 docker compose version
-DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d mongo postgres redis
-docker compose -f infra/docker/docker-compose.yml ps mongo postgres redis
+DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d mongo postgres redis neo4j
+docker compose -f infra/docker/docker-compose.yml ps mongo postgres redis neo4j
 ```
 
 When databases are healthy, connect GUI tools on **Windows** (not WSL):
@@ -37,6 +37,7 @@ When databases are healthy, connect GUI tools on **Windows** (not WSL):
 | DBeaver (PostgreSQL) | [dbeaver_postgresql_windows_setup.md](dbeaver_postgresql_windows_setup.md) | `localhost` | `5432` |
 | MongoDB Compass | [mongodb_compass_windows_setup.md](mongodb_compass_windows_setup.md) | `localhost` | `27018` |
 | Redis Insight | [redis_insight_windows_setup.md](redis_insight_windows_setup.md) | `localhost` | `6379` |
+| Neo4j Browser / Bolt | [neo4j_wsl_windows_setup_guide.md](neo4j_wsl_windows_setup_guide.md) | `localhost` | `7474` (HTTP), `7687` (Bolt) |
 
 Auth tables and unified logs in DBeaver: [dbeaver_auth_tables_and_unified_log_viewing.md](dbeaver_auth_tables_and_unified_log_viewing.md).
 

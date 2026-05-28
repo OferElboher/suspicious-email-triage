@@ -120,6 +120,8 @@ These enhancements were added to improve system robustness, maintainability, obs
 
 See [neo4j_phishing_graph_guide.md](neo4j_phishing_graph_guide.md).
 
+See [neo4j_wsl_windows_setup_guide.md](neo4j_wsl_windows_setup_guide.md) and [neo4j_phishing_graph_demo_guide.md](neo4j_phishing_graph_demo_guide.md).
+
 ---
 
 ## Summary

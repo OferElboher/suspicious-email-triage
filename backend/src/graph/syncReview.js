@@ -58,7 +58,7 @@ async function syncReviewToGraph(review) {
     MERGE (d:Domain {host: link.host})
     MERGE (u)-[:RESOLVES_TO]->(d)
   `;
-
+  // DELETE old CONTAINS_URL edges so removed links do not linger when body is edited.
   try {
     await runWrite(cypher, payload);
     const campaigns = await detectCampaignsForReview(payload.reviewId);

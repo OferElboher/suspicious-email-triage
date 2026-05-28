@@ -37,6 +37,7 @@ export default function GraphView() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
+  /** Load visualization + campaign list from authenticated /graph API routes. */
   const refresh = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -56,16 +57,19 @@ export default function GraphView() {
     }
   }, []);
 
+  /** Initial load and whenever refresh identity is stable (mount-only in practice). */
   useEffect(() => {
     refresh();
   }, [refresh]);
 
   const width = 720;
   const height = 420;
+  /** Circular layout keeps the demo dependency-free (no force-simulation library). */
   const positioned = useMemo(
     () => layoutNodes(graph.nodes || [], width, height),
     [graph.nodes, width, height]
   );
+  /** O(1) lookup when drawing edges between positioned nodes. */
   const positionById = useMemo(() => {
     const map = new Map();
     positioned.forEach((n) => map.set(n.id, n));

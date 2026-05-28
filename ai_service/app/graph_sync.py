@@ -29,6 +29,7 @@ def sync_review_graph(review_id: str) -> bool:
         return False
 
     base = os.environ.get("BACKEND_INTERNAL_URL", "http://backend:3000").rstrip("/")
+    # Token must match backend GRAPH_INTERNAL_TOKEN; never log the header value.
     token = os.environ.get("GRAPH_INTERNAL_TOKEN", "dev-graph-sync-token")
     url = f"{base}/graph/internal/sync/{review_id}"
     headers = {"X-Graph-Internal-Token": token}

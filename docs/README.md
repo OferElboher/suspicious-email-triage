@@ -13,6 +13,8 @@ This folder collects human-oriented explanations of the Suspicious Email Triage 
 - For **password-reset email (Mailpit, Google OAuth, or SMTP)**, read [dev_smtp_password_recovery_email.md](dev_smtp_password_recovery_email.md) and [google_oauth_email_and_signin.md](google_oauth_email_and_signin.md).
 - For **mock commercial LLM scoring (OpenAI-shaped, zero cost)**, read [mock_commercial_llm_guide.md](mock_commercial_llm_guide.md).
 - For **Neo4j phishing relationship graph (campaigns, shared indicators, visualization)**, read [neo4j_phishing_graph_guide.md](neo4j_phishing_graph_guide.md).
+- To **install Neo4j on WSL, configure env vars, and connect from Windows 11**, read [neo4j_wsl_windows_setup_guide.md](neo4j_wsl_windows_setup_guide.md).
+- To **demo Neo4j graph features step by step**, read [neo4j_phishing_graph_demo_guide.md](neo4j_phishing_graph_demo_guide.md).
 - To **manually reset an admin password on a dev workstation**, read `dev_manual_admin_password_reset.md`.
 - For **Kafka event streaming** (consumer groups, offsets, DLQ), read `kafka_event_stream_guide.md`.
 - For **Prefect/dbt orchestration demos**, read `data_orchestration_prefect_dbt_demo.md`.
@@ -44,6 +46,8 @@ This folder collects human-oriented explanations of the Suspicious Email Triage 
 - `google_oauth_email_and_signin.md` — Sign in with Google for login and Gmail API password-reset email (no App Passwords).
 - `mock_commercial_llm_guide.md` — OpenAI-compatible mock LLM, env vars, Celery integration, **how Mongo + PostgreSQL data is assembled into each prompt**, tests.
 - `neo4j_phishing_graph_guide.md` — Neo4j graph model (sender/review/url/domain/campaign), sync flow, API, React visualization, Docker.
+- `neo4j_wsl_windows_setup_guide.md` — Start Neo4j in WSL Docker, `.env` variable meanings (no secrets in doc), Neo4j Browser and DBeaver on Windows 11.
+- `neo4j_phishing_graph_demo_guide.md` — Hands-on demo: submit reviews, campaigns, UI tab, Cypher, REST examples.
 - `kafka_event_stream_guide.md` — topic design, consumer groups, offsets, DLQ reliability patterns.
 - `data_orchestration_prefect_dbt_demo.md` — Prefect flow + dbt model demos over `review_stats_events`.
 - `dbeaver_auth_tables_and_unified_log_viewing.md` — Refresh DBeaver for `auth_*` tables; view/search unified `merged.log` (lnav, glogg, API).

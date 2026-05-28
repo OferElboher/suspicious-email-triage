@@ -2,7 +2,7 @@
 
 This guide explains how the project uses **Neo4j** (a graph database) to connect emails, senders, URLs, domains, and phishing **campaigns**. If you are new to graph databases, read the “Concepts for beginners” section first — it defines every term used later.
 
-**Related docs:** [architecture.md](architecture.md), [worker-architecture.md](worker-architecture.md), [mock_commercial_llm_guide.md](mock_commercial_llm_guide.md), [analytics_and_graphs_guide.md](analytics_and_graphs_guide.md).
+**Related docs:** [architecture.md](architecture.md), [worker-architecture.md](worker-architecture.md), [mock_commercial_llm_guide.md](mock_commercial_llm_guide.md), [analytics_and_graphs_guide.md](analytics_and_graphs_guide.md), [neo4j_wsl_windows_setup_guide.md](neo4j_wsl_windows_setup_guide.md), [neo4j_phishing_graph_demo_guide.md](neo4j_phishing_graph_demo_guide.md).
 
 ---
 
@@ -69,14 +69,18 @@ Internal sync is mounted **before** JWT middleware so workers do not need a user
 
 ## Environment variables
 
-| Variable | Default (dev) | Purpose |
-|----------|---------------|---------|
-| `NEO4J_ENABLED` | `true` | Set `false` in CI/tests without a graph container |
-| `NEO4J_URI` | `bolt://neo4j:7687` | Bolt connection string |
-| `NEO4J_USER` | `neo4j` | Database user |
-| `NEO4J_PASSWORD` | `triage-neo4j-dev` | Database password (change in prod) |
-| `GRAPH_INTERNAL_TOKEN` | `dev-graph-sync-token` | Shared secret for Celery → API sync |
-| `BACKEND_INTERNAL_URL` | `http://backend:3000` | Base URL used by Python worker |
+Values for passwords and service tokens live in **`backend/.env.dev`** (committed template) and optional gitignored **`backend/.env`** (local overrides). **Do not copy secrets into documentation or chat logs** — open the files on your machine.
+
+| Variable | Purpose |
+|----------|---------|
+| `NEO4J_ENABLED` | When `false`, graph sync and queries are skipped (CI without Neo4j). |
+| `NEO4J_URI` | Bolt URL for `neo4j-driver` (`bolt://neo4j:7687` inside Docker). |
+| `NEO4J_USER` | Neo4j username. |
+| `NEO4J_PASSWORD` | Neo4j password — **read locally**, never commit production values. |
+| `GRAPH_INTERNAL_TOKEN` | Shared secret for Celery → `/graph/internal/sync` — **keep private**. |
+| `BACKEND_INTERNAL_URL` | Base URL Celery uses to reach the Node API. |
+
+Full WSL + Windows client setup: [neo4j_wsl_windows_setup_guide.md](neo4j_wsl_windows_setup_guide.md).
 
 ---
 
@@ -84,8 +88,8 @@ Internal sync is mounted **before** JWT middleware so workers do not need a user
 
 Neo4j runs as service `neo4j` in `infra/docker/docker-compose.yml`:
 
-- **Browser UI:** http://localhost:7474 (login `neo4j` / `triage-neo4j-dev`)
-- **Bolt:** `localhost:7687`
+- **Browser UI:** http://localhost:7474 (credentials from your local env — see [neo4j_wsl_windows_setup_guide.md](neo4j_wsl_windows_setup_guide.md))
+- **Bolt:** `localhost:7687` (Windows GUI tools and drivers)
 
 Start the graph with the rest of the stack:
 
@@ -150,7 +154,8 @@ This is intentionally lightweight (plain SVG, no D3) so the demo stays easy to m
 | `ai_service/tests/test_graph_sync.py` | Celery HTTP callback |
 | `integration_tests/test_neo4j_graph.py` | Live Bolt check (skipped if Neo4j down) |
 
-Run everything: [running_tests_guide.md](running_tests_guide.md).
+Run everything: [running_tests_guide.md](running_tests_guide.md).  
+Try features manually: [neo4j_phishing_graph_demo_guide.md](neo4j_phishing_graph_demo_guide.md).
 
 ---
 
@@ -168,7 +173,9 @@ Run everything: [running_tests_guide.md](running_tests_guide.md).
 |---------|--------------|-----|
 | Empty graph | Neo4j not running or `NEO4J_ENABLED=false` | Start `neo4j` container; check backend logs |
 | Campaigns never appear | Fewer than 2 risky reviews share a domain | Submit two reviews with the same phishing URL host |
-| Celery never updates graph | Wrong `BACKEND_INTERNAL_URL` or token | Match `.env.dev` values; recreate `ai-celery` |
+| Celery never updates graph | Wrong `BACKEND_INTERNAL_URL` or internal token | Recreate `ai-celery` after env changes; see [neo4j_wsl_windows_setup_guide.md](neo4j_wsl_windows_setup_guide.md) |
+
+Hands-on demo script: [neo4j_phishing_graph_demo_guide.md](neo4j_phishing_graph_demo_guide.md).
 
 Neo4j Browser query to inspect everything:
 

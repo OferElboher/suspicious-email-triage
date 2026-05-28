@@ -37,6 +37,7 @@ def analyze_review(review_id: str) -> str:
         )
         # Persist final chart status without scanning the Mongo review collection later.
         record_status(review_id, "completed", result.get("verdict"))
+        # Re-sync Neo4j so verdict + campaign edges reflect analysis (non-fatal if graph down).
         sync_review_graph(review_id)
         log_line("info", "celery", "task done", reviewId=review_id)
         return "completed"
