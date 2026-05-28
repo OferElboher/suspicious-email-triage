@@ -46,14 +46,21 @@ upsert_var() {
 }
 
 if [[ "$mode" == "mailpit" ]]; then
+  upsert_var "$LOCAL_ENV" "EMAIL_DELIVERY" "mailpit"
   upsert_var "$LOCAL_ENV" "SMTP_DELIVERY" "mailpit"
   upsert_var "$LOCAL_ENV" "SMTP_HOST" "mailpit"
   upsert_var "$LOCAL_ENV" "SMTP_PORT" "1025"
   upsert_var "$LOCAL_ENV" "SMTP_SECURE" "false"
   upsert_var "$LOCAL_ENV" "SMTP_FROM" "noreply@local.test"
+  # Remove external/Gmail SMTP creds so mailpit mode is not overridden to external.
   sed -i '/^SMTP_USER=/d;/^SMTP_PASS=/d' "$LOCAL_ENV" 2>/dev/null || true
-  echo "Configured Mailpit delivery in backend/.env (inbox UI: http://localhost:8025)"
-  echo "Recreate backend to load env: $COMPOSE up -d --force-recreate backend"
+  echo "Configured Mailpit in backend/.env (inbox UI: http://localhost:8025)"
+  echo ""
+  echo "IMPORTANT: recreate backend — Docker reads env only at container create time:"
+  echo "  $COMPOSE up -d --force-recreate backend"
+  echo ""
+  echo "Verify mode inside container:"
+  echo "  docker compose -f infra/docker/docker-compose.yml exec backend printenv EMAIL_DELIVERY SMTP_HOST"
   exit 0
 fi
 
@@ -83,6 +90,7 @@ if [[ "$host" == *gmail.com* ]] && [[ ${#pass} -lt 16 ]]; then
   echo "  https://myaccount.google.com/apppasswords (2-Step Verification must be on)" >&2
 fi
 
+upsert_var "$LOCAL_ENV" "EMAIL_DELIVERY" "external"
 upsert_var "$LOCAL_ENV" "SMTP_DELIVERY" "external"
 upsert_var "$LOCAL_ENV" "SMTP_HOST" "$host"
 upsert_var "$LOCAL_ENV" "SMTP_PORT" "587"

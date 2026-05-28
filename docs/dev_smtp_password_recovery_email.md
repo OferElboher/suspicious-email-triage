@@ -1,46 +1,92 @@
 # Password recovery email — Mailpit, Google OAuth, or legacy SMTP
 
-Forgot-password sends email through `backend/src/auth/email.js`. **Recommended paths:**
+Forgot-password sends email through `backend/src/auth/email.js`.
 
-| Mode | Best for | Setup |
-|------|----------|-------|
-| **Mailpit** (default) | Local dev, zero config | Included in Docker Compose — UI `http://localhost:8025` |
-| **Google OAuth** | Real Gmail inbox **without App Passwords** | [google_oauth_email_and_signin.md](google_oauth_email_and_signin.md) |
-| **Legacy SMTP** | SendGrid / corporate SMTP with username+password | `configure-dev-smtp.sh external` |
-
-**Related:** [google_oauth_email_and_signin.md](google_oauth_email_and_signin.md), [dev_admin_credentials_and_recovery.md](dev_admin_credentials_and_recovery.md), [AUTHENTICATION_AND_RBAC.md](AUTHENTICATION_AND_RBAC.md).
+**Related:** [google_oauth_email_and_signin.md](google_oauth_email_and_signin.md), [dev_admin_credentials_and_recovery.md](dev_admin_credentials_and_recovery.md), [AUTHENTICATION_AND_RBAC.md](AUTHENTICATION_AND_RBAC.md), [running_tests_guide.md](running_tests_guide.md).
 
 ---
 
-## Important: two different passwords
+## No email in Mailpit? (most common fix)
 
-Many developers confuse these — they are **not** interchangeable:
+If you click **Forgot password** but **http://localhost:8025** stays empty, the backend is almost certainly **not** in Mailpit mode.
 
-| Password | Used for | Example |
-|----------|----------|---------|
-| **Triage app password** | Signing in at `http://localhost:3001`, Django admin | `temp-admin-pswd` (dev bootstrap) |
-| **SMTP / Gmail App Password** | Authenticating to `smtp.gmail.com` when *sending* email | 16-character code from Google (e.g. `abcd efgh ijkl mnop`) |
+### Why this happens
 
-If you run:
+Docker Compose loads env files in this order:
+
+1. `backend/.env.dev` — defaults (`EMAIL_DELIVERY=mailpit`, `SMTP_HOST=mailpit`)
+2. **`backend/.env`** (gitignored) — **wins** if present
+
+If you previously ran `configure-dev-smtp.sh external` or tested Gmail OAuth, your `backend/.env` may still have:
 
 ```bash
-bash scripts/configure-dev-smtp.sh external smtp.gmail.com you@gmail.com 'temp-admin-pswd' you@gmail.com
+SMTP_DELIVERY=external
+SMTP_HOST=smtp.gmail.com
 ```
 
-Gmail will reject the login (`535 BadCredentials`). The script now **blocks** that mistake when the host is Gmail.
+In that case email goes to Gmail SMTP (and fails with bad credentials) — **nothing** reaches Mailpit.
 
-The forgot-password API **always returns HTTP 200** with a generic message (security best practice — it does not reveal whether an account exists). When SMTP fails, the backend logs the error and, in dev, prints the reset link to the console/logs so you can still test the flow.
+### Fix in three commands
+
+```bash
+cd ~/suspicious-email-triage
+bash scripts/configure-dev-smtp.sh mailpit
+DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --force-recreate backend
+```
+
+### Verify the running container
+
+```bash
+docker compose -f infra/docker/docker-compose.yml exec backend printenv EMAIL_DELIVERY SMTP_DELIVERY SMTP_HOST
+```
+
+**Expected for Mailpit:**
+
+```text
+mailpit
+mailpit
+mailpit
+```
+
+If you see `external` or `google_oauth`, run the fix above again.
+
+### Test forgot-password
+
+1. Ensure **mailpit** and **backend** containers are running.
+2. In the UI, use an email that exists in `auth_users` (your bootstrap admin email).
+3. Open `http://localhost:8025` — you should see the reset message within a few seconds.
+
+The API always returns HTTP 200 even when delivery fails; check backend logs if Mailpit is still empty:
+
+```bash
+docker compose -f infra/docker/docker-compose.yml logs backend --tail 30 | grep -i auth
+```
+
+In dev, failed delivery still logs `resetUrl=` so you can complete the flow without mail.
+
+---
+
+## Delivery modes (choose one)
+
+| Mode | Best for | Setup |
+|------|----------|-------|
+| **Mailpit** (default) | Local dev, zero config | `bash scripts/configure-dev-smtp.sh mailpit` + recreate backend |
+| **Google OAuth** | Real Gmail without App Passwords | [google_oauth_email_and_signin.md](google_oauth_email_and_signin.md) |
+| **Legacy SMTP** | SendGrid / corporate SMTP | `configure-dev-smtp.sh external` (not recommended for Gmail) |
 
 ---
 
 ## How delivery mode is chosen
 
-| `SMTP_DELIVERY` | Technology | Typical use |
-|-----------------|------------|-------------|
-| `mailpit` (default in `backend/.env.dev`) | [Mailpit](https://github.com/axllent/mailpit) SMTP sink | Zero-config local dev, automated integration tests |
-| `external` | Real SMTP provider (Gmail, SendGrid, SES, …) | Deliver to your real inbox |
+The backend reads **`EMAIL_DELIVERY`** first, then legacy **`SMTP_DELIVERY`**.
 
-Docker Compose loads `backend/.env.dev` first, then **`backend/.env`** (gitignored). Overrides in `backend/.env` win. **Recreate** the backend container after changing `.env` — env vars are injected at container creation, not on every `docker compose up -d`:
+| Value | Behavior |
+|-------|----------|
+| `mailpit` | SMTP to container `mailpit:1025` → web UI `:8025` |
+| `google_oauth` | Gmail REST API with OAuth refresh token |
+| `external` | nodemailer SMTP with `SMTP_USER` / `SMTP_PASS` |
+
+**After any change to `backend/.env`, recreate the backend container** (env is injected at create time, not on every `up -d`):
 
 ```bash
 DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --force-recreate backend
@@ -48,93 +94,37 @@ DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --for
 
 ---
 
-## Option A — Mailpit (default)
+## Option A — Mailpit (default, recommended for local dev)
 
 Mailpit is defined in `infra/docker/docker-compose.yml`:
 
-| Port | Protocol | Purpose |
-|------|----------|---------|
-| `1025` | SMTP | Backend connects with `SMTP_HOST=mailpit` |
-| `8025` | HTTP | Web UI to read captured messages |
+| Port | Purpose |
+|------|---------|
+| `1025` | SMTP (backend uses `SMTP_HOST=mailpit`) |
+| `8025` | Web inbox UI |
 
-Flow:
+Required config (in `.env.dev` or after `configure-dev-smtp.sh mailpit`):
 
-1. User submits forgot-password in the UI or `POST /auth/forgot-password`.
-2. Node creates a hashed token row in PostgreSQL `auth_password_reset_tokens`.
-3. nodemailer sends SMTP to Mailpit (no TLS, no auth in dev).
-4. Open `http://localhost:8025` → message contains `reset-password?token=...`.
+```bash
+EMAIL_DELIVERY=mailpit
+SMTP_HOST=mailpit
+SMTP_PORT=1025
+SMTP_FROM=noreply@local.test
+```
 
-Integration test: `integration_tests/test_password_reset_email.py`.
+Automated test (when stack + Mailpit are up): `integration_tests/test_password_reset_email.py`.
 
 ---
 
-## Option B — Real email (Gmail example)
+## Option B — Google OAuth (real Gmail, no App Password)
 
-### Step 1 — Create a Gmail App Password
-
-1. Enable [2-Step Verification](https://myaccount.google.com/security) on your Google account.
-2. Open [App passwords](https://myaccount.google.com/apppasswords).
-3. Create an app password for “Mail” / “Other (Triage dev)”.
-4. Copy the **16-character** password (spaces optional).
-
-### Step 2 — Configure `backend/.env`
-
-```bash
-cd ~/suspicious-email-triage
-bash scripts/configure-dev-smtp.sh external smtp.gmail.com ofer.elboher@gmail.com 'xxxx-xxxx-xxxx-xxxx' ofer.elboher@gmail.com
-```
-
-This sets:
-
-- `SMTP_DELIVERY=external`
-- `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`, `SMTP_SECURE=false` (STARTTLS — nodemailer `requireTLS`)
-- `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`
-
-### Step 3 — Recreate backend
-
-```bash
-DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --force-recreate backend
-```
-
-### Step 4 — Trigger forgot-password
-
-```bash
-curl -s -X POST http://localhost:3000/auth/forgot-password \
-  -H 'Content-Type: application/json' \
-  -d '{"email":"ofer.elboher@gmail.com"}'
-```
-
-**Expected response (always):**
-
-```json
-{"ok":true,"message":"If an account exists for that email, password reset instructions were sent."}
-```
-
-Check your Gmail inbox. If SMTP still fails, read backend logs — they include `hint=` explaining App Password vs triage password:
-
-```bash
-docker compose -f infra/docker/docker-compose.yml logs backend --tail 20
-```
-
-In dev, the reset URL is also logged when email delivery fails so you can complete the flow without mail.
-
-### Step 5 — Switch back to Mailpit
-
-```bash
-bash scripts/configure-dev-smtp.sh mailpit
-DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --force-recreate backend
-```
+See [google_oauth_email_and_signin.md](google_oauth_email_and_signin.md).
 
 ---
 
-## Implementation notes (patterns)
+## Option C — Legacy external SMTP
 
-| Pattern | Where | Why |
-|---------|-------|-----|
-| **No enumeration** | `backend/src/api/auth.js` | Same JSON response whether or not the email exists |
-| **SMTP errors swallowed at transport layer** | `backend/src/auth/email.js` | `sendMail` failures return `{ delivered: false }` instead of throwing |
-| **Dev reset URL fallback** | auth route + logger | Log `resetUrl` when Mailpit/external send fails |
-| **STARTTLS on port 587** | `buildTransport()` | Gmail and most providers expect TLS upgrade, not `secure: true` on 587 |
+Only for non-Gmail providers with username/password. For Gmail, use OAuth (Option B).
 
 ---
 
@@ -142,15 +132,15 @@ DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --for
 
 | Symptom | Cause / fix |
 |---------|-------------|
-| `{"error":"forgot_password_failed"}` (older builds) | SMTP threw before fix — upgrade and retry; should now get `ok: true` |
-| Logs show `535 BadCredentials` | Use Gmail **App Password**, not `temp-admin-pswd` |
-| Env changes ignored | Run `--force-recreate backend`, not just `up -d` |
-| Link opens wrong host | Set `APP_PUBLIC_URL` in `backend/.env` |
+| Empty Mailpit inbox | `backend/.env` overrides to `external` — run `configure-dev-smtp.sh mailpit` + `--force-recreate backend` |
+| Env changes ignored | Must use `--force-recreate backend`, not only `up -d` |
+| `535 BadCredentials` in logs | External Gmail with wrong password — switch to Mailpit or Google OAuth |
+| Forgot-password OK but no mail | Email not in `auth_users`, or wrong delivery mode — verify `printenv` above |
+| Link opens wrong host | Set `APP_PUBLIC_URL=http://localhost:3001` in `backend/.env` |
 
 ---
 
 ## Security
 
 - Never commit `backend/.env`.
-- Use provider app passwords or API keys, not primary account passwords.
-- Production SMTP belongs in your secrets manager, not this dev script.
+- Production secrets belong in a secrets manager, not local scripts.

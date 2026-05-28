@@ -6,6 +6,8 @@ This guide lists **every operation and command** for the **local dev** bootstrap
 
 **Scope:** `DEPLOYMENT_ENV=dev` only. Staging and production use separate secrets and procedures.
 
+**Password reset email not in Mailpit?** Your gitignored `backend/.env` may override delivery to external SMTP — see [dev_smtp_password_recovery_email.md](dev_smtp_password_recovery_email.md#no-email-in-mailpit-most-common-fix).
+
 ---
 
 ## Summary table

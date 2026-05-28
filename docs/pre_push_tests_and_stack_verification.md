@@ -2,7 +2,7 @@
 
 This document describes what runs on **`git push`** (Husky **pre-push** hook → `scripts/test-all.sh`) and how optional **live stack** checks behave.
 
-**Related:** [django_admin_user_management.md](django_admin_user_management.md), [windows_dev_startup_run_guide.md](windows_dev_startup_run_guide.md).
+**Related:** [running_tests_guide.md](running_tests_guide.md) (run one test or the full suite), [django_admin_user_management.md](django_admin_user_management.md), [dev_smtp_password_recovery_email.md](dev_smtp_password_recovery_email.md), [windows_dev_startup_run_guide.md](windows_dev_startup_run_guide.md).
 
 ---
 
@@ -18,6 +18,8 @@ Run manually anytime:
 ```bash
 bash scripts/test-all.sh
 ```
+
+See [running_tests_guide.md](running_tests_guide.md) for running a **single test file** or function.
 
 ---
 

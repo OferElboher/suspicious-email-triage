@@ -19,8 +19,9 @@ This folder collects human-oriented explanations of the Suspicious Email Triage 
 - If you need **login, roles, password recovery, or authenticated API examples**, read `AUTHENTICATION_AND_RBAC.md`.
 - If you need to **create, update, or delete users as admin**, read `django_admin_user_management.md`.
 - If you need to understand **Analytics & graphs** charts, read `analytics_and_graphs_guide.md`.
-- For **pre-push tests** and live stack verification, read `pre_push_tests_and_stack_verification.md`.
-- If you are confused by **older references to Django** in CI or legacy markdown, read `NODE_PYTHON_AND_LEGACY_DJANGO.md` first.
+- For **pre-push tests** and live stack verification, read [pre_push_tests_and_stack_verification.md](pre_push_tests_and_stack_verification.md).
+- To **run all tests or a single test**, read [running_tests_guide.md](running_tests_guide.md).
+- If you are confused by **older references to Django** in CI or legacy markdown, read [NODE_PYTHON_AND_LEGACY_DJANGO.md](NODE_PYTHON_AND_LEGACY_DJANGO.md) first.
 
 ## What each major document is for
 
@@ -52,6 +53,9 @@ This folder collects human-oriented explanations of the Suspicious Email Triage 
 - `implemented_beyond_requirements.md` — Notes on extra capabilities delivered beyond the baseline brief.
 - `ci_environment_configurations_and_build_commands.md` — CI-related environment notes (some sections may still reference legacy templates; see the Django clarification doc when in doubt).
 - `ci_pipeline_architecture_distributed_ai_demo.md` — CI pipeline narrative (may include aspirational or historical steps).
+- `pre_push_tests_and_stack_verification.md` — what Husky runs on push; live stack checks.
+- `running_tests_guide.md` — run full suite, one Jest file, or one pytest test.
+- `cursor_project_rules.md` — Cursor AI execution rules mirrored from `.cursorrules`.
 
 ## Short note on accuracy
 

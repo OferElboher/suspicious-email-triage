@@ -38,6 +38,7 @@ describe("sendPasswordResetEmail", () => {
   });
 
   test("external mode requires host, user, and pass", () => {
+    delete process.env.EMAIL_DELIVERY;
     process.env.SMTP_DELIVERY = "external";
     process.env.SMTP_HOST = "smtp.example.com";
     delete process.env.SMTP_USER;
@@ -57,6 +58,7 @@ describe("sendPasswordResetEmail", () => {
   });
 
   test("sendMail is called when SMTP is configured (mailpit)", async () => {
+    process.env.EMAIL_DELIVERY = "mailpit";
     process.env.SMTP_DELIVERY = "mailpit";
     process.env.SMTP_HOST = "mailpit";
     process.env.SMTP_PORT = "1025";
@@ -79,6 +81,7 @@ describe("sendPasswordResetEmail", () => {
   });
 
   test("returns delivered false without throwing when sendMail fails", async () => {
+    delete process.env.EMAIL_DELIVERY;
     process.env.SMTP_DELIVERY = "external";
     process.env.SMTP_HOST = "smtp.gmail.com";
     process.env.SMTP_USER = "user@gmail.com";
