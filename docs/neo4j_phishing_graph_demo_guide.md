@@ -121,9 +121,29 @@ LIMIT 25
 
 ## Part 5 — REST API demo (optional)
 
-Obtain a JWT by signing in through the UI or `POST /auth/login` (use your own email/password — do not commit tokens).
+Graph routes require a **JWT** from user login — not `GRAPH_INTERNAL_TOKEN` (that is only for Celery → `/graph/internal/sync`).
 
-Replace `YOUR_JWT` below with the bearer token string.
+### Option A — helper script (recommended)
+
+```bash
+bash scripts/curl-graph-api.sh YOUR_EMAIL@example.com YOUR_PASSWORD
+bash scripts/curl-graph-api.sh YOUR_EMAIL@example.com YOUR_PASSWORD /graph/campaigns
+bash scripts/curl-graph-api.sh YOUR_EMAIL@example.com YOUR_PASSWORD /graph/visualization
+```
+
+Uses **`http://localhost:3000`** (Node API). Do not curl **`http://localhost:3001`** — that is the React dev server and returns HTML.
+
+### Option B — manual curl
+
+**Login** (get JWT):
+
+```bash
+curl -sS -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"YOUR_EMAIL@example.com","password":"YOUR_PASSWORD"}'
+```
+
+Copy `"token"` from the response, then:
 
 ### Graph status
 

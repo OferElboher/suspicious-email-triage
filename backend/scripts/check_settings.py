@@ -1,3 +1,4 @@
+"""Validate Django settings for dev/staging/prod — used by CI via django-admin container."""
 from django.conf import settings
 import os
 

@@ -157,6 +157,84 @@ From WSL you can open the same URL if you run a browser inside WSL, or use `curl
 
 ---
 
+## Dev ports — API (3000) vs React UI (3001)
+
+This project runs **two HTTP servers** in local development. Mixing them up is the most common curl mistake.
+
+| Port | Process | What it serves | Example |
+|------|---------|----------------|---------|
+| **3000** | Node/Express **backend** (Docker `backend` or local `npm start` in `backend/`) | JSON REST API: `/health`, `/auth/login`, `/graph/*`, `/reviews/*` | `curl http://localhost:3000/health` |
+| **3001** | **React** dev server (`npm start` in `frontend/`) | HTML + JavaScript bundle for the browser | Open `http://localhost:3001` in Edge/Chrome |
+
+When `npm start` prints:
+
+```text
+Local: http://localhost:3001
+```
+
+that URL is **only the UI**. It does **not** implement `/graph/status`. Calling `curl http://localhost:3001/graph/status` returns the React **HTML shell** (DOCTYPE, `<div id="root">`), not JSON.
+
+The frontend talks to the API using `REACT_APP_API_URL` (default `http://localhost:3000`) — see [frontend_backend_integration_guide.md](frontend_backend_integration_guide.md).
+
+---
+
+## Authentication — JWT vs worker internal token
+
+Two different secrets are used for two different purposes. **Do not swap them.**
+
+| Credential | Used for | HTTP pattern |
+|------------|----------|--------------|
+| **JWT** (from login) | Human users and curl demos calling `/graph/status`, `/graph/campaigns`, etc. | `Authorization: Bearer <JWT from POST /auth/login>` |
+| **`GRAPH_INTERNAL_TOKEN`** | Celery worker only — sync after analysis | `POST /graph/internal/sync/:id` with header `X-Graph-Internal-Token` |
+
+If you send `Authorization: Bearer <GRAPH_INTERNAL_TOKEN>` to `/graph/status`, the API responds with:
+
+```json
+{"error":"invalid_token"}
+```
+
+That is expected: the internal token is **not** a JWT signed with `JWT_SECRET`.
+
+### Recommended: helper script (login + graph call)
+
+From the repository root (use **your** admin email and password — never commit them):
+
+```bash
+bash scripts/curl-graph-api.sh YOUR_EMAIL@example.com YOUR_PASSWORD
+bash scripts/curl-graph-api.sh YOUR_EMAIL@example.com YOUR_PASSWORD /graph/campaigns
+```
+
+The script POSTs to `http://localhost:3000/auth/login`, extracts the JWT, then calls the graph endpoint.
+
+### Manual curl (two steps)
+
+**Step 1 — login** (port **3000**):
+
+```bash
+curl -sS -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"YOUR_EMAIL@example.com","password":"YOUR_PASSWORD"}'
+```
+
+Copy the `"token"` field from the JSON response.
+
+**Step 2 — graph status**:
+
+```bash
+curl -sS -H "Authorization: Bearer PASTE_JWT_HERE" \
+  http://localhost:3000/graph/status
+```
+
+**Expected:** `{"enabled":true,"service":"neo4j-phishing-graph"}` (or `"enabled":false` if Neo4j is disabled).
+
+**Public health check** (no JWT required):
+
+```bash
+curl -sS http://localhost:3000/health
+```
+
+---
+
 ## Step 4 — Connect the triage application to Neo4j
 
 The React app does **not** talk to Neo4j directly. Flow:
@@ -172,13 +250,7 @@ Ensure:
 2. `neo4j`, `backend`, and `ai-celery` containers are running.
 3. Your signed-in user has permission **`graph.read`** (admin, analyst, manager, developer, and viewer roles include it by default after auth seed).
 
-Check API status (replace `YOUR_JWT` with a token from browser devtools or login response):
-
-```bash
-curl -s -H "Authorization: Bearer YOUR_JWT" http://localhost:3000/graph/status
-```
-
-**Expected:** JSON with `"enabled": true`.
+Use [scripts/curl-graph-api.sh](../scripts/curl-graph-api.sh) or the **JWT** steps in [Dev ports — API (3000) vs React UI (3001)](#dev-ports--api-3000-vs-react-ui-3001) above — not `GRAPH_INTERNAL_TOKEN`.
 
 ---
 
@@ -186,6 +258,8 @@ curl -s -H "Authorization: Bearer YOUR_JWT" http://localhost:3000/graph/status
 
 | Problem | What to check |
 |---------|----------------|
+| `{"error":"invalid_token"}` on `/graph/status` | You likely used `GRAPH_INTERNAL_TOKEN` instead of a **JWT** from `/auth/login`, or an expired token |
+| curl to `:3001/graph/*` returns HTML | Wrong port — use **3000** for API; **3001** is React only |
 | `Connection refused` on `:7474` or `:7687` | Docker Desktop running? Container up? `docker compose ps neo4j` |
 | Authentication failed in Browser | Username/password must match **your local** `.env.dev` / compose `NEO4J_AUTH`, not an old password |
 | Empty graph in the React UI | Submit reviews with URLs; wait for Celery to finish; see [neo4j_phishing_graph_demo_guide.md](neo4j_phishing_graph_demo_guide.md) |

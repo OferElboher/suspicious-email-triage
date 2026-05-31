@@ -15,6 +15,7 @@ This folder collects human-oriented explanations of the Suspicious Email Triage 
 - For **Neo4j phishing relationship graph (campaigns, shared indicators, visualization)**, read [neo4j_phishing_graph_guide.md](neo4j_phishing_graph_guide.md).
 - To **install Neo4j on WSL, configure env vars, and connect from Windows 11**, read [neo4j_wsl_windows_setup_guide.md](neo4j_wsl_windows_setup_guide.md).
 - To **demo Neo4j graph features step by step**, read [neo4j_phishing_graph_demo_guide.md](neo4j_phishing_graph_demo_guide.md).
+- For a **production roadmap and feature backlog**, read [TBD.md](TBD.md).
 - To **manually reset an admin password on a dev workstation**, read `dev_manual_admin_password_reset.md`.
 - For **Kafka event streaming** (consumer groups, offsets, DLQ), read `kafka_event_stream_guide.md`.
 - For **Prefect/dbt orchestration demos**, read `data_orchestration_prefect_dbt_demo.md`.
@@ -48,6 +49,7 @@ This folder collects human-oriented explanations of the Suspicious Email Triage 
 - `neo4j_phishing_graph_guide.md` — Neo4j graph model (sender/review/url/domain/campaign), sync flow, API, React visualization, Docker.
 - `neo4j_wsl_windows_setup_guide.md` — Start Neo4j in WSL Docker, `.env` variable meanings (no secrets in doc), Neo4j Browser and DBeaver on Windows 11.
 - `neo4j_phishing_graph_demo_guide.md` — Hands-on demo: submit reviews, campaigns, UI tab, Cypher, REST examples.
+- `TBD.md` — Possible improvements for production maturity and expected product features (budget-conscious).
 - `kafka_event_stream_guide.md` — topic design, consumer groups, offsets, DLQ reliability patterns.
 - `data_orchestration_prefect_dbt_demo.md` — Prefect flow + dbt model demos over `review_stats_events`.
 - `dbeaver_auth_tables_and_unified_log_viewing.md` — Refresh DBeaver for `auth_*` tables; view/search unified `merged.log` (lnav, glogg, API).
@@ -61,6 +63,7 @@ This folder collects human-oriented explanations of the Suspicious Email Triage 
 - `ci_pipeline_architecture_distributed_ai_demo.md` — CI pipeline narrative (may include aspirational or historical steps).
 - `pre_push_tests_and_stack_verification.md` — what Husky runs on push; live stack checks.
 - `running_tests_guide.md` — run full suite, one Jest file, or one pytest test.
+- `TBD.md` — production maturity roadmap and feature backlog (budget-conscious).
 - `cursor_project_rules.md` — Cursor AI execution rules mirrored from `.cursorrules`.
 
 ## Short note on accuracy

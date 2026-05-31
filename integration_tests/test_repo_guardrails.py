@@ -120,5 +120,34 @@ def test_neo4j_setup_and_demo_docs_exist():
     assert "neo4j_phishing_graph_demo_guide.md" in readme
     setup = (ROOT / "docs/neo4j_wsl_windows_setup_guide.md").read_text(encoding="utf-8")
     assert "NEO4J_PASSWORD" in setup
+    assert "3000" in setup and "3001" in setup
+    assert "GRAPH_INTERNAL_TOKEN" in setup
+    assert "invalid_token" in setup
     assert "triage-neo4j-dev" not in setup
     assert "dev-graph-sync-token" not in setup
+
+
+def test_curl_graph_api_script_documents_ports():
+    """Helper script must target API port 3000 and warn about JWT vs internal token."""
+    script = (ROOT / "scripts/curl-graph-api.sh").read_text(encoding="utf-8")
+    assert "localhost:3000" in script
+    assert "3001" in script
+    assert "GRAPH_INTERNAL_TOKEN" in script
+
+
+def test_ci_workflow_uses_node24_for_actions():
+    """GitHub Actions must opt into Node 24 for JavaScript actions (Node 20 deprecation)."""
+    ci = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    assert "FORCE_JAVASCRIPT_ACTIONS_TO_NODE24" in ci
+    assert "django-admin" in ci
+    assert "lint-all.sh" in ci
+    assert "test-all.sh" in ci
+    # Settings validation must not run Python inside the Node-only backend image.
+    assert "backend \\\n            python backend/scripts/check_settings.py" not in ci
+
+
+def test_tbd_roadmap_doc_indexed():
+    """Production roadmap doc must be linked from docs/README.md."""
+    readme = (ROOT / "docs/README.md").read_text(encoding="utf-8")
+    assert (ROOT / "docs/TBD.md").is_file()
+    assert "TBD.md" in readme

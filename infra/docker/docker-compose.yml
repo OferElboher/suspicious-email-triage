@@ -7,6 +7,7 @@ services:
     container_name: triage-mongo
     image: mongo:6
     ports:
+      # Host 27018 (not 27017) avoids clashing with a MongoDB install on WSL/Windows.
       - "27018:27017"
     restart: unless-stopped
 
@@ -40,7 +41,9 @@ services:
     environment:
       - NEO4J_AUTH=neo4j/triage-neo4j-dev
     ports:
+      # 7474 = Neo4j Browser (HTTP web UI for Cypher + graph visualization).
       - "7474:7474"
+      # 7687 = Bolt (binary protocol used by neo4j-driver, DBeaver, and CLI tools).
       - "7687:7687"
     volumes:
       - neo4j-data:/data
@@ -67,6 +70,7 @@ services:
       - --advertise-kafka-addr
       - PLAINTEXT://redpanda:9092
     ports:
+      # Host 19092 maps to internal Kafka API 9092 (avoids conflict with other Kafka on 9092).
       - "19092:9092"
     restart: unless-stopped
 
@@ -77,6 +81,7 @@ services:
       context: ../../
       dockerfile: backend/Dockerfile
     ports:
+      # 3000 = REST API (JWT auth, /reviews, /graph, /metrics). React dev server uses 3001 separately.
       - "3000:3000"
     env_file:
       # Profile env: defaults to backend/.env.dev; set DEPLOYMENT_ENV=staging|prod to switch.
@@ -100,7 +105,9 @@ services:
     container_name: triage-mailpit
     image: axllent/mailpit:v1.21
     ports:
+      # 1025 = SMTP (backend sends mail here in mailpit delivery mode).
       - "1025:1025"
+      # 8025 = Mailpit web inbox UI (read captured emails in the browser).
       - "8025:8025"
     restart: unless-stopped
 

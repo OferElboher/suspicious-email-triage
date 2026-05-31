@@ -106,6 +106,15 @@ Production should be deployed by controlled automation, not by hand-edited local
 DEPLOYMENT_ENV=prod docker compose -f infra/docker/docker-compose.yml build
 ```
 
+## GitHub Actions CI (`.github/workflows/ci.yml`)
+
+Pull requests and pushes to `main` run:
+
+1. **Settings validation** — Django settings via the **`django-admin`** Python image (not the Node `backend` image).
+2. **Lint and tests** — `bash scripts/lint-all.sh` and `bash scripts/test-all.sh` (same as local pre-push).
+
+The workflow sets `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` because GitHub Actions is deprecating Node 20 for JavaScript-based actions (for example `actions/checkout@v4`).
+
 ## Django checks (optional, when that tree is active)
 
 The repository contains Django files under `backend/config`, `backend/core`, and `backend/health`. Run Django checks only after the Python/Django dependency set is installed.
