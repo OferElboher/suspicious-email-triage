@@ -265,6 +265,7 @@ Use [scripts/curl-graph-api.sh](../scripts/curl-graph-api.sh) or the **JWT** ste
 | Empty graph in the React UI | Submit reviews with URLs; wait for Celery to finish; see [neo4j_phishing_graph_demo_guide.md](neo4j_phishing_graph_demo_guide.md) |
 | Backend logs `connect failed — graph features degraded` | Wrong `NEO4J_URI` inside container (should use hostname `neo4j`, not `localhost`, in backend env) |
 | Changed `.env` but no effect | Recreate containers with `--force-recreate` |
+| Red error `graph_campaigns_failed` in Phishing graph tab | Usually fixed in current code (Neo4j LIMIT integer bug). Ensure `triage-neo4j` is running; recreate backend: `docker compose up -d --force-recreate backend` |
 
 ---
 

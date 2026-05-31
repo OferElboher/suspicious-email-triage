@@ -65,6 +65,49 @@ bash scripts/bootstrap-auth-admin.sh
 
 ---
 
+## Part 2.5 — Two web servers: why you use BOTH Docker AND `npm start` (read this if ports confuse you)
+
+When you follow the steps below, you are **doing the right thing**. This project intentionally runs **two separate programs** on **two different port numbers**.
+
+Think of it like a restaurant:
+
+| Role | Real-world analogy | This project | Port | How you start it |
+|------|-------------------|--------------|------|------------------|
+| **Kitchen** | Cooks food, stores recipes, talks to suppliers | **Node/Express API** (`triage-backend` container) | **3000** | Docker: `docker compose up -d backend ...` |
+| **Dining room** | Menus and tables for customers | **React web UI** (Create React App) | **3001** | Host: `REACT_APP_API_URL=http://localhost:3000 PORT=3001 npm start --prefix frontend` |
+
+### What happens when you browse `http://localhost:3001`
+
+1. Your browser loads the **React app** (HTML + JavaScript) from port **3001**.
+2. When you sign in, submit a review, or open **Phishing graph**, the JavaScript **automatically calls the API on port 3000** in the background (`REACT_APP_API_URL=http://localhost:3000`).
+3. You **do not** need to open port 3000 in the browser for normal work — the UI does it for you.
+
+### Your exact commands (correct workflow)
+
+```bash
+# Step 1 — start API, databases, workers (includes backend on port 3000 inside Docker)
+DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --build
+
+# Step 2 — start the web UI on port 3001 (in the same or another terminal)
+REACT_APP_API_URL=http://localhost:3000 PORT=3001 npm start --prefix frontend
+```
+
+Then open **`http://localhost:3001`** in the browser. That is the intended address.
+
+### When would you use port 3000 directly?
+
+| Use case | Example |
+|----------|---------|
+| Health check | `curl http://localhost:3000/health` |
+| Login API / scripts | `bash scripts/curl-graph-api.sh EMAIL PASSWORD` |
+| Debugging with curl/Postman | `http://localhost:3000/graph/status` with a JWT |
+
+**Do not** expect `curl http://localhost:3001/graph/status` to return JSON — port 3001 only serves the React HTML shell.
+
+More detail: [frontend_backend_integration_guide.md](frontend_backend_integration_guide.md), [neo4j_wsl_windows_setup_guide.md](neo4j_wsl_windows_setup_guide.md).
+
+---
+
 ## Part 3 — Local development: recommended multi-terminal layout
 
 These commands assume the repository root: `~/suspicious-email-triage` (adjust if yours differs).
@@ -138,6 +181,7 @@ Expected output:
 |-----|-------------|
 | Triage workspace | `http://localhost:3001/` |
 | Analytics & graphs | `http://localhost:3001/#analytics` |
+| Phishing graph (Neo4j) | `http://localhost:3001/#graph` |
 | Django user admin | `http://localhost:8000/admin/` (admin role; also via **User administration** button) |
 
 You can bookmark or share these URLs; after sign-in, opening one lands on that tab directly.

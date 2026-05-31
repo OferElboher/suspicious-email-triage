@@ -11,7 +11,8 @@ RUN pip install --no-cache-dir -r /app/backend/requirements-django.txt
 
 COPY backend /app/backend
 
-ENV PYTHONPATH=/app
+# triage_auth lives under /app/backend — required for DJANGO_SETTINGS_MODULE import in CI scripts.
+ENV PYTHONPATH=/app/backend
 ENV DJANGO_SETTINGS_MODULE=triage_auth.django_admin_settings
 ENV ENVIRONMENT=dev
 ENV DJANGO_ADMIN_SQLITE_PATH=/app/backend/data/django_admin.sqlite3

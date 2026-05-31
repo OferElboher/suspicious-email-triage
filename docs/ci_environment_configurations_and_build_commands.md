@@ -110,10 +110,10 @@ DEPLOYMENT_ENV=prod docker compose -f infra/docker/docker-compose.yml build
 
 Pull requests and pushes to `main` run:
 
-1. **Settings validation** — Django settings via the **`django-admin`** Python image (not the Node `backend` image).
+1. **Settings validation** — `python backend/scripts/check_settings.py` inside the **`django-admin`** Python image (with explicit `django.setup()` and `sys.path` bootstrap for `triage_auth`).
 2. **Lint and tests** — `bash scripts/lint-all.sh` and `bash scripts/test-all.sh` (same as local pre-push).
 
-The workflow sets `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` because GitHub Actions is deprecating Node 20 for JavaScript-based actions (for example `actions/checkout@v4`).
+The workflow uses **`actions/checkout@v5`**, which targets Node.js 24 on GitHub runners and avoids Node 20 deprecation warnings from older action versions.
 
 ## Django checks (optional, when that tree is active)
 

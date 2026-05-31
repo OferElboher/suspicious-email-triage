@@ -212,6 +212,7 @@ docker compose -f infra/docker/docker-compose.yml exec neo4j cypher-shell -u neo
 | Graph never updates | Check `ai-celery` logs; verify `NEO4J_ENABLED` and internal sync URL |
 | 403 on `/graph/*` | User missing `graph.read`; sign in as admin/analyst |
 | Verdict always benign | Set `DISABLE_LLM=false` and use mock LLM, or rely on rule engine keywords |
+| Red error `graph_campaigns_failed` on `#graph` | Rebuild/recreate backend after pulling fixes: `docker compose up -d --build --force-recreate backend`. Confirm Neo4j is up: `docker compose ps neo4j` |
 
 ---
 

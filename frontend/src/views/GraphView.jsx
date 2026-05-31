@@ -37,17 +37,44 @@ export default function GraphView() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
-  /** Load visualization + campaign list from authenticated /graph API routes. */
+  /** Load visualization + campaign list; tolerate partial failure so one bad query does not blank the whole page. */
   const refresh = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const [viz, camp] = await Promise.all([
+      const [vizResult, campResult] = await Promise.allSettled([
         getJson("/graph/visualization"),
         getJson("/graph/campaigns"),
       ]);
-      setGraph(viz);
-      setCampaigns(camp.campaigns || []);
+
+      if (vizResult.status === "fulfilled") {
+        setGraph(vizResult.value);
+      } else {
+        setGraph({ nodes: [], edges: [], stats: {} });
+      }
+
+      if (campResult.status === "fulfilled") {
+        setCampaigns(campResult.value.campaigns || []);
+      } else {
+        setCampaigns([]);
+      }
+
+      const failures = [vizResult, campResult].filter((r) => r.status === "rejected");
+      if (failures.length === 2) {
+        const msg = failures[0].reason?.message || "Failed to load graph";
+        setError(
+          msg === "graph_campaigns_failed"
+            ? "Could not load graph data. Is Neo4j running? Try: docker compose ps neo4j"
+            : msg
+        );
+      } else if (failures.length === 1) {
+        const partial = failures[0].reason?.message || "partial load failed";
+        setError(
+          partial === "graph_campaigns_failed"
+            ? "Campaign list failed to load (visualization may still show). Refresh after Neo4j is healthy."
+            : `Partial load: ${partial}`
+        );
+      }
     } catch (err) {
       setError(err.message || "Failed to load graph");
       setGraph({ nodes: [], edges: [], stats: {} });

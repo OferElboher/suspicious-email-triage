@@ -136,14 +136,28 @@ def test_curl_graph_api_script_documents_ports():
 
 
 def test_ci_workflow_uses_node24_for_actions():
-    """GitHub Actions must opt into Node 24 for JavaScript actions (Node 20 deprecation)."""
+    """GitHub Actions must use checkout v5+ and validate settings without Node backend image."""
     ci = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
-    assert "FORCE_JAVASCRIPT_ACTIONS_TO_NODE24" in ci
+    assert "actions/checkout@v5" in ci
     assert "django-admin" in ci
     assert "lint-all.sh" in ci
     assert "test-all.sh" in ci
-    # Settings validation must not run Python inside the Node-only backend image.
+    assert "python backend/scripts/check_settings.py" in ci
     assert "backend \\\n            python backend/scripts/check_settings.py" not in ci
+
+
+def test_check_settings_bootstraps_python_path():
+    """check_settings.py must import triage_auth when run standalone in CI."""
+    src = (ROOT / "backend/scripts/check_settings.py").read_text(encoding="utf-8")
+    assert "sys.path.insert" in src
+    assert "triage_auth" in src or "_BACKEND_DIR" in src
+
+
+def test_neo4j_client_converts_limit_integers():
+    """Neo4j LIMIT rejects JS floats — driver params must use neo4j.int."""
+    src = (ROOT / "backend/src/graph/neo4jClient.js").read_text(encoding="utf-8")
+    assert "toNeo4jParams" in src
+    assert "neo4j.int" in src
 
 
 def test_tbd_roadmap_doc_indexed():

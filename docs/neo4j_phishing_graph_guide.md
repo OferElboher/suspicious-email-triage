@@ -174,6 +174,7 @@ Try features manually: [neo4j_phishing_graph_demo_guide.md](neo4j_phishing_graph
 | Empty graph | Neo4j not running or `NEO4J_ENABLED=false` | Start `neo4j` container; check backend logs |
 | Campaigns never appear | Fewer than 2 risky reviews share a domain | Submit two reviews with the same phishing URL host |
 | Celery never updates graph | Wrong `BACKEND_INTERNAL_URL` or internal token | Recreate `ai-celery` after env changes; see [neo4j_wsl_windows_setup_guide.md](neo4j_wsl_windows_setup_guide.md) |
+| Red `graph_campaigns_failed` in UI | Neo4j down or backend needs rebuild after graph fixes | `docker compose ps neo4j`; `docker compose up -d --force-recreate backend` |
 
 Hands-on demo script: [neo4j_phishing_graph_demo_guide.md](neo4j_phishing_graph_demo_guide.md).
 

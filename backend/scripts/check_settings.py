@@ -1,13 +1,28 @@
 """Validate Django settings for dev/staging/prod — used by CI via django-admin container."""
-from django.conf import settings
 import os
+import sys
+from pathlib import Path
+
+# Standalone execution (CI: python backend/scripts/check_settings.py) must add backend/ to path
+# the same way manage.py does — PYTHONPATH=/app alone does not expose triage_auth.
+_BACKEND_DIR = Path(__file__).resolve().parent.parent
+if str(_BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(_BACKEND_DIR))
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "triage_auth.django_admin_settings")
+
+import django
+
+django.setup()
+
+from django.conf import settings
 
 
 # Prevent silent misconfiguration acceptance.
 env = settings.ENVIRONMENT
 assert env in {"dev", "staging", "prod"}, f"Invalid ENVIRONMENT: {env}"
 
-# Enforce basic onfiguration-common safety.
+# Enforce basic configuration safety.
 if env == "dev":
     assert settings.DEBUG is True
 else:

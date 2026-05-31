@@ -51,6 +51,19 @@ async function getDriver() {
   }
 }
 
+/** Convert plain JS numbers to neo4j-driver Integer types (LIMIT rejects 50.0 floats). */
+function toNeo4jParams(params = {}) {
+  const normalized = {};
+  for (const [key, value] of Object.entries(params)) {
+    if (typeof value === "number" && Number.isFinite(value)) {
+      normalized[key] = neo4j.int(Math.trunc(value));
+    } else {
+      normalized[key] = value;
+    }
+  }
+  return normalized;
+}
+
 /** Run a read transaction; returns records array or [] when Neo4j is unavailable. */
 async function runRead(cypher, params = {}) {
   const active = await getDriver();
@@ -59,8 +72,11 @@ async function runRead(cypher, params = {}) {
   }
   const session = active.session({ defaultAccessMode: neo4j.session.READ });
   try {
-    const result = await session.executeRead((tx) => tx.run(cypher, params));
+    const result = await session.executeRead((tx) => tx.run(cypher, toNeo4jParams(params)));
     return result.records;
+  } catch (err) {
+    logger.error("neo4j", "read query failed", { error: err.message });
+    throw err;
   } finally {
     await session.close();
   }
@@ -74,7 +90,10 @@ async function runWrite(cypher, params = {}) {
   }
   const session = active.session({ defaultAccessMode: neo4j.session.WRITE });
   try {
-    return await session.executeWrite((tx) => tx.run(cypher, params));
+    return await session.executeWrite((tx) => tx.run(cypher, toNeo4jParams(params)));
+  } catch (err) {
+    logger.error("neo4j", "write query failed", { error: err.message });
+    throw err;
   } finally {
     await session.close();
   }
@@ -104,4 +123,5 @@ module.exports = {
   runWrite,
   closeDriver,
   resetGraph,
+  toNeo4jParams,
 };

@@ -1,13 +1,6 @@
 # CI — validate Docker builds, Django admin settings, lint, and the full test suite.
-#
-# FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: GitHub is deprecating Node 20 for Actions-hosted
-# JavaScript (e.g. actions/checkout). Opt into Node 24 now to avoid runner failures.
-# See: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
 
 name: CI
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 on:
   push:
@@ -21,33 +14,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # checkout@v5 runs on Node 24 natively (avoids Node 20 deprecation warnings on v4).
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Build django-admin image
         run: |
           set -e
           docker compose -f infra/docker/docker-compose.yml build django-admin
-
-      - name: Create backend/.env.dev for CI
-        run: |
-          set -e
-          mkdir -p backend
-          printf "%s\n" \
-            "ENVIRONMENT=dev" \
-            "DJANGO_SECRET_KEY=ci-dev-secret" \
-            "ALLOWED_HOSTS=localhost,127.0.0.1" \
-            > backend/.env.dev
-
-      - name: Create backend/.env.staging for CI
-        run: |
-          set -e
-          mkdir -p backend
-          printf "%s\n" \
-            "ENVIRONMENT=staging" \
-            "DJANGO_SECRET_KEY=ci-staging-secret" \
-            "ALLOWED_HOSTS=localhost,127.0.0.1" \
-            > backend/.env.staging
 
       - name: Validate DEV Django settings
         run: |
@@ -77,12 +51,12 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
           cache-dependency-path: |
             backend/package-lock.json
