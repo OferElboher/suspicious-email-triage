@@ -1,0 +1,12 @@
+apiVersion: v2
+name: triage
+description: Helm chart for Suspicious Email Triage (API, UI, workers, data stores)
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - email
+  - triage
+  - security
+maintainers:
+  - name: triage-team

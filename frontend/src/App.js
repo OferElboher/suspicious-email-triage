@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import TriageApp from "./TriageApp";
 import LoginView, { ForgotPasswordView, ResetPasswordView } from "./views/AuthViews";
+import ThemeSelector from "./components/ThemeSelector";
 import "./styles/triage.css";
+import "./styles/themes.css";
 
 function readResetToken() {
   const params = new URLSearchParams(window.location.search);
@@ -32,20 +35,39 @@ function AuthenticatedShell() {
 
   if (!isAuthenticated) {
     if (authScreen === "forgot") {
-      return <ForgotPasswordView onBackToLogin={() => setAuthScreen("login")} />;
+      return (
+        <>
+          <div className="auth-theme-bar">
+            <ThemeSelector />
+          </div>
+          <ForgotPasswordView onBackToLogin={() => setAuthScreen("login")} />
+        </>
+      );
     }
     if (authScreen === "reset") {
       return (
-        <ResetPasswordView
-          token={resetToken}
-          onComplete={() => {
-            window.history.replaceState({}, "", window.location.pathname);
-            setAuthScreen("login");
-          }}
-        />
+        <>
+          <div className="auth-theme-bar">
+            <ThemeSelector />
+          </div>
+          <ResetPasswordView
+            token={resetToken}
+            onComplete={() => {
+              window.history.replaceState({}, "", window.location.pathname);
+              setAuthScreen("login");
+            }}
+          />
+        </>
       );
     }
-    return <LoginView onForgotPassword={() => setAuthScreen("forgot")} />;
+    return (
+      <>
+        <div className="auth-theme-bar">
+          <ThemeSelector />
+        </div>
+        <LoginView onForgotPassword={() => setAuthScreen("forgot")} />
+      </>
+    );
   }
 
   return <TriageApp />;
@@ -54,7 +76,9 @@ function AuthenticatedShell() {
 export default function App() {
   return (
     <AuthProvider>
-      <AuthenticatedShell />
+      <ThemeProvider>
+        <AuthenticatedShell />
+      </ThemeProvider>
     </AuthProvider>
   );
 }

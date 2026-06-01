@@ -10,6 +10,7 @@ import { useReviewPoller } from "./hooks/useReviewPoller";
 import AnalyticsView from "./views/AnalyticsView";
 import GraphView from "./views/GraphView";
 import SimulationPanel from "./views/SimulationPanel";
+import ThemeSelector from "./components/ThemeSelector";
 import { djangoAdminUrl } from "./lib/appUrls";
 
 /** Page size for the dashboard list; kept aligned with backend pagination limits. */
@@ -145,6 +146,7 @@ export default function TriageApp() {
         </div>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
           <div className="toolbar">
+            <ThemeSelector />
             <span className="pill">Authenticated workspace</span>
             {hasRole("admin") && (
               <a

@@ -1,0 +1,72 @@
+{{- if .Values.backend.enabled }}
+# Backend Deployment — stateless Express API; scale horizontally behind a Service.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "triage.fullname" . }}-backend
+  labels:
+    {{- include "triage.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  replicas: {{ .Values.backend.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: backend
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        {{- include "triage.labels" . | nindent 8 }}
+        app.kubernetes.io/component: backend
+    spec:
+      containers:
+        - name: backend
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          ports:
+            - containerPort: 3000
+              name: http
+          envFrom:
+            - configMapRef:
+                name: {{ include "triage.fullname" . }}-config
+            - secretRef:
+                name: {{ include "triage.fullname" . }}-secrets
+          # livenessProbe: is the Node process responding? (no dependency I/O)
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.backend.probes.livenessPath }}
+              port: http
+            initialDelaySeconds: {{ .Values.backend.probes.initialDelaySeconds }}
+            periodSeconds: {{ .Values.backend.probes.periodSeconds }}
+          # readinessProbe: can this pod serve traffic? (Mongo/Postgres/Redis/Neo4j checks)
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.backend.probes.readinessPath }}
+              port: http
+            initialDelaySeconds: {{ .Values.backend.probes.initialDelaySeconds }}
+            periodSeconds: {{ .Values.backend.probes.periodSeconds }}
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}
+          volumeMounts:
+            - name: logs
+              mountPath: /var/log/triage
+      volumes:
+        - name: logs
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "triage.fullname" . }}-backend
+  labels:
+    {{- include "triage.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.backend.service.type }}
+  selector:
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - port: {{ .Values.backend.service.port }}
+      targetPort: http
+      name: http
+{{- end }}

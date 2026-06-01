@@ -40,7 +40,7 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 
 ---
 
-### 1.2 Health checks and uptime (P0)
+### 1.2 Health checks and uptime (P0) — **implemented (free dev path)**
 
 **User value:** The app recovers automatically when a container crashes; load balancers stop sending traffic to broken instances.
 
@@ -52,11 +52,21 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 
 **Tech pattern:** HTTP probes, Docker `HEALTHCHECK`, optional `@godaddy/terminus` graceful shutdown in Node.
 
-**Free path:** Already have `GET /health`; extend locally with Docker healthcheck in compose — no cloud cost.
+**Implemented (dev/staging free path):**
+
+- `GET /health/live` — liveness (process up, no dependency I/O)
+- `GET /health/ready` — readiness (Mongo, Postgres, Redis, Neo4j checks)
+- `GET /health` — backward-compatible summary
+- Docker Compose `healthcheck` on `backend` service (`infra/docker/docker-compose.yml`)
+- Kubernetes liveness/readiness probes in Helm chart (`deploy/helm/triage/templates/backend-deployment.yaml`)
+
+**Guide:** [health_checks_and_uptime_guide.md](health_checks_and_uptime_guide.md)
+
+**Remaining (paid / later):** PagerDuty/on-call integration, external uptime monitors (Pingdom, etc.).
 
 ---
 
-### 1.3 Central logging and search (P0–P1)
+### 1.3 Central logging and search (P0–P1) — **implemented (free dev path)**
 
 **User value:** SOC lead searches all services in one place (“show failed graph sync last hour”).
 
@@ -67,11 +77,19 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 
 **Tech pattern:** OpenSearch, Grafana Loki, Datadog Logs, CloudWatch Logs; ship `merged.log` or stdout.
 
-**Free path:** Local `merged.log` + `GET /logs/search` API (already in dev); **lnav** or grep on WSL — see [dbeaver_auth_tables_and_unified_log_viewing.md](dbeaver_auth_tables_and_unified_log_viewing.md).
+**Implemented (dev free path):**
+
+- Unified JSON-lines `merged.log` (see logger module)
+- `GET /logs/search` — keyword/topic/time filter (`logs.read` permission)
+- `GET /ops/logs/summary` — topic/level counts for dashboards
+
+**Guides:** [central_logging_guide.md](central_logging_guide.md), [dbeaver_auth_tables_and_unified_log_viewing.md](dbeaver_auth_tables_and_unified_log_viewing.md)
+
+**Remaining (paid / later):** OpenSearch/Loki cluster, retention policies in cloud, log shipping sidecars in K8s.
 
 ---
 
-### 1.4 Metrics and alerting (P1)
+### 1.4 Metrics and alerting (P1) — **implemented (free dev path)**
 
 **User value:** Team gets paged when queue backlog grows or LLM errors spike.
 
@@ -82,7 +100,16 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 
 **Tech pattern:** Prometheus + Grafana, or Datadog/New Relic APM.
 
-**Free path:** Grafana Cloud free tier; local Prometheus in Docker for demos.
+**Implemented (dev free path):**
+
+- In-process counters (`backend/src/lib/appMetrics.js`) — HTTP requests, 5xx, reviews created, graph sync failures
+- `GET /ops/prometheus` — Prometheus text scrape (no auth, standard pattern)
+- `GET /ops/alerts` — JSON alert evaluation from readiness + thresholds (`metrics.read`)
+- Env tuning: `ALERT_MAX_GRAPH_SYNC_FAILURES`, `ALERT_MAX_HTTP_ERRORS`
+
+**Guide:** [metrics_and_alerting_guide.md](metrics_and_alerting_guide.md)
+
+**Remaining (paid / later):** Grafana dashboards, DLQ Kafka alert rules, p95 latency histograms, PagerDuty routing.
 
 ---
 

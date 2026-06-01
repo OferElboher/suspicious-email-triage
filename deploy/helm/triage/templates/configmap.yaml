@@ -1,0 +1,16 @@
+# Non-secret configuration injected as environment variables via ConfigMap.
+# Pattern: twelve-factor app — config in the environment, not baked into images.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "triage.fullname" . }}-config
+  labels:
+    {{- include "triage.labels" . | nindent 4 }}
+data:
+  DEPLOYMENT_ENV: {{ .Values.global.deploymentEnv | quote }}
+  LOG_LEVEL: {{ .Values.config.logLevel | quote }}
+  NEO4J_ENABLED: {{ .Values.config.neo4jEnabled | quote }}
+  KAFKA_BROKERS: {{ .Values.config.kafkaBrokers | quote }}
+  REDIS_HOST: {{ printf "%s-redis" (include "triage.fullname" .) | quote }}
+  MONGO_URI: {{ printf "mongodb://%s-mongo:27017/triage" (include "triage.fullname" .) | quote }}
+  STATS_PG_URL: {{ printf "postgresql://%s:$(POSTGRES_PASSWORD)@%s-postgres:5432/%s" .Values.postgres.user (include "triage.fullname" .) .Values.postgres.database | quote }}

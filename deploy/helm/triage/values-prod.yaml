@@ -1,0 +1,43 @@
+# Production overrides — HA API, external managed databases, strict resources.
+global:
+  deploymentEnv: prod
+
+backend:
+  replicaCount: 3
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 12
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+frontend:
+  replicaCount: 3
+
+mongo:
+  enabled: false
+
+postgres:
+  enabled: false
+
+redis:
+  enabled: false  # ElastiCache / managed Redis
+
+neo4j:
+  enabled: false  # Neo4j Aura or dedicated cluster
+
+celeryWorker:
+  replicaCount: 2
+
+ingress:
+  enabled: true
+  host: triage.example.com
+  tls: true
+
+config:
+  logLevel: warn

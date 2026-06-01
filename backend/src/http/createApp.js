@@ -1,4 +1,6 @@
-/** Express app factory: middleware + routes only (no listen). */
+/**
+ * Express app factory: middleware + routes only (no listen).
+ */
 const express = require("express");
 const cors = require("cors");
 const logger = require("../lib/logger");
@@ -7,15 +9,18 @@ const metricsRoutes = require("../api/metrics");
 const graphRoutes = require("../api/graph");
 const graphInternalRoutes = require("../api/graphInternal");
 const authRoutes = require("../api/auth");
+const healthRoutes = require("../api/health");
+const opsRoutes = require("../api/ops");
 const devRoutes = require("../dev/devRoutes");
 const { searchLogs } = require("../lib/logSearch");
 const { enqueueAfterCreate } = require("../services/reviewPipeline");
 const { authenticate, requirePermission } = require("./middleware/auth");
+const { metricsMiddleware } = require("./middleware/metrics");
 
+/** Build configured Express application (used by server.js and Jest supertest). */
 function createApp() {
   const app = express();
 
-  /** CORS: allow browser dev servers to call the API during local development. */
   app.use(
     cors({
       origin: true,
@@ -23,36 +28,25 @@ function createApp() {
     })
   );
 
-  /** JSON body parser with a conservative size cap to reduce accidental huge payloads. */
   app.use(express.json({ limit: "2mb" }));
+  app.use(metricsMiddleware);
 
-  /** Liveness/readiness style endpoint for orchestrators and quick manual checks. */
-  app.get("/health", (req, res) => {
-    res.json({ status: "ok", service: "triage-api", auth: "required_for_api" });
-  });
+  /** Health probes — public, no JWT (Docker/Kubernetes pattern). */
+  app.use("/health", healthRoutes);
 
-  /** Public authentication routes (login, password recovery). */
+  /** Prometheus scrape + ops alerts — public /ops/prometheus only. */
+  app.use("/ops", opsRoutes);
+
   app.use("/auth", authRoutes);
-
-  /** Worker-only graph sync (service token, no JWT) — must stay before authenticate(). */
   app.use("/graph/internal", graphInternalRoutes);
 
-  /** All routes below require a valid bearer token. */
   app.use(authenticate);
 
-  /** Core review lifecycle endpoints (create/list/get/override). */
   app.use("/reviews", reviewRoutes);
-
-  /** Dashboard metrics endpoints backed by PostgreSQL statistics. */
   app.use("/metrics", metricsRoutes);
-
-  /** Neo4j phishing relationship graph (campaigns, neighborhoods, visualization). */
   app.use("/graph", graphRoutes);
-
-  /** Dev controls + capability advertisement for the SPA (role-gated inside router). */
   app.use("/dev", devRoutes);
 
-  /** Operator log search across the merged JSON-lines log file. */
   app.get("/logs/search", requirePermission("logs.read"), async (req, res) => {
     try {
       const { keyword, topic, from, to, limit } = req.query;
@@ -70,7 +64,6 @@ function createApp() {
     }
   });
 
-  /** POST /test — minimal demo ingest (legacy quick path for workshops). */
   app.post("/test", requirePermission("reviews.write"), async (req, res) => {
     try {
       const Review = require("../models/Review");

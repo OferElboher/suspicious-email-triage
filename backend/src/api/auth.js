@@ -7,7 +7,10 @@ const {
   loadUserAccess,
   createPasswordResetToken,
   resetPasswordWithToken,
+  getUserUiTheme,
+  setUserUiTheme,
 } = require("../auth/authPg");
+const { UI_THEMES, DEFAULT_UI_THEME, isValidUiTheme } = require("../auth/themeConstants");
 const { sendPasswordResetEmail } = require("../auth/email");
 const {
   googleLoginEnabled,
@@ -82,6 +85,7 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "invalid_credentials" });
     }
     const token = signAccessToken({ sub: user.id, email: user.email });
+    const uiTheme = await getUserUiTheme(user.id);
     res.json({
       token,
       expiresIn: jwtTtlSeconds(),
@@ -90,6 +94,7 @@ router.post("/login", async (req, res) => {
         email: user.email,
         roles: user.roles,
         permissions: user.permissions,
+        uiTheme,
       },
     });
   } catch (err) {
@@ -168,6 +173,7 @@ router.get("/me", authenticate, async (req, res) => {
       return res.status(401).json({ error: "invalid_token" });
     }
     const access = await loadUserAccess(user.id);
+    const uiTheme = user.ui_theme || (await getUserUiTheme(user.id));
     res.json({
       user: {
         id: user.id,
@@ -175,11 +181,42 @@ router.get("/me", authenticate, async (req, res) => {
         roles: access.roles,
         permissions: access.permissions,
         isActive: user.is_active,
+        uiTheme,
       },
     });
   } catch (err) {
     logger.error("auth", "me failed", { error: err.message });
     res.status(500).json({ error: "profile_failed" });
+  }
+});
+
+/** GET /auth/preferences — UI preferences (theme catalog + current selection). */
+router.get("/preferences", authenticate, async (req, res) => {
+  try {
+    const uiTheme = await getUserUiTheme(req.auth.userId);
+    res.json({
+      uiTheme,
+      themes: UI_THEMES,
+      defaultTheme: DEFAULT_UI_THEME,
+    });
+  } catch (err) {
+    logger.error("auth", "preferences get failed", { error: err.message });
+    res.status(500).json({ error: "preferences_failed" });
+  }
+});
+
+/** PUT /auth/preferences — persist UI theme per user in PostgreSQL auth_users.ui_theme. */
+router.put("/preferences", authenticate, async (req, res) => {
+  try {
+    const uiTheme = String(req.body.uiTheme || "").trim();
+    if (!isValidUiTheme(uiTheme)) {
+      return res.status(400).json({ error: "invalid_ui_theme", allowed: UI_THEMES.map((t) => t.id) });
+    }
+    const saved = await setUserUiTheme(req.auth.userId, uiTheme);
+    res.json({ ok: true, uiTheme: saved });
+  } catch (err) {
+    logger.error("auth", "preferences put failed", { error: err.message });
+    res.status(500).json({ error: "preferences_failed" });
   }
 });
 

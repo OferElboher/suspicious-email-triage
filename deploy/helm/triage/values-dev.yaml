@@ -1,0 +1,29 @@
+# Dev cluster overrides — single replica, in-cluster databases, ingress off.
+global:
+  deploymentEnv: dev
+
+backend:
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+
+frontend:
+  replicaCount: 1
+
+mongo:
+  enabled: true
+  storage: 2Gi
+
+postgres:
+  enabled: true
+  storage: 2Gi
+
+neo4j:
+  enabled: true
+  storage: 2Gi
+
+ingress:
+  enabled: false
+
+config:
+  logLevel: debug

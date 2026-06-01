@@ -1,0 +1,27 @@
+# Staging overrides — modest HA, autoscaling on API, ingress enabled.
+global:
+  deploymentEnv: staging
+
+backend:
+  replicaCount: 2
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+
+frontend:
+  replicaCount: 2
+
+mongo:
+  enabled: false  # use Atlas or managed Mongo in staging
+
+postgres:
+  enabled: false  # use RDS or managed Postgres
+
+ingress:
+  enabled: true
+  host: staging.triage.example.com
+  tls: true
+
+config:
+  logLevel: info

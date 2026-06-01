@@ -63,3 +63,13 @@ export async function getJson(path, { auth = true } = {}) {
   });
   return parseResponse(res);
 }
+
+/** PUT JSON with bearer token (used for /auth/preferences theme persistence). */
+export async function putJson(path, body, { auth = true } = {}) {
+  const res = await fetch(`${base()}${path}`, {
+    method: "PUT",
+    headers: auth ? authHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return parseResponse(res);
+}

@@ -9,6 +9,7 @@ const { REVIEW_PAGE_SIZE } = require("../../../shared/config/pagination");
 const logger = require("../lib/logger");
 const { enqueueAfterCreate } = require("../services/reviewPipeline");
 const { scheduleGraphSync } = require("../services/graphSyncService");
+const { incrementReviewsCreated } = require("../lib/appMetrics");
 const { requirePermission } = require("../http/middleware/auth");
 
 /** Default page index for GET /reviews pagination (zero-based). */
@@ -37,6 +38,7 @@ router.post("/", requirePermission("reviews.write"), async (req, res) => {
 
     await enqueueAfterCreate(review._id);
     scheduleGraphSync(review._id);
+    incrementReviewsCreated();
 
     logger.info("reviews", "created", { id: String(review._id) });
     return res.status(201).json({ id: review._id, status: review.status });

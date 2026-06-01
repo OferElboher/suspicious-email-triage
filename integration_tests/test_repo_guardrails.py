@@ -165,3 +165,38 @@ def test_tbd_roadmap_doc_indexed():
     readme = (ROOT / "docs/README.md").read_text(encoding="utf-8")
     assert (ROOT / "docs/TBD.md").is_file()
     assert "TBD.md" in readme
+
+
+def test_health_ops_and_helm_wired():
+    """Health probes, ops metrics, Helm chart, and theme preferences must exist."""
+    create_app = (ROOT / "backend/src/http/createApp.js").read_text(encoding="utf-8")
+    assert "/health" in create_app
+    assert "/ops" in create_app
+    assert (ROOT / "backend/src/api/health.js").is_file()
+    assert (ROOT / "backend/src/api/ops.js").is_file()
+    assert (ROOT / "backend/src/lib/healthChecks.js").is_file()
+    assert (ROOT / "backend/src/lib/appMetrics.js").is_file()
+    compose = (ROOT / "infra/docker/docker-compose.yml").read_text(encoding="utf-8")
+    assert "healthcheck:" in compose
+    assert "/health/ready" in compose
+    assert (ROOT / "deploy/helm/triage/Chart.yaml").is_file()
+    assert (ROOT / "deploy/helm/triage/values-dev.yaml").is_file()
+    auth = (ROOT / "backend/src/api/auth.js").read_text(encoding="utf-8")
+    assert "/preferences" in auth
+    assert (ROOT / "frontend/src/context/ThemeContext.jsx").is_file()
+    assert (ROOT / "frontend/src/styles/themes.css").is_file()
+
+
+def test_observability_and_api_docs_indexed():
+    """New ops/API/theme docs must be linked from docs/README.md."""
+    readme = (ROOT / "docs/README.md").read_text(encoding="utf-8")
+    for name in (
+        "kubernetes_helm_deployment_guide.md",
+        "rest_api_reference.md",
+        "health_checks_and_uptime_guide.md",
+        "central_logging_guide.md",
+        "metrics_and_alerting_guide.md",
+        "ui_themes_guide.md",
+    ):
+        assert (ROOT / f"docs/{name}").is_file()
+        assert name in readme

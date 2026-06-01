@@ -1,0 +1,112 @@
+# Default values for the triage Helm chart.
+# Override per environment with values-dev.yaml, values-staging.yaml, or values-prod.yaml.
+
+global:
+  # deploymentEnv is injected into pods as DEPLOYMENT_ENV (dev | staging | prod).
+  deploymentEnv: dev
+  # imagePullSecrets: []  # uncomment when using a private container registry
+
+# --- Backend (Node/Express API) ---
+backend:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: triage-backend
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 3000
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  # livenessProbe hits /health/live; readinessProbe hits /health/ready (dependency checks).
+  probes:
+    livenessPath: /health/live
+    readinessPath: /health/ready
+    initialDelaySeconds: 20
+    periodSeconds: 15
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+
+# --- Frontend (React static/nginx) ---
+frontend:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: triage-frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 80
+  env:
+    # REACT_APP_API_URL is baked at build time in production; set via ingress path or external URL.
+    apiUrl: http://triage-backend:3000
+
+# --- Celery worker (Python ai_service) ---
+celeryWorker:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: triage-celery
+    tag: latest
+    pullPolicy: IfNotPresent
+
+# --- Node Kafka dispatcher / optional node worker ---
+nodeWorker:
+  enabled: false
+  replicaCount: 1
+  image:
+    repository: triage-node-worker
+    tag: latest
+    pullPolicy: IfNotPresent
+
+# --- Data stores (enable for dev-in-cluster; use managed services in prod) ---
+mongo:
+  enabled: true
+  storage: 5Gi
+  storageClassName: ""
+
+postgres:
+  enabled: true
+  storage: 5Gi
+  storageClassName: ""
+  database: triage_stats
+  user: triage
+
+redis:
+  enabled: true
+
+neo4j:
+  enabled: true
+  storage: 5Gi
+  storageClassName: ""
+
+# --- Ingress (expose UI + API) ---
+ingress:
+  enabled: false
+  className: nginx
+  host: triage.example.com
+  tls: false
+
+# --- ConfigMap non-secret settings (see templates/configmap.yaml) ---
+config:
+  logLevel: info
+  neo4jEnabled: "true"
+  kafkaBrokers: "redpanda:9092"
+
+# --- Secret placeholders (replace via --set-file or external secrets operator in prod) ---
+secrets:
+  # NEVER commit real passwords; inject at deploy time.
+  jwtSecret: "REPLACE_ME"
+  postgresPassword: "REPLACE_ME"
+  neo4jPassword: "REPLACE_ME"
+  graphInternalToken: "REPLACE_ME"

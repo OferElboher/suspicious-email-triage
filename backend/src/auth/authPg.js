@@ -65,7 +65,12 @@ async function ensureAuthSchema() {
 
       CREATE INDEX IF NOT EXISTS idx_auth_users_email ON auth_users (lower(email));
       CREATE INDEX IF NOT EXISTS idx_auth_reset_tokens_user ON auth_password_reset_tokens (user_id);
-    `);
+    `).then(async () => {
+      await pool.query(`
+        ALTER TABLE auth_users
+        ADD COLUMN IF NOT EXISTS ui_theme TEXT NOT NULL DEFAULT 'default-light'
+      `);
+    });
   }
   return ensurePromise;
 }
@@ -170,7 +175,8 @@ async function findUserByEmail(email) {
 async function findUserById(userId) {
   await ensureAuthSchema();
   const { rows } = await pool.query(
-    `SELECT id, email, is_active, created_at, updated_at
+    `SELECT id, email, is_active, created_at, updated_at,
+            COALESCE(ui_theme, 'default-light') AS ui_theme
      FROM auth_users
      WHERE id = $1`,
     [userId]
@@ -377,6 +383,27 @@ async function listRoles() {
   return rows.map((row) => ({ name: row.name, permissions: row.permissions }));
 }
 
+/** Read persisted UI theme preference for one user. */
+async function getUserUiTheme(userId) {
+  await ensureAuthSchema();
+  const { rows } = await pool.query(
+    `SELECT COALESCE(ui_theme, 'default-light') AS ui_theme FROM auth_users WHERE id = $1`,
+    [userId]
+  );
+  return rows[0]?.ui_theme || "default-light";
+}
+
+/** Persist UI theme preference (validated by caller). */
+async function setUserUiTheme(userId, uiTheme) {
+  await ensureAuthSchema();
+  const { rows } = await pool.query(
+    `UPDATE auth_users SET ui_theme = $2, updated_at = now() WHERE id = $1
+     RETURNING COALESCE(ui_theme, 'default-light') AS ui_theme`,
+    [userId, uiTheme]
+  );
+  return rows[0]?.ui_theme || null;
+}
+
 module.exports = {
   ensureAuthSchema,
   seedRolesAndPermissions,
@@ -393,4 +420,6 @@ module.exports = {
   createPasswordResetToken,
   resetPasswordWithToken,
   listRoles,
+  getUserUiTheme,
+  setUserUiTheme,
 };

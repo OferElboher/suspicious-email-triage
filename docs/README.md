@@ -17,6 +17,12 @@ This folder collects human-oriented explanations of the Suspicious Email Triage 
 - To **demo Neo4j graph features step by step**, read [neo4j_phishing_graph_demo_guide.md](neo4j_phishing_graph_demo_guide.md).
 - For a **production roadmap and feature backlog**, read [TBD.md](TBD.md).
 - To **manually reset an admin password on a dev workstation**, read `dev_manual_admin_password_reset.md`.
+- For **Kubernetes and Helm deployment** (Pods, Ingress, HPA, dev/staging/prod install commands), read [kubernetes_helm_deployment_guide.md](kubernetes_helm_deployment_guide.md).
+- For the **complete REST API reference** (every route, curl samples, test links), read [rest_api_reference.md](rest_api_reference.md).
+- For **health probes and uptime** (liveness/readiness, Docker/Kubernetes), read [health_checks_and_uptime_guide.md](health_checks_and_uptime_guide.md).
+- For **central logging and search** (merged.log, `/logs/search`, `/ops/logs/summary`), read [central_logging_guide.md](central_logging_guide.md).
+- For **metrics and alerting** (Prometheus scrape, JSON alerts), read [metrics_and_alerting_guide.md](metrics_and_alerting_guide.md).
+- For **UI color themes** (CSS variables, per-user persistence), read [ui_themes_guide.md](ui_themes_guide.md).
 - For **Kafka event streaming** (consumer groups, offsets, DLQ), read `kafka_event_stream_guide.md`.
 - For **Prefect/dbt orchestration demos**, read `data_orchestration_prefect_dbt_demo.md`.
 - If login fails but **`auth_users` shows your email in DBeaver**, or you need to **reset auth tables** and recreate admin, read `dev_auth_tables_reset_and_admin_recovery.md`.
@@ -32,6 +38,12 @@ This folder collects human-oriented explanations of the Suspicious Email Triage 
 - `AUTHENTICATION_AND_RBAC.md` — PostgreSQL-backed users, JWT login, roles/permissions, password recovery, admin provisioning, protected routes.
 - `architecture.md` — High-level component map, data movement, and MongoDB/PostgreSQL storage split.
 - `deployment.md` — Operational deployment concerns (containers, ports, dependencies).
+- `kubernetes_helm_deployment_guide.md` — Beginner-friendly Kubernetes/Helm guide: chart layout, core objects, health probes, secrets, and install/upgrade for dev/staging/prod.
+- `rest_api_reference.md` — Every REST route with auth, permissions, request/response samples, curl examples, and links to Jest tests.
+- `health_checks_and_uptime_guide.md` — Liveness vs readiness, `/health/*` routes, Docker HEALTHCHECK, Kubernetes probes.
+- `central_logging_guide.md` — JSON merged.log, log search API, log summary ops endpoint, lnav/grep free path.
+- `metrics_and_alerting_guide.md` — In-process Prometheus metrics, `/ops/prometheus`, `/ops/alerts`, threshold env vars.
+- `ui_themes_guide.md` — CSS variable themes, ThemeContext, GET/PUT `/auth/preferences`, PostgreSQL `ui_theme` column.
 - `env_configuration_guide.md` — Environment variables and how they influence behavior.
 - `frontend_backend_integration_guide.md` — How the SPA talks to the API (routes, polling, error handling patterns).
 - `full_stack_run_guide_mongo_db_node_worker_react.md` — Practical “bring the stack up” guidance (may overlap with the versions doc; both are maintained intentionally for different audiences).
