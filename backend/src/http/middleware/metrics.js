@@ -1,5 +1,5 @@
 /** Lightweight request counter middleware for Prometheus metrics (TBD 1.4). */
-const { incrementHttpRequests, incrementHttpErrors } = require("../lib/appMetrics");
+const { incrementHttpRequests, incrementHttpErrors } = require("../../lib/appMetrics");
 
 /** Count requests and 5xx responses without logging every path (low overhead). */
 function metricsMiddleware(req, res, next) {
