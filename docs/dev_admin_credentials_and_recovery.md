@@ -155,7 +155,7 @@ DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d backe
 
 ```bash
 cd ~/suspicious-email-triage
-REACT_APP_API_URL=http://localhost:3000 PORT=3001 npm start --prefix frontend
+PORT=3001 npm start --prefix frontend
 ```
 
 2. Open `http://localhost:3001` in the browser.

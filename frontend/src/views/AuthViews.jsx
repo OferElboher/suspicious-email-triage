@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { getJson, postJson } from "../api/client";
+import { resolveOAuthApiBase } from "../lib/apiBase";
+import PasswordInput from "../components/PasswordInput";
 
-const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:3000";
-
+/** Sign-in form — posts credentials to POST /auth/login via proxied or direct API base. */
 export default function LoginView({ onForgotPassword }) {
   const { login } = useAuth();
   const [email, setEmail] = useState("");
@@ -25,11 +26,19 @@ export default function LoginView({ onForgotPassword }) {
     try {
       await login(email.trim(), password);
     } catch (err) {
-      setError(err.body?.error === "invalid_credentials" ? "Invalid email or password." : err.message);
+      if (err.networkError) {
+        setError(err.message);
+      } else if (err.body?.error === "invalid_credentials") {
+        setError("Invalid email or password.");
+      } else {
+        setError(err.message || "Sign in failed.");
+      }
     } finally {
       setSubmitting(false);
     }
   };
+
+  const oauthBase = resolveOAuthApiBase();
 
   return (
     <div className="auth-shell">
@@ -46,23 +55,20 @@ export default function LoginView({ onForgotPassword }) {
             required
           />
         </label>
-        <label className="field">
-          Password
-          <input
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </label>
+        <PasswordInput
+          label="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          autoComplete="current-password"
+          required
+        />
         {error && <p className="status-failed">{error}</p>}
         <div className="actions">
           <button type="submit" className="primary" disabled={submitting}>
             {submitting ? "Signing in…" : "Sign in"}
           </button>
           {googleLoginEnabled && (
-            <a className="button" href={`${API_BASE}/auth/google/start`}>
+            <a className="button" href={`${oauthBase}/auth/google/start`}>
               Sign in with Google
             </a>
           )}
@@ -75,6 +81,7 @@ export default function LoginView({ onForgotPassword }) {
   );
 }
 
+/** Forgot-password form — always returns 200 from API (no email enumeration). */
 export function ForgotPasswordView({ onBackToLogin }) {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -90,7 +97,7 @@ export function ForgotPasswordView({ onBackToLogin }) {
       const data = await postJson("/auth/forgot-password", { email: email.trim() }, { auth: false });
       setMessage(data.message || "If the account exists, reset instructions were sent.");
     } catch (err) {
-      setError(err.message || "Request failed");
+      setError(err.networkError ? err.message : err.message || "Request failed");
     } finally {
       setSubmitting(false);
     }
@@ -131,6 +138,7 @@ export function ForgotPasswordView({ onBackToLogin }) {
   );
 }
 
+/** Reset-password form — consumes one-time token from email link query string. */
 export function ResetPasswordView({ token, onComplete }) {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -151,7 +159,13 @@ export function ResetPasswordView({ token, onComplete }) {
       setMessage(data.message || "Password updated.");
       onComplete();
     } catch (err) {
-      setError(err.body?.error === "invalid_or_expired_token" ? "Invalid or expired reset link." : err.message);
+      if (err.networkError) {
+        setError(err.message);
+      } else if (err.body?.error === "invalid_or_expired_token") {
+        setError("Invalid or expired reset link.");
+      } else {
+        setError(err.message || "Update failed.");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -161,26 +175,22 @@ export function ResetPasswordView({ token, onComplete }) {
     <div className="auth-shell">
       <form className="card auth-card" onSubmit={submit}>
         <h1>Set new password</h1>
-        <label className="field">
-          New password
-          <input
-            type="password"
-            minLength={8}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </label>
-        <label className="field">
-          Confirm password
-          <input
-            type="password"
-            minLength={8}
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-            required
-          />
-        </label>
+        <PasswordInput
+          label="New password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          autoComplete="new-password"
+          minLength={8}
+          required
+        />
+        <PasswordInput
+          label="Confirm password"
+          value={confirm}
+          onChange={(e) => setConfirm(e.target.value)}
+          autoComplete="new-password"
+          minLength={8}
+          required
+        />
         {message && <p className="status-completed">{message}</p>}
         {error && <p className="status-failed">{error}</p>}
         <div className="actions">

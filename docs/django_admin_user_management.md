@@ -88,7 +88,7 @@ If the container status is **Restarting** instead of **Up**, read the logs — a
 Start the React UI (separate terminal):
 
 ```bash
-REACT_APP_API_URL=http://localhost:3000 PORT=3001 npm start --prefix frontend
+PORT=3001 npm start --prefix frontend
 ```
 
 ---

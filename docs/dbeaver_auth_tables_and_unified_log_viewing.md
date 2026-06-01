@@ -255,7 +255,7 @@ Expected: JSON with `"token"` and `"user"` containing `"roles": ["admin"]` and a
 
 #### Verify in the UI (Windows)
 
-1. Start frontend: `REACT_APP_API_URL=http://localhost:3000 PORT=3001 npm start --prefix frontend`
+1. Start frontend: `PORT=3001 npm start --prefix frontend`
 2. Open `http://localhost:3001`
 3. Sign in with **your email** / **`temp-admin-pswd`**
 4. You should see **Triage workspace** and **Analytics & graphs** tabs, plus **User administration** (admin role).

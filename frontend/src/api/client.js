@@ -1,9 +1,15 @@
 /**
  * Thin fetch wrapper with bearer-token support for authenticated API calls.
+ * Dev mode uses same-origin paths proxied to port 3000 (see setupProxy.js).
  */
+import { buildNetworkError, resolveApiBase } from "../lib/apiBase";
+
 const STORAGE_KEY = "triage_auth_token";
 
-const base = () => process.env.REACT_APP_API_URL || "http://localhost:3000";
+/** API origin for JSON fetch calls (empty string = CRA dev proxy). */
+export function apiBase() {
+  return resolveApiBase();
+}
 
 export function getStoredToken() {
   return localStorage.getItem(STORAGE_KEY);
@@ -39,37 +45,42 @@ async function parseResponse(res) {
   return data;
 }
 
-export async function postJson(path, body, { auth = true } = {}) {
-  const res = await fetch(`${base()}${path}`, {
-    method: "POST",
-    headers: auth ? authHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+/** Low-level fetch with network error translation (Failed to fetch → actionable hint). */
+async function request(path, { method = "GET", body, auth = true } = {}) {
+  const url = `${apiBase()}${path}`;
+  let res;
+  try {
+    res = await fetch(url, {
+      method,
+      headers:
+        body !== undefined
+          ? auth
+            ? authHeaders({ "Content-Type": "application/json" })
+            : { "Content-Type": "application/json" }
+          : auth
+            ? authHeaders()
+            : {},
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+  } catch (err) {
+    throw buildNetworkError(err, apiBase());
+  }
   return parseResponse(res);
+}
+
+export async function postJson(path, body, { auth = true } = {}) {
+  return request(path, { method: "POST", body, auth });
 }
 
 export async function patchJson(path, body) {
-  const res = await fetch(`${base()}${path}`, {
-    method: "PATCH",
-    headers: authHeaders({ "Content-Type": "application/json" }),
-    body: JSON.stringify(body),
-  });
-  return parseResponse(res);
+  return request(path, { method: "PATCH", body, auth: true });
 }
 
 export async function getJson(path, { auth = true } = {}) {
-  const res = await fetch(`${base()}${path}`, {
-    headers: auth ? authHeaders() : {},
-  });
-  return parseResponse(res);
+  return request(path, { method: "GET", auth });
 }
 
 /** PUT JSON with bearer token (used for /auth/preferences theme persistence). */
 export async function putJson(path, body, { auth = true } = {}) {
-  const res = await fetch(`${base()}${path}`, {
-    method: "PUT",
-    headers: auth ? authHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  return parseResponse(res);
+  return request(path, { method: "PUT", body, auth });
 }

@@ -34,6 +34,8 @@ PostgreSQL stores passwords as **bcrypt hashes** in `auth_users.password_hash`. 
 
 The UI **Reset local databases & queues** button (`POST /dev/reset-local-state`) clears Mongo reviews, **chart statistics**, Redis, and Kafka — it does **not** delete or reset `auth_*` tables.
 
+**Docker rebuilds and passwords:** As of the current `docker-compose.yml`, PostgreSQL data lives in the named volume **`postgres-data`**. Running `docker compose up --build` should **keep** your password hashes. If you previously rebuilt without that volume, Postgres was recreated empty, bootstrap ran again, and only the bootstrap password (`temp-admin-pswd`) worked until you changed it again — see [frontend_backend_integration_guide.md](frontend_backend_integration_guide.md).
+
 ---
 
 ## Choose your path
@@ -410,7 +412,7 @@ curl -sS http://localhost:3000/health
 
 ```bash
 cd ~/suspicious-email-triage
-REACT_APP_API_URL=http://localhost:3000 PORT=3001 npm start --prefix frontend
+PORT=3001 npm start --prefix frontend
 ```
 
 ### Step 3 — Sign in (Windows browser)

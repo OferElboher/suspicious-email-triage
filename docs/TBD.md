@@ -113,7 +113,7 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 
 ---
 
-### 1.5 Backups and restore (P0)
+### 1.5 Backups and restore (P0) — **partial (dev Docker volumes)**
 
 **User value:** Ransomware or bad deploy does not permanently lose reviews and graph intelligence.
 
@@ -122,9 +122,16 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 - Daily backup Mongo, Postgres, Neo4j volume; documented restore tested quarterly.
 - RPO/RTO written (e.g. RPO 24h, RTO 4h).
 
-**Tech pattern:** `mongodump`, `pg_dump`, Neo4j `neo4j-admin dump`, S3/GCS storage.
+**Tech pattern:** `mongodump`, `pg_dump`, Neo4j `neo4j-admin dump`, S3/GCS storage; Docker **named volumes** for dev persistence.
 
-**Free path:** Manual dump scripts on WSL cron to a local folder — sufficient for dev/staging pilots.
+**Implemented (dev free path):**
+
+- `mongo-data`, `postgres-data`, and `neo4j-data` named volumes in `infra/docker/docker-compose.yml` so `docker compose up --build` does **not** wipe login passwords or review data
+- Auth password hashes live in Postgres — without `postgres-data`, every rebuild recreated bootstrap admin with `temp-admin-pswd`
+
+**Guides:** [dev_auth_tables_reset_and_admin_recovery.md](dev_auth_tables_reset_and_admin_recovery.md), [windows_dev_startup_run_guide.md](windows_dev_startup_run_guide.md)
+
+**Remaining (paid / later):** Scheduled cloud backups, restore drills, off-site storage.
 
 ---
 

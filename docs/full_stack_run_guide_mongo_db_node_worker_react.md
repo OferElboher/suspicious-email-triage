@@ -50,7 +50,7 @@ From repository root:
 ```bash
 # Install frontend libraries when needed, then start the local browser UI.
 test -d frontend/node_modules || npm install --prefix frontend && \
-  REACT_APP_API_URL=http://localhost:3000 PORT=3001 npm start --prefix frontend
+  PORT=3001 npm start --prefix frontend
 ```
 
 ## Browser

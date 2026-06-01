@@ -179,12 +179,15 @@ def test_health_ops_and_helm_wired():
     compose = (ROOT / "infra/docker/docker-compose.yml").read_text(encoding="utf-8")
     assert "healthcheck:" in compose
     assert "/health/ready" in compose
+    assert "postgres-data:" in compose
+    assert "mongo-data:" in compose
     assert (ROOT / "deploy/helm/triage/Chart.yaml").is_file()
     assert (ROOT / "deploy/helm/triage/values-dev.yaml").is_file()
     auth = (ROOT / "backend/src/api/auth.js").read_text(encoding="utf-8")
     assert "/preferences" in auth
     assert (ROOT / "frontend/src/context/ThemeContext.jsx").is_file()
     assert (ROOT / "frontend/src/styles/themes.css").is_file()
+    assert (ROOT / "frontend/src/setupProxy.js").is_file()
 
 
 def test_observability_and_api_docs_indexed():

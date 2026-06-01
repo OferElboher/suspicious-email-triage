@@ -74,7 +74,7 @@ Think of it like a restaurant:
 | Role | Real-world analogy | This project | Port | How you start it |
 |------|-------------------|--------------|------|------------------|
 | **Kitchen** | Cooks food, stores recipes, talks to suppliers | **Node/Express API** (`triage-backend` container) | **3000** | Docker: `docker compose up -d backend ...` |
-| **Dining room** | Menus and tables for customers | **React web UI** (Create React App) | **3001** | Host: `REACT_APP_API_URL=http://localhost:3000 PORT=3001 npm start --prefix frontend` |
+| **Dining room** | Menus and tables for customers | **React web UI** (Create React App) | **3001** | Host: `PORT=3001 npm start --prefix frontend` (dev proxy → API) |
 
 ### What happens when you browse `http://localhost:3001`
 
@@ -89,7 +89,8 @@ Think of it like a restaurant:
 DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --build
 
 # Step 2 — start the web UI on port 3001 (in the same or another terminal)
-REACT_APP_API_URL=http://localhost:3000 PORT=3001 npm start --prefix frontend
+# setupProxy.js forwards /auth, /reviews, etc. to port 3000 (same origin — avoids "Failed to fetch").
+PORT=3001 npm start --prefix frontend
 ```
 
 Then open **`http://localhost:3001`** in the browser. That is the intended address.
@@ -158,7 +159,7 @@ From the repository root:
 ```bash
 cd ~/suspicious-email-triage
 test -d frontend/node_modules || npm install --prefix frontend
-REACT_APP_API_URL=http://localhost:3000 PORT=3001 npm start --prefix frontend
+PORT=3001 npm start --prefix frontend
 ```
 
 Expected output:

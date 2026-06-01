@@ -102,6 +102,32 @@ textarea {
   resize: vertical;
 }
 
+/* Password field with show/hide toggle (login, reset password). */
+.password-input-wrap {
+  display: flex;
+  align-items: stretch;
+  gap: 0.35rem;
+}
+
+.password-input-wrap input {
+  flex: 1;
+}
+
+.password-toggle {
+  flex-shrink: 0;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--text);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.password-toggle:hover {
+  border-color: var(--accent);
+}
+
 .row {
   display: grid;
   grid-template-columns: 1fr 1fr;

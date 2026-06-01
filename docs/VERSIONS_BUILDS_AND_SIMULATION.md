@@ -194,7 +194,7 @@ DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up --build
 Frontend (separate terminal):
 
 ```bash
-REACT_APP_API_URL=http://localhost:3000 PORT=3001 npm start --prefix frontend
+PORT=3001 npm start --prefix frontend
 ```
 
 Open `http://localhost:3001` (workspace), `http://localhost:3001/#analytics`, or Django admin at `http://localhost:8000/admin/` (admin role). Browser refresh (F5) keeps the current triage tab.

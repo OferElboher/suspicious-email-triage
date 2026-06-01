@@ -9,6 +9,9 @@ services:
     ports:
       # Host 27018 (not 27017) avoids clashing with a MongoDB install on WSL/Windows.
       - "27018:27017"
+    volumes:
+      # mongo-data: persists reviews across container rebuilds (without this, data is lost on recreate).
+      - mongo-data:/data/db
     restart: unless-stopped
 
   # redis: local dev broker/backend for Celery and lightweight API state.
@@ -32,6 +35,9 @@ services:
       - POSTGRES_PASSWORD=triage
     ports:
       - "5432:5432"
+    volumes:
+      # postgres-data: persists auth_users (password hashes) and stats — required so rebuilds do not reset login.
+      - postgres-data:/var/lib/postgresql/data
     restart: unless-stopped
 
   # neo4j: graph database for sender/url/domain relationships and campaign clustering.
@@ -227,6 +233,10 @@ services:
 volumes:
   # triage-logs: shared dev volume so API and workers append to one merged log.
   triage-logs:
+  # mongo-data: review documents survive docker compose rebuilds.
+  mongo-data:
+  # postgres-data: auth_users password hashes survive docker compose rebuilds.
+  postgres-data:
   # neo4j-data: persisted graph state for phishing relationship analysis.
   neo4j-data:
   # django-admin-state: SQLite for Django sessions/admin log (keeps Postgres free of duplicate auth tables).
