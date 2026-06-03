@@ -178,8 +178,131 @@ Try features manually: [neo4j_phishing_graph_demo_guide.md](neo4j_phishing_graph
 
 Hands-on demo script: [neo4j_phishing_graph_demo_guide.md](neo4j_phishing_graph_demo_guide.md).
 
-Neo4j Browser query to inspect everything:
+---
+
+## Neo4j Browser — novice guide (http://localhost:7474/browser/)
+
+**Neo4j Browser** is the web UI shipped with Neo4j. You run **Cypher** queries and see nodes and relationships as a graph picture or as tables. This section is for developers who have never used it before.
+
+**Install context:** Neo4j runs in Docker for this project — you do not install Browser separately. WSL + Windows access: [neo4j_wsl_windows_setup_guide.md](neo4j_wsl_windows_setup_guide.md).
+
+### Open Browser
+
+1. Start the `neo4j` service (see [Docker](#docker) above).
+2. On **Windows 11**, open a normal browser (Edge, Chrome, Firefox).
+3. Go to **http://localhost:7474/browser/**  
+   (The older root `http://localhost:7474` may redirect here.)
+
+Port **7474** is published from the `triage-neo4j` container to your machine.
+
+### Log in (use env vars, not doc passwords)
+
+Neo4j Browser asks for **connection URI**, **username**, and **password**.
+
+| Field | What to enter |
+|-------|----------------|
+| Connect URL / URI | `bolt://localhost:7687` (Bolt from your PC into Docker) |
+| Username | Value of **`NEO4J_USER`** in `backend/.env.dev` (template uses `neo4j`) |
+| Password | Value of **`NEO4J_PASSWORD`** in `backend/.env.dev` — **read on your machine only**; never commit real production passwords |
+
+If login fails:
+
+- Confirm `docker compose ps neo4j` shows **Up**.
+- Wait 20–30 seconds on first boot.
+- Ensure you copied the password from **your** env file, not from an old chat log.
+
+**Security habit:** Treat `NEO4J_PASSWORD` like any database secret. Rotate it in staging/prod; keep docs free of literal passwords.
+
+### Navigation basics
+
+After login you typically land on a **welcome** or **query** screen.
+
+| UI area | Purpose |
+|---------|---------|
+| **Editor** (top) | Type Cypher; press **Ctrl+Enter** (Windows) or the **Run** ▶ button |
+| **Graph** view | Circles (nodes) and arrows (relationships) — drag to rearrange |
+| **Table** view | Same result as rows/columns — good for counts and IDs |
+| **Text** view | Raw values when graph layout is crowded |
+| **Database info** (sidebar) | Labels, relationship types, property keys — confirms data exists |
+| **:help** commands | Type `:help` in the editor for built-in Browser cheatsheet |
+
+Switch result mode with icons above the result pane (**graph**, **table**, **text**).
+
+### Running your first query
+
+Paste into the editor and run:
 
 ```cypher
-MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 100
+RETURN 1 AS ok
 ```
+
+**Expected:** One row, `ok = 1`. That proves Browser talks to the database.
+
+### Example queries for this project
+
+**Count nodes by label** (sanity check after demos):
+
+```cypher
+MATCH (n)
+RETURN labels(n) AS label, count(*) AS cnt
+ORDER BY cnt DESC
+```
+
+**List campaigns and linked review IDs** (matches backend campaign detection):
+
+```cypher
+MATCH (c:Campaign)<-[:PART_OF_CAMPAIGN]-(r:Review)
+RETURN c.indicator AS campaign, collect(r.id) AS reviewIds, c.reviewCount AS count
+```
+
+**Sender → review → URL → domain chain** (typical phishing path):
+
+```cypher
+MATCH (s:Sender)-[:SENT]->(r:Review)-[:CONTAINS_URL]->(u:Url)-[:RESOLVES_TO]->(d:Domain)
+RETURN s.email AS sender, r.id AS reviewId, u.href AS url, d.host AS domain
+LIMIT 25
+```
+
+**Visualize a small subgraph** (graph view works best with a LIMIT):
+
+```cypher
+MATCH (n)-[r]->(m)
+RETURN n, r, m
+LIMIT 50
+```
+
+**Find one review by Mongo id** (replace the id with a value from the triage UI):
+
+```cypher
+MATCH (r:Review {id: "PASTE_MONGO_REVIEW_ID_HERE"})
+OPTIONAL MATCH (r)-[rel]-(neighbor)
+RETURN r, rel, neighbor
+LIMIT 100
+```
+
+### Reading results
+
+| You see | Meaning |
+|---------|---------|
+| `(:Review {id: "..."})` | A review node; `id` is the MongoDB string |
+| `[:SENT]`, `[:CONTAINS_URL]`, etc. | Relationship types from the [data model](#data-model-implemented-pattern) |
+| `(:Campaign {indicator: "host.example"})` | Shared domain (or indicator) for a campaign cluster |
+| Empty graph, zero rows | Neo4j empty, sync not run, or `NEO4J_ENABLED=false` on backend — submit reviews and wait for `completed` |
+| Red error in Browser | Syntax error in Cypher, or wrong property name — read the message; fix typos |
+
+**Table view tips:** Use it to copy `reviewId` values into curl commands or the triage UI. **Graph view tips:** Double-click a node to expand neighbors (Browser feature); use LIMIT so layout stays readable.
+
+### Common mistakes
+
+| Mistake | Fix |
+|---------|-----|
+| Using `http://localhost:7474` as Bolt URI | Bolt is **`bolt://localhost:7687`**, not HTTP |
+| Querying before Celery finishes | Graph may lack final `PART_OF_CAMPAIGN` until verdict is risky and domain is shared |
+| Forgetting `LIMIT` | Large graphs slow Browser; always cap exploratory queries |
+| Expecting passwords in this doc | Open `backend/.env.dev` locally |
+
+### Verify the same data via API
+
+JWT-authenticated routes (`GET /graph/campaigns`, `GET /graph/visualization`) return JSON derived from the same graph. Browser is best for **ad hoc Cypher**; the React **Phishing graph** tab is best for demos to non-technical stakeholders.
+
+Automated checks: [running_tests_guide.md](running_tests_guide.md) and [neo4j_phishing_graph_demo_guide.md](neo4j_phishing_graph_demo_guide.md) (campaign verification script).

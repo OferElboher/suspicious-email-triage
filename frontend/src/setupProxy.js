@@ -14,6 +14,7 @@ const API_PREFIXES = [
   "/dev",
   "/logs",
   "/ops",
+  "/search",
   "/test",
 ];
 

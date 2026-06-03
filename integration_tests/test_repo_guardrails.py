@@ -188,10 +188,12 @@ def test_health_ops_and_helm_wired():
     assert (ROOT / "frontend/src/context/ThemeContext.jsx").is_file()
     assert (ROOT / "frontend/src/styles/themes.css").is_file()
     assert (ROOT / "frontend/src/setupProxy.js").is_file()
+    assert "elasticsearch:" in compose
+    assert (ROOT / "backend/src/api/search.js").is_file()
+    assert (ROOT / "backend/src/search/elasticClient.js").is_file()
 
 
 def test_observability_and_api_docs_indexed():
-    """New ops/API/theme docs must be linked from docs/README.md."""
     readme = (ROOT / "docs/README.md").read_text(encoding="utf-8")
     for name in (
         "kubernetes_helm_deployment_guide.md",
@@ -200,6 +202,7 @@ def test_observability_and_api_docs_indexed():
         "central_logging_guide.md",
         "metrics_and_alerting_guide.md",
         "ui_themes_guide.md",
+        "elasticsearch_search_guide.md",
     ):
         assert (ROOT / f"docs/{name}").is_file()
         assert name in readme

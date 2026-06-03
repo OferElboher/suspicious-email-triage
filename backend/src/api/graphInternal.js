@@ -4,6 +4,7 @@
 const express = require("express");
 const router = express.Router();
 const { syncReviewGraphById } = require("../services/graphSyncService");
+const { scheduleSearchIndex } = require("../services/reviewSearchSync");
 const logger = require("../lib/logger");
 
 /** Compare X-Graph-Internal-Token header to GRAPH_INTERNAL_TOKEN env (shared secret). */
@@ -21,6 +22,7 @@ router.post("/sync/:id", async (req, res) => {
   }
   try {
     const result = await syncReviewGraphById(req.params.id);
+    scheduleSearchIndex(req.params.id);
     if (result.reason === "not_found") {
       return res.status(404).json({ error: "not_found" });
     }

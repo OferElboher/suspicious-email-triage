@@ -9,6 +9,7 @@ const { REVIEW_PAGE_SIZE } = require("../../../shared/config/pagination");
 const logger = require("../lib/logger");
 const { enqueueAfterCreate } = require("../services/reviewPipeline");
 const { scheduleGraphSync } = require("../services/graphSyncService");
+const { scheduleSearchIndex } = require("../services/reviewSearchSync");
 const { incrementReviewsCreated } = require("../lib/appMetrics");
 const { requirePermission } = require("../http/middleware/auth");
 
@@ -38,6 +39,7 @@ router.post("/", requirePermission("reviews.write"), async (req, res) => {
 
     await enqueueAfterCreate(review._id);
     scheduleGraphSync(review._id);
+    scheduleSearchIndex(review._id);
     incrementReviewsCreated();
 
     logger.info("reviews", "created", { id: String(review._id) });
@@ -64,6 +66,7 @@ router.post("/:id/override", requirePermission("reviews.override"), async (req, 
     };
     await review.save();
     scheduleGraphSync(review._id);
+    scheduleSearchIndex(review._id);
     logger.info("reviews", "override saved", { id: String(review._id) });
     return res.json({ ok: true, review });
   } catch (err) {

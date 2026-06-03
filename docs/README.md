@@ -21,6 +21,7 @@ This folder collects human-oriented explanations of the Suspicious Email Triage 
 - For the **complete REST API reference** (every route, curl samples, test links), read [rest_api_reference.md](rest_api_reference.md).
 - For **health probes and uptime** (liveness/readiness, Docker/Kubernetes), read [health_checks_and_uptime_guide.md](health_checks_and_uptime_guide.md).
 - For **central logging and search** (merged.log, `/logs/search`, `/ops/logs/summary`), read [central_logging_guide.md](central_logging_guide.md).
+- For **Elasticsearch full-text review search** (dev Docker, `/search/*`, index admin UI), read [elasticsearch_search_guide.md](elasticsearch_search_guide.md).
 - For **metrics and alerting** (Prometheus scrape, JSON alerts), read [metrics_and_alerting_guide.md](metrics_and_alerting_guide.md).
 - For **UI color themes** (CSS variables, per-user persistence), read [ui_themes_guide.md](ui_themes_guide.md).
 - For **Kafka event streaming** (consumer groups, offsets, DLQ), read `kafka_event_stream_guide.md`.
@@ -42,6 +43,7 @@ This folder collects human-oriented explanations of the Suspicious Email Triage 
 - `rest_api_reference.md` — Every REST route with auth, permissions, request/response samples, curl examples, and links to Jest tests.
 - `health_checks_and_uptime_guide.md` — Liveness vs readiness, `/health/*` routes, Docker HEALTHCHECK, Kubernetes probes.
 - `central_logging_guide.md` — JSON merged.log, log search API, log summary ops endpoint, lnav/grep free path.
+- `elasticsearch_search_guide.md` — Optional ES 8 single-node dev stack, `triage-reviews` index, `/search` API, SearchIndexPanel clear button.
 - `metrics_and_alerting_guide.md` — In-process Prometheus metrics, `/ops/prometheus`, `/ops/alerts`, threshold env vars.
 - `ui_themes_guide.md` — CSS variable themes, ThemeContext, GET/PUT `/auth/preferences`, PostgreSQL `ui_theme` column.
 - `env_configuration_guide.md` — Environment variables and how they influence behavior.

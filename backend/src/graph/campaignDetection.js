@@ -7,6 +7,11 @@ const { runRead, runWrite } = require("./neo4jClient");
 /** Verdicts treated as suspicious for campaign clustering. */
 const RISKY_VERDICTS = ["suspicious", "likely_phishing"];
 
+/** Return true when verdict qualifies a review for campaign clustering. */
+function isRiskyVerdict(verdict) {
+  return RISKY_VERDICTS.includes(String(verdict || ""));
+}
+
 /** Find domains shared by 2+ risky reviews and link them to Campaign nodes. */
 async function detectCampaignsForReview(reviewId) {
   const detectCypher = `
@@ -67,4 +72,4 @@ async function listCampaigns(limit = 50) {
   }));
 }
 
-module.exports = { RISKY_VERDICTS, detectCampaignsForReview, listCampaigns };
+module.exports = { RISKY_VERDICTS, isRiskyVerdict, detectCampaignsForReview, listCampaigns };

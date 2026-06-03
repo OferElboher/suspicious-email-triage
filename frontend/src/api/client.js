@@ -84,3 +84,8 @@ export async function getJson(path, { auth = true } = {}) {
 export async function putJson(path, body, { auth = true } = {}) {
   return request(path, { method: "PUT", body, auth });
 }
+
+/** DELETE with bearer token (used for /search/index clear). */
+export async function deleteJson(path, { auth = true } = {}) {
+  return request(path, { method: "DELETE", auth });
+}

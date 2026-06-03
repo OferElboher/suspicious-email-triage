@@ -113,6 +113,32 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 
 ---
 
+### 1.6 Review full-text search (Elasticsearch) — **implemented (free dev path)**
+
+**User value:** Analysts search past reviews by keywords in subject, body, sender, or links without writing Mongo queries.
+
+**Exact demand:**
+
+- Index updates when reviews are created, overridden, and after async analysis completes.
+- Authenticated search API; admin/developer can clear the dev index.
+- Laptop-friendly single-node ES (256 MB heap) in Docker Compose.
+
+**Tech pattern:** Elasticsearch 8 + `@elastic/elasticsearch` Node client; index `triage-reviews`; `multi_match` queries.
+
+**Implemented (dev free path):**
+
+- Docker service `elasticsearch` in `infra/docker/docker-compose.yml` (`ES_JAVA_OPTS=-Xms256m -Xmx256m`)
+- Env: `ELASTICSEARCH_ENABLED`, `ELASTICSEARCH_URL`, `ELASTICSEARCH_REVIEWS_INDEX`
+- `GET /search/status`, `GET /search/reviews?q=`, `DELETE /search/index`
+- Background indexing via `scheduleSearchIndex` (create, override, Celery internal graph sync)
+- UI **Search index** panel with **Clear search index** for `dev.reset` + admin/developer (`SearchIndexPanel.jsx`)
+
+**Guide:** [elasticsearch_search_guide.md](elasticsearch_search_guide.md)
+
+**Remaining (paid / later):** Managed Elastic/OpenSearch cluster, TLS and auth, index lifecycle management, analyst search box in React UI, cross-tenant index isolation.
+
+---
+
 ### 1.5 Backups and restore (P0) — **partial (dev Docker volumes)**
 
 **User value:** Ransomware or bad deploy does not permanently lose reviews and graph intelligence.
@@ -415,7 +441,7 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 
 ## Summary for managers
 
-**Already delivered (free to run locally):** async triage pipeline, RBAC, analytics charts, Neo4j phishing graph, mock LLM, Mailpit email, Google OAuth options.
+**Already delivered (free to run locally):** async triage pipeline, RBAC, analytics charts, Neo4j phishing graph, Elasticsearch review search (optional), mock LLM, Mailpit email, Google OAuth options.
 
 **Next low-cost wins (mostly code, no new vendors):** audit trail polish, case management, CSV export, SPF/DKIM display, CI hardening.
 

@@ -11,6 +11,7 @@ const graphInternalRoutes = require("../api/graphInternal");
 const authRoutes = require("../api/auth");
 const healthRoutes = require("../api/health");
 const opsRoutes = require("../api/ops");
+const searchRoutes = require("../api/search");
 const devRoutes = require("../dev/devRoutes");
 const { searchLogs } = require("../lib/logSearch");
 const { enqueueAfterCreate } = require("../services/reviewPipeline");
@@ -45,6 +46,7 @@ function createApp() {
   app.use("/reviews", reviewRoutes);
   app.use("/metrics", metricsRoutes);
   app.use("/graph", graphRoutes);
+  app.use("/search", searchRoutes);
   app.use("/dev", devRoutes);
 
   app.get("/logs/search", requirePermission("logs.read"), async (req, res) => {
@@ -79,7 +81,7 @@ function createApp() {
         senderName: req.auth.email.split("@")[0],
         status: "pending",
       });
-      logger.info("api", "demo review created", { id: String(review._id) });
+      logger.info("api", "test review created", { id: String(review._id) });
 
       await enqueueAfterCreate(review._id);
 

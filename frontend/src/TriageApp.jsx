@@ -11,6 +11,8 @@ import AnalyticsView from "./views/AnalyticsView";
 import GraphView from "./views/GraphView";
 import SimulationPanel from "./views/SimulationPanel";
 import ThemeSelector from "./components/ThemeSelector";
+import RecentReviewsList from "./components/RecentReviewsList";
+import SearchIndexPanel from "./components/SearchIndexPanel";
 import { djangoAdminUrl } from "./lib/appUrls";
 
 /** Page size for the dashboard list; kept aligned with backend pagination limits. */
@@ -30,6 +32,7 @@ export default function TriageApp() {
   const canReadGraph = hasPermission("graph.read");
   const canWrite = hasPermission("reviews.write");
   const canOverride = hasPermission("reviews.override");
+  const canDevReset = hasPermission("dev.reset");
 
   const canAccessScreen = useCallback(
     (view) => {
@@ -318,37 +321,18 @@ export default function TriageApp() {
             <SimulationPanel maxPerMin={features.simulationMaxEventsPerMin} />
           )}
 
-          <section className="card" style={{ gridColumn: "1 / -1" }}>
-            <h2>Recent reviews</h2>
-            <div className="toolbar">
-              <button type="button" onClick={() => fetchPage().catch(() => {})}>
-                Refresh
-              </button>
-              <button type="button" disabled={page === 0} onClick={() => setPage(0)}>
-                First
-              </button>
-              <button type="button" disabled={page === 0} onClick={() => setPage((p) => Math.max(p - 1, 0))}>
-                Prev
-              </button>
-              <button type="button" disabled={!hasMore} onClick={() => setPage((p) => p + 1)}>
-                Next
-              </button>
-              <button type="button" disabled={page >= lastPage} onClick={() => setPage(lastPage)}>
-                Last
-              </button>
-              <span className="muted">Page {page + 1}{totalReviews > 0 ? ` of ${lastPage + 1}` : ""}</span>
-            </div>
-            <ul className="dashboard-list">
-              {reviews.map((r) => (
-                <li key={r._id}>
-                  <strong>{r.subject}</strong>
-                  <div className="muted">
-                    {r.senderEmail} · {r.status} · {r.analysisResult?.verdict || "—"}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </section>
+          {canDevReset && <SearchIndexPanel />}
+
+          <RecentReviewsList
+            reviews={reviews}
+            page={page}
+            lastPage={lastPage}
+            hasMore={hasMore}
+            totalReviews={totalReviews}
+            canReadGraph={canReadGraph}
+            onRefresh={() => fetchPage().catch(() => {})}
+            onPageChange={setPage}
+          />
         </main>
       )}
     </div>

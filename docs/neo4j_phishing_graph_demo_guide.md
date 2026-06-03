@@ -58,7 +58,7 @@ In **Triage workspace**, submit:
 | Subject | `Urgent: verify your account` |
 | Body | `Please verify immediately: https://secure-login.example-phish.test/reset` |
 
-Wait until **Status: completed** and note a verdict (mock LLM often returns `likely_phishing` when the body mentions “password” or “verify”).
+Wait until **Status: completed** and note a verdict (mock LLM often returns `likely_phishing` when the body mentions credential keywords like “verify your account”, or when the body contains a demo phishing URL host — see Review B below).
 
 ### Review B
 
@@ -71,6 +71,8 @@ Submit a second review:
 | Body | `Click here: https://secure-login.example-phish.test/update` |
 
 **Important:** the hostname `secure-login.example-phish.test` is **the same** as in Review A — that shared domain becomes the campaign **indicator**.
+
+With **`LLM_PROVIDER=mock_commercial`**, Review B does **not** need “password” or “verify” in the text: the mock LLM treats URL hosts containing `example-phish`, `secure-login`, and similar demo hints as **`likely_phishing`** (see `ai_service/mock_commercial_llm/responses.py`). That makes the second review reliably “risky” for campaign linking even when the subject only mentions account lockout.
 
 Wait for **completed** on both.
 
@@ -97,8 +99,10 @@ If the graph is empty:
 
 ## Part 4 — Neo4j Browser (direct graph inspection)
 
-1. On Windows, open **http://localhost:7474**.
-2. Connect with credentials from **your local** `backend/.env.dev` (`NEO4J_USER`, `NEO4J_PASSWORD`) — see [neo4j_wsl_windows_setup_guide.md](neo4j_wsl_windows_setup_guide.md).
+Full beginner-oriented Browser guide (login, navigation, reading results): [neo4j_phishing_graph_guide.md — Neo4j Browser section](neo4j_phishing_graph_guide.md#neo4j-browser--novice-guide-httplocalhost7474browser).
+
+1. On Windows, open **http://localhost:7474/browser/** (Bolt URI in the connect dialog: `bolt://localhost:7687`).
+2. Log in with **`NEO4J_USER`** and **`NEO4J_PASSWORD`** from **your local** `backend/.env.dev` (or gitignored `backend/.env`) — see [neo4j_wsl_windows_setup_guide.md](neo4j_wsl_windows_setup_guide.md). **Do not use passwords copied from documentation**; open the env file on your machine.
 
 Run:
 
@@ -116,6 +120,32 @@ MATCH (s:Sender)-[:SENT]->(r:Review)-[:CONTAINS_URL]->(u:Url)-[:RESOLVES_TO]->(d
 RETURN s, r, u, d
 LIMIT 25
 ```
+
+---
+
+## Verify campaign detection with automated tests
+
+Before or after a live demo, you can prove campaign logic and mock LLM phishing rules without clicking through the UI.
+
+From the repository root in WSL:
+
+```bash
+bash scripts/verify-campaign-detection.sh
+```
+
+The script:
+
+1. Runs Jest tests matching **`campaignDetection`** in `backend/` (`npm test -- --testPathPattern=campaignDetection`).
+2. Runs pytest **`ai_service/tests/test_mock_phishing_campaign.py`** (mock LLM flags `example-phish.test` URLs as risky verdicts).
+
+To run only the Node unit tests:
+
+```bash
+cd backend
+npm test -- --testPathPattern=campaignDetection --watchAll=false
+```
+
+**Expected:** all tests pass; no Neo4j or Docker required for these tests (mocked or pure logic).
 
 ---
 
@@ -218,5 +248,6 @@ docker compose -f infra/docker/docker-compose.yml exec neo4j cypher-shell -u neo
 
 ## Next steps
 
-- Automated tests: [running_tests_guide.md](running_tests_guide.md) (`graphSync`, `graphApi`, `test_graph_sync.py`)
+- Campaign verification script: `bash scripts/verify-campaign-detection.sh` (see [Verify campaign detection](#verify-campaign-detection-with-automated-tests))
+- Broader test guide: [running_tests_guide.md](running_tests_guide.md) (`graphSync`, `graphApi`, `test_graph_sync.py`, `campaignDetection`)
 - Architecture context: [architecture.md](architecture.md), [worker-architecture.md](worker-architecture.md)

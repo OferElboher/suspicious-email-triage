@@ -1,6 +1,6 @@
 /**
  * Phishing relationship graph view — fetches Neo4j visualization JSON and renders SVG.
- * Uses a simple circular layout (no D3) so the bundle stays lightweight for demos.
+ * Uses a simple circular layout (no external graph library) to keep the bundle small.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getJson } from "../api/client";
@@ -64,14 +64,14 @@ export default function GraphView() {
         const msg = failures[0].reason?.message || "Failed to load graph";
         setError(
           msg === "graph_campaigns_failed"
-            ? "Could not load graph data. Is Neo4j running? Try: docker compose ps neo4j"
+            ? "Graph data is unavailable. Verify Neo4j connectivity and API health."
             : msg
         );
       } else if (failures.length === 1) {
         const partial = failures[0].reason?.message || "partial load failed";
         setError(
           partial === "graph_campaigns_failed"
-            ? "Campaign list failed to load (visualization may still show). Refresh after Neo4j is healthy."
+            ? "Campaign list could not be loaded. Visualization may still be available."
             : `Partial load: ${partial}`
         );
       }
@@ -84,19 +84,16 @@ export default function GraphView() {
     }
   }, []);
 
-  /** Initial load and whenever refresh identity is stable (mount-only in practice). */
   useEffect(() => {
     refresh();
   }, [refresh]);
 
   const width = 720;
   const height = 420;
-  /** Circular layout keeps the demo dependency-free (no force-simulation library). */
   const positioned = useMemo(
     () => layoutNodes(graph.nodes || [], width, height),
     [graph.nodes, width, height]
   );
-  /** O(1) lookup when drawing edges between positioned nodes. */
   const positionById = useMemo(() => {
     const map = new Map();
     positioned.forEach((n) => map.set(n.id, n));
@@ -113,9 +110,7 @@ export default function GraphView() {
           </button>
         </div>
         <p className="muted">
-          Neo4j models senders, reviews, URLs, domains, and shared-indicator campaigns.
-          Nodes are laid out in a circle for readability; edges show SENT, CONTAINS_URL,
-          RESOLVES_TO, and PART_OF_CAMPAIGN relationships.
+          Relationship graph of senders, reviews, URLs, domains, and shared-indicator campaigns.
         </p>
         {loading && <p className="muted">Loading graph…</p>}
         {error && <p className="status-failed">{error}</p>}
@@ -129,7 +124,7 @@ export default function GraphView() {
               className="graph-svg"
               viewBox={`0 0 ${width} ${height}`}
               role="img"
-              aria-label="Suspicious activity graph"
+              aria-label="Phishing activity graph"
             >
               {(graph.edges || []).map((edge, idx) => {
                 const from = positionById.get(edge.source);
@@ -169,12 +164,8 @@ export default function GraphView() {
 
       <section className="card">
         <h2>Detected campaigns (shared indicators)</h2>
-        <p className="muted">
-          A campaign appears when two or more suspicious reviews share the same domain extracted
-          from email links.
-        </p>
         {campaigns.length === 0 && !loading && (
-          <p className="muted">No campaigns yet — submit reviews with overlapping phishing URLs.</p>
+          <p className="muted">No campaigns detected.</p>
         )}
         <ul className="dashboard-list">
           {campaigns.map((c) => (

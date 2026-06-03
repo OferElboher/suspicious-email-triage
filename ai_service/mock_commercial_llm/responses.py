@@ -25,7 +25,30 @@ def pick_mock_analysis(user_text: str, model: str, temperature: float) -> dict[s
     combined = f"{subject} {body}"
 
     cred_keywords = ("password", "credential", "verify your account", "urgent action")
-    if any(k in combined for k in cred_keywords):
+    phishing_url_hints = (
+        "example-phish",
+        "phish.test",
+        "secure-login",
+        "malware",
+        "evil.com",
+    )
+    if any(h in body for h in phishing_url_hints):
+        payload = {
+            "verdict": "likely_phishing",
+            "recommendedAction": "report_and_block",
+            "summary": (
+                f"[mock {model}] Suspicious link host detected in body (temp={temperature})."
+            ),
+            "findings": [
+                {
+                    "severity": "high",
+                    "explanation": "URL hostname matches known phishing-demo indicators.",
+                    "evidence": "phishing URL pattern in body",
+                }
+            ],
+            "followUpQuestions": ["Validate the link domain with threat intelligence."],
+        }
+    elif any(k in combined for k in cred_keywords):
         payload = {
             "verdict": "likely_phishing",
             "recommendedAction": "report_and_block",
@@ -44,7 +67,10 @@ def pick_mock_analysis(user_text: str, model: str, temperature: float) -> dict[s
                 "Do links point outside your organization?",
             ],
         }
-    elif any(k in combined for k in ("invoice", "payment", "wire", "bank")):
+    elif any(
+        k in combined
+        for k in ("invoice", "payment", "wire", "bank", "locked", "click here", "urgent")
+    ):
         payload = {
             "verdict": "suspicious",
             "recommendedAction": "investigate",

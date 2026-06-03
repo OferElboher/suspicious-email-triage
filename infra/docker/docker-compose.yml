@@ -80,6 +80,22 @@ services:
       - "19092:9092"
     restart: unless-stopped
 
+  # elasticsearch: optional full-text search (single-node, 256MB heap — laptop-friendly).
+  elasticsearch:
+    container_name: triage-elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - cluster.name=triage-dev
+      - ES_JAVA_OPTS=-Xms256m -Xmx256m
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    mem_limit: 512m
+    restart: unless-stopped
+
   # backend: Node/Express API used by the React UI.
   backend:
     container_name: triage-backend
@@ -104,6 +120,7 @@ services:
       - redpanda
       - mailpit
       - neo4j
+      - elasticsearch
     restart: unless-stopped
     healthcheck:
       # Docker HEALTHCHECK uses Node fetch (no extra packages) against /health/ready.
@@ -237,6 +254,8 @@ volumes:
   mongo-data:
   # postgres-data: auth_users password hashes survive docker compose rebuilds.
   postgres-data:
+  # elasticsearch-data: persisted search index across rebuilds.
+  elasticsearch-data:
   # neo4j-data: persisted graph state for phishing relationship analysis.
   neo4j-data:
   # django-admin-state: SQLite for Django sessions/admin log (keeps Postgres free of duplicate auth tables).
