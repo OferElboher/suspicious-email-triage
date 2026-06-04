@@ -14,7 +14,7 @@ usage() {
   echo "  2. Add redirect URI: http://localhost:3333/oauth/callback (setup script listener)."
   echo "  3. For login mode, also add: http://localhost:3000/auth/google/callback"
   echo ""
-  echo "See docs/google_oauth_email_and_signin.md"
+  echo "See docs/auth_guide_google_oauth.md"
   exit "${1:-0}"
 }
 

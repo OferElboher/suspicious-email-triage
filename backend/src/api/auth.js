@@ -75,7 +75,7 @@ router.get("/google/callback", async (req, res) => {
 
 router.post("/login", async (req, res) => {
   try {
-    const email = String(req.body.email || "").trim();
+    const email = String(req.body.email || "").trim().toLowerCase();
     const password = String(req.body.password || "");
     if (!email || !password) {
       return res.status(400).json({ error: "email_and_password_required" });

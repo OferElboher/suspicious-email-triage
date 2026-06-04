@@ -23,7 +23,7 @@ module.exports = function setupProxy(app) {
   app.use(
     API_PREFIXES,
     createProxyMiddleware({
-      target: "http://127.0.0.1:3000",
+      target: process.env.REACT_APP_PROXY_TARGET || "http://localhost:3000",
       changeOrigin: true,
       logLevel: "warn",
     })

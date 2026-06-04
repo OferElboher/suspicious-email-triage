@@ -3,7 +3,7 @@
 ## Files
 
 - `lint-all.sh` — runs backend eslint, frontend eslint, and `ruff` for Python sources.
-- `test-all.sh` — runs backend Jest, frontend CRA tests (CI mode), and pytest (`ai_service/tests` + `integration_tests`; see [running_tests_guide.md](../docs/running_tests_guide.md) and [pre_push_tests_and_stack_verification.md](../docs/pre_push_tests_and_stack_verification.md)).
+- `test-all.sh` — runs backend Jest, frontend CRA tests (CI mode), and pytest (`ai_service/tests` + `integration_tests`; see [stack_guide_running_tests.md](../docs/stack_guide_running_tests.md) and [stack_guide_pre_push_verification.md](../docs/stack_guide_pre_push_verification.md)).
 - `reset-dev-admin-password.sh` — set a user's password in PostgreSQL via bcrypt (dev script).
 - `cleanup-postgres-django-auth-tables.sh` — removes mistaken Django contrib.auth tables from PostgreSQL after the SQLite admin split.
 - `setup-local-dev.sh` — checks/install local prerequisites and project dependencies for dev.
@@ -14,6 +14,6 @@
 - `configure-dev-smtp.sh` — Mailpit or legacy SMTP password delivery (Gmail: prefer `configure-dev-google-oauth.sh`).
 - `configure-dev-google-oauth.sh` — Sign in with Google OAuth for Gmail send + app login (no App Passwords).
 
-Auth table reset and login recovery: [docs/dev_auth_tables_reset_and_admin_recovery.md](../docs/dev_auth_tables_reset_and_admin_recovery.md).
+Auth table reset and login recovery: [docs/auth_guide_dev_auth_recovery.md](../docs/auth_guide_dev_auth_recovery.md).
 
 These scripts are intended to be called from Husky hooks and local developer terminals.

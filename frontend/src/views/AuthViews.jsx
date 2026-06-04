@@ -24,7 +24,7 @@ export default function LoginView({ onForgotPassword }) {
     setSubmitting(true);
     setError("");
     try {
-      await login(email.trim(), password);
+      await login(email.trim().toLowerCase(), password);
     } catch (err) {
       if (err.networkError) {
         setError(err.message);

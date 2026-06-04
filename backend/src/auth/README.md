@@ -6,4 +6,4 @@
 - `jwt.js` — access token sign/verify.
 - `email.js` — optional SMTP password recovery.
 
-See `docs/AUTHENTICATION_AND_RBAC.md` for login, recovery, and API examples.
+See `docs/auth_guide_rbac.md` for login, recovery, and API examples.

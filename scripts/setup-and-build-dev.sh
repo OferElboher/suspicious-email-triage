@@ -23,4 +23,4 @@ DEPLOYMENT_ENV=dev docker compose -f "$COMPOSE_FILE" build
 
 echo "Dev setup and image build completed."
 echo "Start services with: DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up"
-echo "User administration (Django admin) requires the django-admin service on port 8000 — see docs/django_admin_user_management.md"
+echo "User administration (Django admin) requires the django-admin service on port 8000 — see docs/auth_guide_django_admin_users.md"

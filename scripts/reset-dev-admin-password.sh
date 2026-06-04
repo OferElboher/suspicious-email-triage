@@ -8,7 +8,7 @@ COMPOSE=(docker compose -f "$ROOT/infra/docker/docker-compose.yml")
 usage() {
   echo "Usage: bash scripts/reset-dev-admin-password.sh EMAIL NEW_PASSWORD"
   echo "Example: bash scripts/reset-dev-admin-password.sh you@example.com 'MyNewPass1'"
-  echo "Requires postgres + backend containers. See docs/dev_manual_admin_password_reset.md"
+  echo "Requires postgres + backend containers. See docs/auth_guide_dev_password_reset.md"
   exit "${1:-0}"
 }
 

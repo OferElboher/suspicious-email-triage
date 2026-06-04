@@ -9,7 +9,7 @@ if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
   echo "Usage: bash scripts/bootstrap-auth-admin.sh"
   echo "Ensures postgres is up, then seeds auth schema/roles and creates bootstrap admin if no users exist."
   echo "Email/password: AUTH_BOOTSTRAP_* in backend/.env (configure with scripts/configure-dev-bootstrap-admin.sh)"
-  echo "Auth reset / login recovery: docs/dev_auth_tables_reset_and_admin_recovery.md"
+  echo "Auth reset / login recovery: docs/auth_guide_dev_auth_recovery.md"
   exit 0
 fi
 

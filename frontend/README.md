@@ -26,7 +26,7 @@ npm run lint --prefix frontend
 
 ## Environment variables
 
-- `REACT_APP_API_URL` — base URL for the Node API (example: `http://localhost:3000`).
+- `REACT_APP_API_URL` — optional for **production builds** only; dev `npm start` uses `setupProxy.js` (leave unset). See `docs/stack_guide_frontend_api.md`.
 - `REACT_APP_DEPLOYMENT_ENV` — informational hint for UI defaults; capability flags still come from `GET /dev/features`.
 
 See `frontend/.env.development` for a local default.
@@ -34,7 +34,7 @@ See `frontend/.env.development` for a local default.
 ## Where to read more
 
 - `frontend/src/README.md` — folder map.
-- `docs/frontend_backend_integration_guide.md` — API integration notes.
+- `docs/stack_guide_frontend_api.md` — API integration notes.
 
 ---
 

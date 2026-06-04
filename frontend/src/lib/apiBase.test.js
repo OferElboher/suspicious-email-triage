@@ -18,10 +18,16 @@ describe("apiBase helpers", () => {
     expect(resolveApiBase()).toBe("");
   });
 
-  it("prefers explicit REACT_APP_API_URL when set", () => {
+  it("always uses CRA proxy in development even if REACT_APP_API_URL is set", () => {
     process.env.REACT_APP_API_URL = "http://localhost:3000";
     process.env.NODE_ENV = "development";
-    expect(resolveApiBase()).toBe("http://localhost:3000");
+    expect(resolveApiBase()).toBe("");
+  });
+
+  it("prefers explicit REACT_APP_API_URL in production builds", () => {
+    process.env.REACT_APP_API_URL = "https://api.example.com";
+    process.env.NODE_ENV = "production";
+    expect(resolveApiBase()).toBe("https://api.example.com");
   });
 
   it("defaults production build to localhost:3000", () => {

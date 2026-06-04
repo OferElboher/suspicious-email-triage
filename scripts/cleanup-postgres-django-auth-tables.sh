@@ -37,4 +37,4 @@ DROP TABLE IF EXISTS django_migrations CASCADE;
 SQL
 
 echo "Done. Refresh DBeaver. Django admin now stores sessions in SQLite (django-admin container volume)."
-echo "See docs/django_admin_user_management.md and docs/pre_push_tests_and_stack_verification.md."
+echo "See docs/auth_guide_django_admin_users.md and docs/stack_guide_pre_push_verification.md."

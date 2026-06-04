@@ -114,11 +114,11 @@ def test_neo4j_graph_module_wired():
 def test_neo4j_setup_and_demo_docs_exist():
     """WSL/Windows setup and hands-on demo guides must be indexed from docs/README.md."""
     readme = (ROOT / "docs/README.md").read_text(encoding="utf-8")
-    assert (ROOT / "docs/neo4j_wsl_windows_setup_guide.md").is_file()
-    assert (ROOT / "docs/neo4j_phishing_graph_demo_guide.md").is_file()
-    assert "neo4j_wsl_windows_setup_guide.md" in readme
-    assert "neo4j_phishing_graph_demo_guide.md" in readme
-    setup = (ROOT / "docs/neo4j_wsl_windows_setup_guide.md").read_text(encoding="utf-8")
+    assert (ROOT / "docs/tech_neo4j_setup_wsl_windows.md").is_file()
+    assert (ROOT / "docs/graph_demo_neo4j_phishing.md").is_file()
+    assert "tech_neo4j_setup_wsl_windows.md" in readme
+    assert "graph_demo_neo4j_phishing.md" in readme
+    setup = (ROOT / "docs/tech_neo4j_setup_wsl_windows.md").read_text(encoding="utf-8")
     assert "NEO4J_PASSWORD" in setup
     assert "3000" in setup and "3001" in setup
     assert "GRAPH_INTERNAL_TOKEN" in setup
@@ -163,8 +163,8 @@ def test_neo4j_client_converts_limit_integers():
 def test_tbd_roadmap_doc_indexed():
     """Production roadmap doc must be linked from docs/README.md."""
     readme = (ROOT / "docs/README.md").read_text(encoding="utf-8")
-    assert (ROOT / "docs/TBD.md").is_file()
-    assert "TBD.md" in readme
+    assert (ROOT / "docs/roadmap_tbd.md").is_file()
+    assert "roadmap_tbd.md" in readme
 
 
 def test_health_ops_and_helm_wired():
@@ -196,13 +196,31 @@ def test_health_ops_and_helm_wired():
 def test_observability_and_api_docs_indexed():
     readme = (ROOT / "docs/README.md").read_text(encoding="utf-8")
     for name in (
-        "kubernetes_helm_deployment_guide.md",
-        "rest_api_reference.md",
-        "health_checks_and_uptime_guide.md",
-        "central_logging_guide.md",
-        "metrics_and_alerting_guide.md",
-        "ui_themes_guide.md",
-        "elasticsearch_search_guide.md",
+        "ops_guide_kubernetes_helm.md",
+        "api_reference_rest.md",
+        "ops_guide_health_uptime.md",
+        "ops_guide_central_logging.md",
+        "ops_guide_metrics_alerting.md",
+        "ui_guide_color_themes.md",
+        "search_guide_elasticsearch_reviews.md",
+        "tech_neo4j_browser_guide.md",
     ):
         assert (ROOT / f"docs/{name}").is_file()
         assert name in readme
+
+
+def test_docs_readme_indexes_all_guides():
+    """Every docs/*.md (except README and util_*) must appear in docs/README.md."""
+    readme = (ROOT / "docs/README.md").read_text(encoding="utf-8")
+    skip = {"README.md", "util_terminal_block_format.md"}
+    for path in sorted((ROOT / "docs").glob("*.md")):
+        if path.name in skip:
+            continue
+        assert path.name in readme, f"{path.name} missing from docs/README.md"
+
+
+def test_dev_login_uses_cra_proxy_in_development():
+    """Regression: REACT_APP_API_URL must not bypass setupProxy in development."""
+    src = (ROOT / "frontend/src/lib/apiBase.js").read_text(encoding="utf-8")
+    assert 'process.env.NODE_ENV === "development"' in src
+    assert 'return ""' in src

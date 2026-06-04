@@ -18,7 +18,7 @@ usage() {
   echo ""
   echo "Gmail: do NOT use temp-admin-pswd. Prefer Google OAuth instead:"
   echo "  bash scripts/configure-dev-google-oauth.sh email CLIENT_ID CLIENT_SECRET you@gmail.com"
-  echo "See docs/google_oauth_email_and_signin.md"
+  echo "See docs/auth_guide_google_oauth.md"
   exit "${1:-0}"
 }
 
@@ -110,4 +110,4 @@ echo "  $COMPOSE up -d --force-recreate backend"
 echo ""
 echo "Then POST /auth/forgot-password or use the UI Forgot password link."
 echo "If Gmail rejects credentials, use an App Password — not temp-admin-pswd."
-echo "See docs/dev_smtp_password_recovery_email.md"
+echo "See docs/auth_guide_dev_smtp_recovery.md"

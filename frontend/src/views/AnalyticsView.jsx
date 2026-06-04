@@ -123,7 +123,7 @@ export default function AnalyticsView() {
       <p className="muted">
         Charts count new reviews entering the system (created timestamps). Adjust the window and
         bucket size to match the story you are telling (incident hour vs weekly trend). See{" "}
-        <code>docs/analytics_and_graphs_guide.md</code> in the repository for a full chart guide.
+        <code>docs/ui_guide_analytics_charts.md</code> in the repository for a full chart guide.
       </p>
 
       <div className="row" style={{ marginTop: "0.75rem" }}>

@@ -14,4 +14,4 @@ DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up --build
 
 ## Windows GUI database clients
 
-To connect DBeaver, MongoDB Compass, or Redis Insight on Windows 11 to these containers, see `docs/windows_docker_databases_start_and_verify.md`.
+To connect DBeaver, MongoDB Compass, or Redis Insight on Windows 11 to these containers, see `docs/stack_guide_windows_docker_databases.md`.
