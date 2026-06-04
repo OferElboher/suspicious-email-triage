@@ -17,7 +17,82 @@ This project runs tests in **three layers**: Node (Jest), React (CRA/Jest), and 
 | **All Python tests** | `bash scripts/ensure-ai-service-venv.sh && ai_service/.venv/bin/pytest` |
 | **One pytest file** | `ai_service/.venv/bin/pytest path/to/test_file.py -v` |
 | **One pytest function** | `ai_service/.venv/bin/pytest path/to/test_file.py::test_name -v` |
-| **One Jest file** | `cd backend && npm test -- --testPathPattern=authEmail` |
+| **One Jest test file** | See [Map `backend/src` → Jest command](#map-backendsrc--jest-command) below |
+
+---
+
+## Map `backend/src` → Jest command {#map-backendsrc--jest-command}
+
+Jest runs files under **`backend/__tests__/*.test.js`**, not `backend/src/` directly. Use **`--testPathPattern`** with the **test file name** (substring match). Always add **`--watchAll=false`** so the run exits (same as CI).
+
+**Example — tests for `backend/src/graph/campaignDetection.js`:**
+
+<div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
+
+<p><strong>Run in terminal</strong> — WSL, matches <code>campaignDetection.test.js</code> (covers <code>src/graph/campaignDetection.js</code>)</p>
+
+```bash
+cd ~/suspicious-email-triage/backend
+npm test -- --watchAll=false --testPathPattern=campaignDetection
+```
+
+</div>
+
+**Example — tests for `frontend/src/App.js`:**
+
+<div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
+
+<p><strong>Run in terminal</strong> — matches <code>App.test.js</code></p>
+
+```bash
+cd ~/suspicious-email-triage/frontend
+npm test -- --watchAll=false --testPathPattern=App.test
+```
+
+</div>
+
+| Source (`backend/src/…`) | Test file (`backend/__tests__/`) | `--testPathPattern=` |
+|--------------------------|----------------------------------|----------------------|
+| `graph/campaignDetection.js` | `campaignDetection.test.js` | `campaignDetection` |
+| `graph/syncReview.js` | `graphSync.test.js` | `graphSync` |
+| `graph/domainFromUrl.js` | `domainFromUrl.test.js` | `domainFromUrl` |
+| `api/graph.js` | `graphApi.test.js` | `graphApi` |
+| `api/graphInternal.js` | `graphInternal.test.js` | `graphInternal` |
+| `graph/neo4jClient.js` | `neo4jParams.test.js` | `neo4jParams` |
+| `api/auth.js` (login) | `authLogin.test.js` | `authLogin` |
+| `auth/email.js` | `authEmail.test.js` | `authEmail` |
+| `auth/password.js` | `authPassword.test.js` | `authPassword` |
+| `api/search.js` | `searchApi.test.js` | `searchApi` |
+| `search/reviewSearchIndex.js` | `reviewSearchIndex.test.js` | `reviewSearchIndex` |
+| `api/ops.js` | `opsApi.test.js` | `opsApi` |
+| `api/health.js` | `healthApi.test.js` | `healthApi` |
+| `llm/llmProvider.js` | `llmProvider.test.js` | `llmProvider` |
+
+**One test by name inside a file:**
+
+<div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
+
+<p><strong>Run in terminal</strong></p>
+
+```bash
+cd ~/suspicious-email-triage/backend
+npm test -- --watchAll=false --testPathPattern=authEmail --testNamePattern="smtpDeliveryMode"
+```
+
+</div>
+
+**Campaign + mock LLM (script used in graph demo):**
+
+<div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
+
+<p><strong>Run in terminal</strong> — repo root</p>
+
+```bash
+cd ~/suspicious-email-triage
+bash scripts/verify-campaign-detection.sh
+```
+
+</div>
 
 ---
 
@@ -50,20 +125,20 @@ cd ~/suspicious-email-triage/backend
 npm test
 ```
 
-### Run one file or pattern
+### Run one backend test file (quick copy-paste)
+
+Same rules as [Map `backend/src` → Jest command](#map-backendsrc--jest-command). Pattern:
 
 ```bash
-# Single file by name pattern
-npm test -- --testPathPattern=authEmail
-
-# Single test name
-npm test -- --testNamePattern="smtpDeliveryMode defaults"
+cd ~/suspicious-email-triage/backend
+npm test -- --watchAll=false --testPathPattern=PATTERN
 ```
 
-Examples:
+Replace `PATTERN` with a row from the table above (e.g. `campaignDetection` for `src/graph/campaignDetection.js`).
 
-| File | What it covers |
-|------|----------------|
+| Test file | What it covers |
+|-----------|----------------|
+| `campaignDetection.test.js` | Shared-domain campaigns (`campaignDetection.js`) |
 | `authPassword.test.js` | bcrypt, reset token hashing |
 | `authEmail.test.js` | Mailpit / external / delivery modes |
 | `gmailApi.test.js` | Google OAuth Gmail API send (mocked) |
@@ -73,7 +148,8 @@ Examples:
 | `graphSync.test.js` | Neo4j sync payload + mocked Cypher |
 | `graphApi.test.js` | Authenticated `/graph` routes |
 | `graphInternal.test.js` | Celery internal sync token |
-| `integration_tests/test_neo4j_graph.py` | Live Bolt (skipped if Neo4j down) |
+
+**Python live Neo4j** (not Jest): `ai_service/.venv/bin/pytest integration_tests/test_neo4j_graph.py -v`
 
 Neo4j hands-on demo: [graph_demo_neo4j_phishing.md](graph_demo_neo4j_phishing.md).
 
@@ -86,11 +162,22 @@ cd ~/suspicious-email-triage/frontend
 npm test -- --watchAll=false
 ```
 
-### Run one file
+### Run one frontend test file
+
+CRA tests live next to components (e.g. `frontend/src/App.test.js` for `App.js`). Use **`--testPathPattern`** on the **test filename**:
+
+<div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
+
+<p><strong>Run in terminal</strong> — example: <code>App.test.js</code> (covers main <code>App.js</code> routing)</p>
 
 ```bash
+cd ~/suspicious-email-triage/frontend
 npm test -- --watchAll=false --testPathPattern=App.test
 ```
+
+</div>
+
+Other examples: `apiBase.test` → `src/lib/apiBase.js`, `RecentReviewsList.test` → `src/components/RecentReviewsList.jsx`.
 
 ---
 

@@ -172,6 +172,18 @@ Use **`http://localhost:3000`** (Node API). Port **3001** is the React dev serve
 
 Automated route tests: `backend/__tests__/searchApi.test.js`, `backend/__tests__/reviewSearchIndex.test.js`.
 
+<div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
+
+<p><strong>Run in terminal</strong> — Elasticsearch API tests (<code>searchApi.js</code> / <code>reviewSearchIndex.js</code>)</p>
+
+```bash
+cd ~/suspicious-email-triage/backend
+npm test -- --watchAll=false --testPathPattern=searchApi
+npm test -- --watchAll=false --testPathPattern=reviewSearchIndex
+```
+
+</div>
+
 ---
 
 ## UI: Search index panel and clear button

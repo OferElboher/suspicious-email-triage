@@ -183,6 +183,28 @@ Theme changes apply **before** the server responds so the UI stays snappy; faile
 - `backend/__tests__/authPreferences.test.js` — GET catalog, PUT validation, persistence
 - `frontend/src/themes/themes.test.js` — `applyThemeToDocument` sets `data-theme`
 
+<div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
+
+<p><strong>Run in terminal</strong> — backend preferences API</p>
+
+```bash
+cd ~/suspicious-email-triage/backend
+npm test -- --watchAll=false --testPathPattern=authPreferences
+```
+
+</div>
+
+<div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
+
+<p><strong>Run in terminal</strong> — frontend theme utilities</p>
+
+```bash
+cd ~/suspicious-email-triage/frontend
+npm test -- --watchAll=false --testPathPattern=themes.test
+```
+
+</div>
+
 ---
 
 ## Design notes

@@ -79,3 +79,18 @@ sequenceDiagram
 ## Operational notes
 
 The architecture is intentionally modular. A team can scale the API, dispatcher, and Celery workers separately. Logs are written as JSON lines so they can be searched locally and later shipped to a log platform. In dev, the UI also offers a reset control that stops simulation, clears Mongo review data, truncates PostgreSQL statistics, flushes Redis queues, and recreates the local Kafka ingest topic.
+---
+
+## Command you can run (this guide) {#run-one-command}
+
+<div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
+
+<p><strong>Run in terminal</strong> — WSL, repository root unless noted</p>
+
+```bash
+cd ~/suspicious-email-triage
+DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d backend mongo postgres redis ai-celery ai-kafka-dispatch
+```
+
+</div>
+

@@ -406,3 +406,18 @@ This pipeline provides:
 ---
 
 # End of Document
+---
+
+## Command you can run (this guide) {#run-one-command}
+
+<div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
+
+<p><strong>Run in terminal</strong> — WSL, repository root unless noted</p>
+
+```bash
+cd ~/suspicious-email-triage
+bash scripts/test-all.sh
+```
+
+</div>
+

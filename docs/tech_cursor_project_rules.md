@@ -25,3 +25,18 @@ This file was renamed from the accidental `Untitled` file. It mirrors the projec
 - Provide meaningful, actionable error messages.
 - Implement graceful degradation or safe fallback mechanisms.
 - Validate incoming data, API payloads, and function inputs before processing.
+---
+
+## Command you can run (this guide) {#run-one-command}
+
+<div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
+
+<p><strong>Run in terminal</strong> — WSL, repository root unless noted</p>
+
+```bash
+cd ~/suspicious-email-triage
+cat .cursorrules | head -40
+```
+
+</div>
+

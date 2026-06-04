@@ -69,3 +69,18 @@ That is the “combination”: not everything in one process, but a soft polyglo
 
 - If you are implementing a feature, first decide whether it belongs in **HTTP ingestion** (Node), **async scoring** (Python/Celery), **Django service support**, or **presentation** (React).
 - If you are fixing CI, keep the checks explicit: Node/React checks should run for the main UI/API path, Python/Celery checks should run for `ai_service`, and Django checks should run only when the Django dependency set is installed.
+---
+
+## Command you can run (this guide) {#run-one-command}
+
+<div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
+
+<p><strong>Run in terminal</strong> — WSL, repository root unless noted</p>
+
+```bash
+cd ~/suspicious-email-triage
+bash scripts/lint-all.sh
+```
+
+</div>
+

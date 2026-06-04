@@ -132,3 +132,19 @@ LIMIT 100
 JWT routes (`GET /graph/campaigns`, `GET /graph/visualization`) return JSON from the same graph. Browser is best for **ad hoc Cypher**; the React **Phishing graph** tab is best for live demos.
 
 **Tests:** [stack_guide_running_tests.md](stack_guide_running_tests.md), [graph_demo_neo4j_phishing.md — verify campaigns](graph_demo_neo4j_phishing.md#verify-campaign-detection-with-automated-tests).
+---
+
+## Command you can run (this guide) {#run-one-command}
+
+<div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
+
+<p><strong>Run in terminal</strong> — WSL, repository root unless noted</p>
+
+```bash
+cd ~/suspicious-email-triage
+DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d neo4j
+# Then open http://localhost:7474/browser/ in your Windows browser
+```
+
+</div>
+

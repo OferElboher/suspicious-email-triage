@@ -209,6 +209,16 @@ def test_observability_and_api_docs_indexed():
         assert name in readme
 
 
+def test_each_doc_has_runnable_cli_sample():
+    """Every guide under docs/ must include at least one ```bash block (self-contained samples)."""
+    skip = {"util_terminal_block_format.md"}
+    for path in sorted((ROOT / "docs").glob("*.md")):
+        if path.name in skip:
+            continue
+        text = path.read_text(encoding="utf-8")
+        assert "```bash" in text, f"{path.name} must include a ```bash command sample"
+
+
 def test_docs_readme_indexes_all_guides():
     """Every docs/*.md (except README and util_*) must appear in docs/README.md."""
     readme = (ROOT / "docs/README.md").read_text(encoding="utf-8")

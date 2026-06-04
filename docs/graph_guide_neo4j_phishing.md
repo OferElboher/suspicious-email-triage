@@ -93,9 +93,16 @@ Neo4j runs as service `neo4j` in `infra/docker/docker-compose.yml`:
 
 Start the graph with the rest of the stack:
 
+<div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
+
+<p><strong>Run in terminal</strong> — WSL, repository root</p>
+
 ```bash
+cd ~/suspicious-email-triage
 DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d neo4j backend ai-celery
 ```
+
+</div>
 
 ---
 
@@ -129,33 +136,57 @@ This is intentionally lightweight (plain SVG, no D3) so the demo stays easy to m
 
 ## Code map
 
-| Area | Path |
-|------|------|
-| Bolt driver singleton | `backend/src/graph/neo4jClient.js` |
-| Review → Cypher upsert | `backend/src/graph/syncReview.js` |
-| Campaign detection | `backend/src/graph/campaignDetection.js` |
-| Read queries / viz JSON | `backend/src/graph/graphQueries.js` |
-| Domain parsing | `backend/src/graph/domainFromUrl.js` |
-| Public REST routes | `backend/src/api/graph.js` |
-| Internal worker route | `backend/src/api/graphInternal.js` |
-| Celery callback | `ai_service/app/graph_sync.py` |
-| React UI | `frontend/src/views/GraphView.jsx` |
+| Area | Source path | Run its unit tests (terminal) |
+|------|-------------|-------------------------------|
+| Bolt driver singleton | `backend/src/graph/neo4jClient.js` | `cd ~/suspicious-email-triage/backend && npm test -- --watchAll=false --testPathPattern=neo4jParams` |
+| Review → Cypher upsert | `backend/src/graph/syncReview.js` | `cd ~/suspicious-email-triage/backend && npm test -- --watchAll=false --testPathPattern=graphSync` |
+| Campaign detection | `backend/src/graph/campaignDetection.js` | `cd ~/suspicious-email-triage/backend && npm test -- --watchAll=false --testPathPattern=campaignDetection` |
+| Read queries / viz JSON | `backend/src/graph/graphQueries.js` | `cd ~/suspicious-email-triage/backend && npm test -- --watchAll=false --testPathPattern=graphApi` |
+| Domain parsing | `backend/src/graph/domainFromUrl.js` | `cd ~/suspicious-email-triage/backend && npm test -- --watchAll=false --testPathPattern=domainFromUrl` |
+| Public REST routes | `backend/src/api/graph.js` | `cd ~/suspicious-email-triage/backend && npm test -- --watchAll=false --testPathPattern=graphApi` |
+| Internal worker route | `backend/src/api/graphInternal.js` | `cd ~/suspicious-email-triage/backend && npm test -- --watchAll=false --testPathPattern=graphInternal` |
+| Celery callback | `ai_service/app/graph_sync.py` | `cd ~/suspicious-email-triage && ai_service/.venv/bin/pytest ai_service/tests/test_graph_sync.py -v` |
+| React UI | `frontend/src/views/GraphView.jsx` | *(manual — use [graph_demo_neo4j_phishing.md](graph_demo_neo4j_phishing.md))* |
+
+Jest matches **test files** under `backend/__tests__/`, not `src/` paths directly. Pattern details: [stack_guide_running_tests.md — Map backend/src → Jest](stack_guide_running_tests.md#map-backendsrc--jest-command).
 
 ---
 
-## Tests
+## Tests {#tests}
 
-| File | What it verifies |
-|------|------------------|
-| `backend/__tests__/domainFromUrl.test.js` | URL → hostname parsing |
-| `backend/__tests__/graphSync.test.js` | Payload mapping + mocked Cypher |
-| `backend/__tests__/graphApi.test.js` | Authenticated graph routes |
-| `backend/__tests__/graphInternal.test.js` | Service token on internal sync |
-| `ai_service/tests/test_graph_sync.py` | Celery HTTP callback |
-| `integration_tests/test_neo4j_graph.py` | Live Bolt check (skipped if Neo4j down) |
+<div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
 
-Run everything: [stack_guide_running_tests.md](stack_guide_running_tests.md).  
-Try features manually: [graph_demo_neo4j_phishing.md](graph_demo_neo4j_phishing.md).
+<p><strong>Run in terminal</strong> — campaign detection (<code>campaignDetection.js</code>) + mock LLM phishing rules</p>
+
+```bash
+cd ~/suspicious-email-triage
+bash scripts/verify-campaign-detection.sh
+```
+
+</div>
+
+<div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
+
+<p><strong>Run in terminal</strong> — Jest only for <code>backend/src/graph/campaignDetection.js</code></p>
+
+```bash
+cd ~/suspicious-email-triage/backend
+npm test -- --watchAll=false --testPathPattern=campaignDetection
+```
+
+</div>
+
+| Test file | What it verifies |
+|-----------|------------------|
+| `backend/__tests__/domainFromUrl.test.js` | URL → hostname parsing — `--testPathPattern=domainFromUrl` |
+| `backend/__tests__/graphSync.test.js` | Payload mapping + mocked Cypher — `--testPathPattern=graphSync` |
+| `backend/__tests__/graphApi.test.js` | Authenticated graph routes — `--testPathPattern=graphApi` |
+| `backend/__tests__/graphInternal.test.js` | Service token on internal sync — `--testPathPattern=graphInternal` |
+| `ai_service/tests/test_graph_sync.py` | Celery HTTP callback — `ai_service/.venv/bin/pytest ai_service/tests/test_graph_sync.py -v` |
+| `integration_tests/test_neo4j_graph.py` | Live Bolt (skipped if Neo4j down) — `ai_service/.venv/bin/pytest integration_tests/test_neo4j_graph.py -v` |
+
+Full suite: `bash scripts/test-all.sh` — see [stack_guide_running_tests.md](stack_guide_running_tests.md).  
+Manual demo: [graph_demo_neo4j_phishing.md](graph_demo_neo4j_phishing.md).
 
 ---
 
@@ -174,7 +205,19 @@ Try features manually: [graph_demo_neo4j_phishing.md](graph_demo_neo4j_phishing.
 | Empty graph | Neo4j not running or `NEO4J_ENABLED=false` | Start `neo4j` container; check backend logs |
 | Campaigns never appear | Fewer than 2 risky reviews share a domain | Submit two reviews with the same phishing URL host |
 | Celery never updates graph | Wrong `BACKEND_INTERNAL_URL` or internal token | Recreate `ai-celery` after env changes; see [tech_neo4j_setup_wsl_windows.md](tech_neo4j_setup_wsl_windows.md) |
-| Red `graph_campaigns_failed` in UI | Neo4j down or backend needs rebuild after graph fixes | `docker compose ps neo4j`; `docker compose up -d --force-recreate backend` |
+| Red `graph_campaigns_failed` in UI | Neo4j down or backend needs rebuild after graph fixes | Commands in box below |
+
+<div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
+
+<p><strong>Run in terminal</strong> — check Neo4j and recreate backend</p>
+
+```bash
+cd ~/suspicious-email-triage
+DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml ps neo4j
+DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --force-recreate backend
+```
+
+</div>
 
 Hands-on demo script: [graph_demo_neo4j_phishing.md](graph_demo_neo4j_phishing.md).
 

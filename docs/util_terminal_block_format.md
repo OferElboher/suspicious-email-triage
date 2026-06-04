@@ -21,6 +21,8 @@ YOUR_FULL_COMMAND_HERE
 
 ## Rules
 
+- **Every guide** under `docs/` must include **at least one** runnable terminal sample (gray box or ` ```bash ` block) so readers never have to hunt another doc for a first command.
+- When a doc mentions a **source file** (e.g. `backend/src/graph/campaignDetection.js`), include the matching **test command** on the same page, e.g. `npm test -- --watchAll=false --testPathPattern=campaignDetection` (see [stack_guide_running_tests.md](stack_guide_running_tests.md#map-backendsrc--jest-command)).
 - Always include `cd ~/suspicious-email-triage` when the command must run from the repo root.
 - Use **full** commands (no `...` omissions) so a novice can copy-paste.
 - For tests, name the script or `npm test` / `pytest` path explicitly.

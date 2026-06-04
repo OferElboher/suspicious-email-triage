@@ -224,7 +224,28 @@ The mock server does **not** read your databases itself — all Mongo/Postgres c
 | `ai_service/tests/test_mock_commercial_llm.py` | Stock response rules, health route |
 | `backend/__tests__/llmProvider.test.js` | Node BullMQ path parity |
 
-Run: `ai_service/.venv/bin/pytest ai_service/tests/test_llm_client.py ai_service/tests/test_mock_commercial_llm.py -v`
+<div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
+
+<p><strong>Run in terminal</strong> — Python mock LLM tests</p>
+
+```bash
+cd ~/suspicious-email-triage
+bash scripts/ensure-ai-service-venv.sh
+ai_service/.venv/bin/pytest ai_service/tests/test_llm_client.py ai_service/tests/test_mock_commercial_llm.py -v
+```
+
+</div>
+
+<div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
+
+<p><strong>Run in terminal</strong> — Node <code>llmProvider.js</code> (<code>llmProvider.test.js</code>)</p>
+
+```bash
+cd ~/suspicious-email-triage/backend
+npm test -- --watchAll=false --testPathPattern=llmProvider
+```
+
+</div>
 
 ---
 

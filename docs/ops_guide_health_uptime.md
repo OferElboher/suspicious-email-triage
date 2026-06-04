@@ -164,4 +164,26 @@ Tune `initialDelaySeconds` if Mongo/Postgres need longer cold starts on your clu
 
 Jest: `backend/__tests__/healthApi.test.js` — live/ready/summary status codes and payloads.
 
+<div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
+
+<p><strong>Run in terminal</strong> — <code>healthApi.test.js</code> (<code>src/api/health.js</code>)</p>
+
+```bash
+cd ~/suspicious-email-triage/backend
+npm test -- --watchAll=false --testPathPattern=healthApi
+```
+
+</div>
+
 Integration: `integration_tests/test_http_endpoints.py` hits `GET /health`.
+
+<div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
+
+<p><strong>Run in terminal</strong></p>
+
+```bash
+cd ~/suspicious-email-triage
+ai_service/.venv/bin/pytest integration_tests/test_http_endpoints.py -v
+```
+
+</div>

@@ -56,3 +56,19 @@ Development mode also includes a **reset local databases & queues** action. It i
 ## If you only remember one sentence
 
 This system is a **triage workbench**: it ingests suspicious email content, runs automated checks asynchronously, presents an explainable result, and supports human overrides for accountability.
+---
+
+## Command you can run (this guide) {#run-one-command}
+
+<div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
+
+<p><strong>Run in terminal</strong> — WSL, repository root unless noted</p>
+
+```bash
+cd ~/suspicious-email-triage
+PORT=3001 npm start --prefix frontend
+# Open http://localhost:3001 and sign in
+```
+
+</div>
+

@@ -476,3 +476,18 @@ When planning budget, treat **P0 security and backups** on managed databases as 
 ---
 
 When you implement an item, document it in [roadmap_implemented_beyond_requirements.md](roadmap_implemented_beyond_requirements.md) and link runbooks from [README.md](README.md).
+---
+
+## Command you can run (this guide) {#run-one-command}
+
+<div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
+
+<p><strong>Run in terminal</strong> — WSL, repository root unless noted</p>
+
+```bash
+cd ~/suspicious-email-triage
+bash scripts/lint-all.sh
+```
+
+</div>
+

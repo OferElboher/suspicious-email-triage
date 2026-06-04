@@ -172,3 +172,19 @@ Compare counts to the bar chart for the same time window.
 - [stack_guide_windows_startup.md](stack_guide_windows_startup.md) — start stack & open UI
 - [stack_guide_dev_database_credentials.md](stack_guide_dev_database_credentials.md) — PostgreSQL connection info
 - [arch_guide_overview.md](arch_guide_overview.md) — Mongo vs PostgreSQL split
+---
+
+## Command you can run (this guide) {#run-one-command}
+
+<div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
+
+<p><strong>Run in terminal</strong> — WSL, repository root unless noted</p>
+
+```bash
+cd ~/suspicious-email-triage
+curl -sS http://localhost:3000/health/live
+# API must be up; open charts at http://localhost:3001/#analytics after sign-in
+```
+
+</div>
+

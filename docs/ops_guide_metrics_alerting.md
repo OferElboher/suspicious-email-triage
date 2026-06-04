@@ -166,3 +166,14 @@ The roadmap also mentions dashboards (reviews/min, Celery failure rate, p95 late
 ## Tests
 
 `backend/__tests__/opsApi.test.js` — Prometheus text format, alerts auth, log summary permissions.
+
+<div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
+
+<p><strong>Run in terminal</strong> — <code>opsApi.test.js</code> (covers <code>src/api/ops.js</code>)</p>
+
+```bash
+cd ~/suspicious-email-triage/backend
+npm test -- --watchAll=false --testPathPattern=opsApi
+```
+
+</div>
