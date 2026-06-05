@@ -11,7 +11,8 @@ def test_analyze_with_llm_disabled_returns_stub(monkeypatch):
     """DISABLE_LLM=true must skip network (CI-safe default)."""
     monkeypatch.setenv("DISABLE_LLM", "true")
     result = analyze_with_llm({"senderEmail": "a@b.com", "subject": "Hi", "body": "x"})
-    assert result["verdict"] == "benign"
+    assert result.get("_llmDisabled") is True
+    assert "verdict" not in result
     assert "disabled" in result["summary"].lower()
 
 

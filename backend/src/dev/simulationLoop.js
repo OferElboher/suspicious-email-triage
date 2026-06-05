@@ -52,6 +52,7 @@ async function tick() {
     body: "Synthetic message for throughput testing in development.",
     links: [],
     referenceSources: [],
+    source: "dev_simulation",
     status: "pending",
   });
   await enqueueAfterCreate(review._id);

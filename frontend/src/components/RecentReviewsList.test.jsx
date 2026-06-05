@@ -29,6 +29,32 @@ describe("RecentReviewsList", () => {
     });
   });
 
+  it("prefixes simulation rows in the list", () => {
+    render(
+      <RecentReviewsList
+        reviews={[
+          {
+            _id: "sim1",
+            subject: "Simulated ingest 2026",
+            senderEmail: "sim@dev.local",
+            source: "dev_simulation",
+            status: "completed",
+          },
+        ]}
+        page={0}
+        lastPage={0}
+        hasMore={false}
+        totalReviews={1}
+        canReadGraph={false}
+        includeSimulation
+        onIncludeSimulationChange={() => {}}
+        onRefresh={() => {}}
+        onPageChange={() => {}}
+      />
+    );
+    expect(screen.getByText(/\[Simulation\]/)).toBeInTheDocument();
+  });
+
   it("expands review details on row click", async () => {
     render(
       <RecentReviewsList

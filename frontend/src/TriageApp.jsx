@@ -64,6 +64,8 @@ export default function TriageApp() {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [totalReviews, setTotalReviews] = useState(0);
+  const [includeSimulation, setIncludeSimulation] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const lastPage = Math.max(0, Math.ceil(totalReviews / PAGE_SIZE) - 1);
 
@@ -99,11 +101,20 @@ export default function TriageApp() {
   useReviewPoller(active?._id, onPoll);
 
   const fetchPage = useCallback(async () => {
-    const data = await getJson(`/reviews?limit=${PAGE_SIZE}&page=${page}`);
-    setReviews(data.data || []);
+    const sim = includeSimulation ? "&includeSimulation=true" : "";
+    const data = await getJson(`/reviews?limit=${PAGE_SIZE}&page=${page}${sim}`);
+    const rows = data.data || [];
+    const seen = new Set();
+    const unique = rows.filter((row) => {
+      const id = String(row._id);
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+    setReviews(unique);
     setHasMore(Boolean(data.hasMore));
     setTotalReviews(Number(data.total) || 0);
-  }, [page]);
+  }, [page, includeSimulation]);
 
   useEffect(() => {
     if (hasPermission("reviews.read")) {
@@ -112,20 +123,41 @@ export default function TriageApp() {
   }, [fetchPage, hasPermission]);
 
   const submit = async () => {
+    if (submitting) return;
+    setSubmitting(true);
     setActive(null);
-    const created = await postJson("/reviews", {
-      senderName,
-      senderEmail,
-      subject: subject || "(no subject)",
-      body,
-      referenceSources: [],
-    });
-    setActive({
-      _id: created.id,
-      status: created.status || "pending",
-      analysisResult: null,
-      _polling: true,
-    });
+    try {
+      const created = await postJson("/reviews", {
+        senderName,
+        senderEmail,
+        subject: subject || "(no subject)",
+        body,
+        referenceSources: [],
+      });
+      setActive({
+        _id: created.id,
+        status: created.status || "pending",
+        analysisResult: null,
+        _polling: true,
+      });
+      setPage(0);
+      const sim = includeSimulation ? "&includeSimulation=true" : "";
+      const list = await getJson(`/reviews?limit=${PAGE_SIZE}&page=0${sim}`);
+      const rows = list.data || [];
+      const seen = new Set();
+      setReviews(
+        rows.filter((row) => {
+          const id = String(row._id);
+          if (seen.has(id)) return false;
+          seen.add(id);
+          return true;
+        })
+      );
+      setHasMore(Boolean(list.hasMore));
+      setTotalReviews(Number(list.total) || 0);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const saveOverride = async () => {
@@ -240,9 +272,10 @@ export default function TriageApp() {
                 <button
                   className="primary"
                   type="button"
+                  disabled={submitting}
                   onClick={() => submit().catch((e) => window.alert(e.message))}
                 >
-                  Queue analysis
+                  {submitting ? "Queuing…" : "Queue analysis"}
                 </button>
               </div>
             </section>
@@ -330,6 +363,8 @@ export default function TriageApp() {
             hasMore={hasMore}
             totalReviews={totalReviews}
             canReadGraph={canReadGraph}
+            includeSimulation={includeSimulation}
+            onIncludeSimulationChange={setIncludeSimulation}
             onRefresh={() => fetchPage().catch(() => {})}
             onPageChange={setPage}
           />

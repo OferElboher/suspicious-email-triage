@@ -27,6 +27,18 @@ describe("llmProvider", () => {
     expect(llmProvider()).toBe("disabled");
   });
 
+  test("disabled stub omits verdict so rules are not overwritten", async () => {
+    process.env.DISABLE_LLM = "true";
+    const result = await analyzeReview({
+      _id: "x",
+      senderEmail: "a@b.com",
+      subject: "hi",
+      body: "https://secure-login.example-phish.test",
+    });
+    expect(result._llmDisabled).toBe(true);
+    expect(result.verdict).toBeUndefined();
+  });
+
   test("analyzeReview calls mock commercial chat completions API", async () => {
     process.env.DISABLE_LLM = "false";
     process.env.LLM_PROVIDER = "mock_commercial";

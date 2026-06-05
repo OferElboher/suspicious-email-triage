@@ -52,11 +52,10 @@ function parseModelJson(raw, reviewId) {
   }
 }
 
-/** Deterministic stub when DISABLE_LLM=true. */
+/** Placeholder when DISABLE_LLM=true — no verdict so mergeHybrid keeps rule_engine output. */
 function disabledStub() {
   return {
-    verdict: "benign",
-    recommendedAction: "close",
+    _llmDisabled: true,
     summary: "LLM disabled (stub)",
     findings: [],
     followUpQuestions: [],

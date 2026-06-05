@@ -55,17 +55,24 @@ Sign in with a user that has **`graph.read`** (default admin/analyst roles).
 
 ## Part 2 — Seed two related “phishing” reviews {#part-2-seed-reviews}
 
-Campaign detection needs **at least two completed reviews** with verdict **`suspicious`** or **`likely_phishing`** that share the **same URL domain**.
+**What you are proving:** Neo4j **campaign detection** (`backend/src/graph/campaignDetection.js`) links two or more **risky** reviews when they share the same URL **domain** (here: `secure-login.example-phish.test`). That requires:
+
+1. Both reviews reach **`completed`** (Kafka → Celery pipeline in `ai_service/app/tasks.py`).
+2. Each has verdict **`suspicious`** or **`likely_phishing`** (rule engine + optional mock LLM in `ai_service/app/merge.py`).
+3. Celery calls **`sync_review_graph`** so Neo4j `Review` nodes get the final verdict before campaign Cypher runs.
+
+**Before you submit:** turn **off** dev simulation in the Triage workspace (Simulation panel → uncheck “Enable synthetic ingests”) so **Recent reviews** is not flooded with “Simulated ingest” rows. User submissions are tagged `source: user`; simulation uses `dev_simulation` and is hidden by default.
 
 <div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
 
-<p><strong>Demo test data (UI — Triage workspace)</strong> — not a shell command. Submit these two reviews in the React app at <code>http://localhost:3001</code>. Shared campaign hostname: <code>secure-login.example-phish.test</code></p>
+<p><strong>Demo test data (UI — Triage workspace)</strong> — open <code>http://localhost:3001</code>, sign in, click <strong>Queue analysis</strong> twice (once per row). Shared hostname: <code>secure-login.example-phish.test</code></p>
 
 <p><strong>Review A</strong></p>
 
 | Field | Value |
 |-------|-------|
-| Sender | `attacker-a@fake-mail.test` |
+| Sender name | `Attacker A` |
+| Sender email | `attacker-a@fake-mail.test` |
 | Subject | `Urgent: verify your account` |
 | Body | `Please verify immediately: https://secure-login.example-phish.test/reset` |
 
@@ -73,13 +80,27 @@ Campaign detection needs **at least two completed reviews** with verdict **`susp
 
 | Field | Value |
 |-------|-------|
-| Sender | `attacker-b@other-domain.test` |
+| Sender name | `Attacker B` |
+| Sender email | `attacker-b@other-domain.test` |
 | Subject | `Your account will be locked` |
 | Body | `Click here: https://secure-login.example-phish.test/update` |
 
 </div>
 
-Wait until **Status: completed** on both. With **`LLM_PROVIDER=mock_commercial`**, the mock LLM flags hosts containing `example-phish` / `secure-login` as **`likely_phishing`** (see `ai_service/mock_commercial_llm/responses.py`).
+**Wait for Result panel:** **Status: completed** on both. Verdict should be **`likely_phishing`** (rule engine matches `example-phish` / `secure-login` in the URL even when `DISABLE_LLM=true`; mock LLM adds the same when `DISABLE_LLM=false` and `LLM_PROVIDER=mock_commercial`).
+
+**Verify scoring (optional, terminal):**
+
+<div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
+
+<p><strong>Run in terminal</strong></p>
+
+```bash
+cd ~/suspicious-email-triage
+bash scripts/verify-campaign-detection.sh
+```
+
+</div>
 
 ---
 

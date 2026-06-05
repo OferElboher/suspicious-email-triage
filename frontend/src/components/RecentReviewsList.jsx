@@ -22,7 +22,10 @@ function ReviewRow({ summary, expanded, onToggle, canReadGraph }) {
   return (
     <li className={`dashboard-list-item${isOpen ? " expanded" : ""}`}>
       <button type="button" className="review-row-toggle" onClick={() => onToggle(id)}>
-        <strong>{summary.subject}</strong>
+        <strong>
+          {summary.source === "dev_simulation" ? "[Simulation] " : ""}
+          {summary.subject}
+        </strong>
         <div className="muted">
           {summary.senderEmail} · {summary.status} · {summary.analysisResult?.verdict || "—"}
         </div>
@@ -88,6 +91,8 @@ export default function RecentReviewsList({
   onRefresh,
   onPageChange,
   canReadGraph,
+  includeSimulation,
+  onIncludeSimulationChange,
 }) {
   const [expanded, setExpanded] = useState(null);
   const [loadingId, setLoadingId] = useState(null);
@@ -115,7 +120,19 @@ export default function RecentReviewsList({
   return (
     <section className="card" style={{ gridColumn: "1 / -1" }}>
       <h2>Recent reviews</h2>
+      <p className="muted">
+        Shows analyst-submitted reviews by default. Dev simulation traffic is hidden unless you
+        enable it below (synthetic &quot;Simulated ingest&quot; rows).
+      </p>
       <div className="toolbar">
+        <label className="field" style={{ marginBottom: 0 }}>
+          <input
+            type="checkbox"
+            checked={Boolean(includeSimulation)}
+            onChange={(e) => onIncludeSimulationChange?.(e.target.checked)}
+          />{" "}
+          Show simulation traffic
+        </label>
         <button type="button" onClick={onRefresh}>
           Refresh
         </button>

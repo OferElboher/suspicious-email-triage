@@ -17,10 +17,11 @@ from app.llm_ollama import analyze_with_ollama
 
 
 def _disabled_stub() -> dict[str, Any]:
-    """Deterministic payload when DISABLE_LLM=true (no network, stable CI)."""
+    """
+    Placeholder when DISABLE_LLM=true — omits verdict so merge_results keeps rule_engine output.
+    """
     return {
-        "verdict": "benign",
-        "recommendedAction": "close",
+        "_llmDisabled": True,
         "summary": "LLM disabled (python stub)",
         "findings": [],
         "followUpQuestions": [],

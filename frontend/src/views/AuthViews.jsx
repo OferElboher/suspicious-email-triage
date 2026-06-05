@@ -29,7 +29,10 @@ export default function LoginView({ onForgotPassword }) {
       if (err.networkError) {
         setError(err.message);
       } else if (err.body?.error === "invalid_credentials") {
-        setError("Invalid email or password.");
+        setError(
+          "Invalid email or password. If you just rebuilt Docker, bootstrap admin may need reset " +
+            "(see docs/auth_guide_dev_admin_credentials.md). API reachability errors show a different message above."
+        );
       } else {
         setError(err.message || "Sign in failed.");
       }

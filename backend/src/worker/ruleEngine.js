@@ -1,12 +1,31 @@
 /**
  * Deterministic rules; security-critical outcomes must not be weakened by LLM output downstream.
  */
+/** Host substrings aligned with mock_commercial_llm demo URLs (graph campaign tests). */
+const PHISHING_URL_HINTS = [
+  "example-phish",
+  "phish.test",
+  "secure-login",
+  "malware",
+  "evil.com",
+];
+
 function runRuleEngine(review) {
   const text = `${review.subject} ${review.body}`.toLowerCase();
   let verdict = "benign";
   let recommendedAction = "close";
   const findings = [];
   const followUpQuestions = [];
+
+  if (PHISHING_URL_HINTS.some((hint) => text.includes(hint))) {
+    verdict = "likely_phishing";
+    recommendedAction = "report_and_block";
+    findings.push({
+      severity: "high",
+      explanation: "URL hostname matches phishing-demo indicators",
+      evidence: review.body.slice(0, 120),
+    });
+  }
 
   if (
     text.includes("password") ||

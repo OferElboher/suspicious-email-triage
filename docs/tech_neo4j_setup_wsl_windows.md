@@ -174,7 +174,7 @@ Local: http://localhost:3001
 
 that URL is **only the UI**. It does **not** implement `/graph/status`. Calling `curl http://localhost:3001/graph/status` returns the React **HTML shell** (DOCTYPE, `<div id="root">`), not JSON.
 
-The frontend talks to the API using `REACT_APP_API_URL` (default `http://localhost:3000`) — see [stack_guide_frontend_api.md](stack_guide_frontend_api.md).
+The React dev server (`npm start` on port **3001**) talks to the API through **`setupProxy.js`** (same-origin `/auth`, `/graph`, … forwarded to port **3000**). Do **not** set `REACT_APP_API_URL` during local dev — see [stack_guide_frontend_api.md](stack_guide_frontend_api.md).
 
 ---
 

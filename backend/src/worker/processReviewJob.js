@@ -14,7 +14,8 @@ function normalizeSeverity(s) {
 
 function mergeHybrid(ruleOutcome, llmResult) {
   const { verdict, findings, followUpQuestions } = ruleOutcome;
-  const finalVerdict = llmResult.verdict || verdict;
+  const llmDisabled = llmResult._llmDisabled === true;
+  const finalVerdict = llmDisabled || !llmResult.verdict ? verdict : llmResult.verdict;
   const finalAction =
     finalVerdict === "benign"
       ? "close"

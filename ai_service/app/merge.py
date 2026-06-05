@@ -12,14 +12,20 @@ def _sev(s: str) -> str:
 
 def merge_results(rule_out: tuple, llm: Dict[str, Any]) -> Dict[str, Any]:
     verdict_r, action_r, findings_r, fu_r = rule_out
-    final_verdict = llm.get("verdict") or verdict_r
-    final_action = (
-        "close"
-        if final_verdict == "benign"
-        else "investigate"
-        if final_verdict == "suspicious"
-        else "report_and_block"
-    )
+    # When LLM is off, the stub must not override deterministic rules (campaign demos, CI).
+    llm_disabled = llm.get("_llmDisabled") is True
+    llm_verdict = llm.get("verdict")
+    final_verdict = verdict_r if llm_disabled or not llm_verdict else llm_verdict
+    if llm_disabled:
+        final_action = action_r
+    else:
+        final_action = (
+            "close"
+            if final_verdict == "benign"
+            else "investigate"
+            if final_verdict == "suspicious"
+            else "report_and_block"
+        )
     merged_findings: List[Dict[str, Any]] = [
         {
             "explanation": str(f.get("explanation", "")),

@@ -34,6 +34,7 @@ router.post("/", requirePermission("reviews.write"), async (req, res) => {
       body,
       links,
       referenceSources,
+      source: "user",
       status: "pending",
     });
 
@@ -80,14 +81,18 @@ router.get("/", requirePermission("reviews.read"), async (req, res) => {
   try {
     const page = parseInt(req.query.page ?? DEFAULT_PAGE, 10);
     const limit = parseInt(req.query.limit ?? DEFAULT_LIMIT, 10);
+    const includeSimulation =
+      String(req.query.includeSimulation || "").toLowerCase() === "true" ||
+      req.query.includeSimulation === "1";
     const safePage = Math.max(page, 0);
     const safeLimit = Math.min(Math.max(limit, 1), REVIEW_PAGE_SIZE);
-    const total = await Review.countDocuments();
-    const reviews = await Review.find()
+    const filter = includeSimulation ? {} : { source: { $ne: "dev_simulation" } };
+    const total = await Review.countDocuments(filter);
+    const reviews = await Review.find(filter)
       .sort({ updatedAt: -1 })
       .skip(safePage * safeLimit)
       .limit(safeLimit)
-      .select("senderEmail subject status analysisResult.verdict updatedAt");
+      .select("senderEmail subject status source analysisResult.verdict updatedAt");
     return res.json({
       data: reviews,
       page: safePage,
