@@ -229,10 +229,11 @@ def test_docs_readme_indexes_all_guides():
         assert path.name in readme, f"{path.name} missing from docs/README.md"
 
 
-def test_frontend_env_does_not_set_api_url_for_dev():
-    """frontend/.env must not set REACT_APP_API_URL=http://localhost:3000 (breaks CRA proxy login)."""
-    env = (ROOT / "frontend/.env").read_text(encoding="utf-8")
-    assert "REACT_APP_API_URL=http://localhost:3000" not in env
+def test_frontend_env_templates_avoid_dev_api_url():
+    """Committed frontend env templates must not set REACT_APP_API_URL (breaks CRA proxy login)."""
+    for name in ("frontend/.env.development", "frontend/.env.example"):
+        text = (ROOT / name).read_text(encoding="utf-8")
+        assert "REACT_APP_API_URL=http://localhost:3000" not in text, name
 
 
 def test_dev_login_uses_cra_proxy_in_development():
