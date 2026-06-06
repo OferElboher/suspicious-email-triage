@@ -113,15 +113,21 @@ async function countUsers() {
   return rows[0].count;
 }
 
+/** Read bootstrap admin email/password from env (Docker env_file + gitignored backend/.env). */
+function bootstrapCredentialsFromEnv() {
+  const email = String(process.env.AUTH_BOOTSTRAP_ADMIN_EMAIL || "")
+    .trim()
+    .toLowerCase();
+  const password = process.env.AUTH_BOOTSTRAP_ADMIN_PASSWORD || "temp-admin-pswd";
+  return { email, password };
+}
+
 async function bootstrapAdminUser() {
   const total = await countUsers();
   if (total > 0) {
     return null;
   }
-  const email = String(process.env.AUTH_BOOTSTRAP_ADMIN_EMAIL || "")
-    .trim()
-    .toLowerCase();
-  const password = process.env.AUTH_BOOTSTRAP_ADMIN_PASSWORD || "temp-admin-pswd";
+  const { email, password } = bootstrapCredentialsFromEnv();
   if (!email || email.endsWith("@local.test")) {
     logger.warn("auth", "bootstrap admin skipped — configure a real email first", {
       hint: "bash scripts/configure-dev-bootstrap-admin.sh YOUR_EMAIL@example.com",
@@ -135,6 +141,37 @@ async function bootstrapAdminUser() {
   });
   logger.warn("auth", "bootstrap admin user created", { email });
   return user;
+}
+
+/**
+ * Dev-only: create bootstrap admin if missing, or reset its password to AUTH_BOOTSTRAP_*.
+ * Fixes login after Docker rebuild when postgres-data persists but password/email drifted.
+ */
+async function resetBootstrapAdminForDev() {
+  await ensureAuthSchema();
+  await seedRolesAndPermissions();
+  const { email, password } = bootstrapCredentialsFromEnv();
+  if (!email || email.endsWith("@local.test")) {
+    return {
+      ok: false,
+      error: "bootstrap_email_not_configured",
+      hint: "bash scripts/configure-dev-bootstrap-admin.sh YOUR_EMAIL@example.com",
+    };
+  }
+  const existing = await findUserByEmail(email);
+  if (existing) {
+    await setUserPasswordByEmail(email, password);
+    await setUserRoles(existing.id, ["admin"]);
+    logger.warn("auth", "bootstrap admin password reset (dev)", { email });
+    return { ok: true, action: "password_reset", email };
+  }
+  const user = await createUser({
+    email,
+    password,
+    roleNames: ["admin"],
+  });
+  logger.warn("auth", "bootstrap admin user created (dev reset)", { email });
+  return { ok: true, action: "created", email: user.email };
 }
 
 async function loadUserAccess(userId) {
@@ -408,6 +445,8 @@ module.exports = {
   ensureAuthSchema,
   seedRolesAndPermissions,
   bootstrapAdminUser,
+  bootstrapCredentialsFromEnv,
+  resetBootstrapAdminForDev,
   authenticateUser,
   findUserById,
   loadUserAccess,

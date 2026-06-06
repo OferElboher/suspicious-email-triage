@@ -9,8 +9,8 @@ This guide tells you **exactly** how to bring the Suspicious Email Triage projec
 ## Before you start
 
 1. Repository checked out in WSL (for example `/home/you/suspicious-email-triage`).
-2. One-time setup completed: `bash scripts/setup-and-build-dev.sh` (installs tools, prompts for your bootstrap admin email, builds images).
-3. Bootstrap admin configured — see [auth_guide_dev_admin_credentials.md](auth_guide_dev_admin_credentials.md) if you have never set `AUTH_BOOTSTRAP_ADMIN_EMAIL`.
+2. One-time setup completed: `bash scripts/setup-and-build-dev.sh` (installs tools, prompts for your bootstrap admin email, builds images). Full walkthrough: [stack_guide_build_and_run.md](stack_guide_build_and_run.md).
+3. Bootstrap admin configured — see [auth_guide_dev_admin_credentials.md](auth_guide_dev_admin_credentials.md) if you have never set `AUTH_BOOTSTRAP_ADMIN_EMAIL`. After rebuild, run `bash scripts/bootstrap-auth-admin.sh --reset-password` or use the sign-in UI button.
 
 ---
 

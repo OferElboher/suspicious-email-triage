@@ -152,10 +152,10 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 
 **Implemented (dev free path):**
 
-- `mongo-data`, `postgres-data`, and `neo4j-data` named volumes in `infra/docker/docker-compose.yml` so `docker compose up --build` does **not** wipe login passwords or review data
-- Auth password hashes live in Postgres — without `postgres-data`, every rebuild recreated bootstrap admin with `temp-admin-pswd`
+- `mongo-data`, `postgres-data`, and `neo4j-data` named volumes in `infra/docker/docker-compose.yml` so `docker compose up --build` does **not** wipe review/graph data
+- Auth password hashes live in Postgres — **persisted volumes mean rebuild alone does not reset passwords**; dev recovery is implemented via `POST /auth/dev/bootstrap-reset`, sign-in UI **Reset dev bootstrap password**, and `bash scripts/bootstrap-auth-admin.sh --reset-password` (`resetBootstrapAdminForDev` in `authPg.js`)
 
-**Guides:** [auth_guide_dev_auth_recovery.md](auth_guide_dev_auth_recovery.md), [stack_guide_windows_startup.md](stack_guide_windows_startup.md)
+**Guides:** [stack_guide_build_and_run.md](stack_guide_build_and_run.md), [auth_guide_dev_admin_credentials.md](auth_guide_dev_admin_credentials.md), [auth_guide_dev_auth_recovery.md](auth_guide_dev_auth_recovery.md)
 
 **Remaining (paid / later):** Scheduled cloud backups, restore drills, off-site storage.
 

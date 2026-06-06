@@ -20,6 +20,7 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 |------|----------|
 | Non-technical product overview | [biz_guide_user.md](biz_guide_user.md) |
 | Full technical handbook | [arch_guide_system_comprehensive.md](arch_guide_system_comprehensive.md) |
+| **Build → bootstrap → sign in** (after clone or rebuild) | [stack_guide_build_and_run.md](stack_guide_build_and_run.md) |
 | Windows 11 + WSL after reboot | [stack_guide_windows_startup.md](stack_guide_windows_startup.md) |
 | Dev builds, simulation, ports | [stack_guide_versions_builds.md](stack_guide_versions_builds.md) |
 | Login, roles, JWT, recovery | [auth_guide_rbac.md](auth_guide_rbac.md) |
@@ -33,6 +34,7 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 ### Authentication & users
 
 - [auth_guide_rbac.md](auth_guide_rbac.md) — JWT login, RBAC, protected routes
+- [stack_guide_build_and_run.md](stack_guide_build_and_run.md) — Docker build, bootstrap, login recovery
 - [auth_guide_dev_admin_credentials.md](auth_guide_dev_admin_credentials.md) — bootstrap admin
 - [auth_guide_dev_auth_recovery.md](auth_guide_dev_auth_recovery.md) — reset auth tables
 - [auth_guide_dev_password_reset.md](auth_guide_dev_password_reset.md) — manual password reset
@@ -54,6 +56,7 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 
 - [graph_guide_neo4j_phishing.md](graph_guide_neo4j_phishing.md) — model, sync, APIs
 - [graph_demo_neo4j_phishing.md](graph_demo_neo4j_phishing.md) — hands-on demo & tests
+- [graph_test_manual_phishing_identification.md](graph_test_manual_phishing_identification.md) — manual QA checklist for phishing verdicts & campaigns
 
 ### Search (Elasticsearch)
 

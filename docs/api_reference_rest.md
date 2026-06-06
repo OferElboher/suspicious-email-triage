@@ -107,6 +107,7 @@ Public (no JWT)
 ├── GET  /health
 ├── GET  /ops/prometheus
 ├── GET  /auth/config
+├── POST /auth/dev/bootstrap-reset   (dev only)
 ├── GET  /auth/google/start
 ├── GET  /auth/google/callback
 ├── POST /auth/login
@@ -374,15 +375,55 @@ Public routes for login and password reset; profile and preferences require JWT.
 ```json
 {
   "googleLoginEnabled": true,
-  "emailDelivery": "mailpit"
+  "emailDelivery": "mailpit",
+  "devLoginAssist": true,
+  "bootstrapEmailConfigured": true,
+  "maskedBootstrapEmail": "yo***@example.com",
+  "bootstrapPasswordHint": "temp-admin-pswd"
 }
 ```
+
+`devLoginAssist`, `maskedBootstrapEmail`, and `bootstrapPasswordHint` are present only when `DEPLOYMENT_ENV=dev`. The SPA uses them on the sign-in screen; they do not expose the full bootstrap email.
 
 **curl:**
 
 ```bash
 curl -s http://localhost:3000/auth/config
 ```
+
+---
+
+### POST /auth/dev/bootstrap-reset
+
+**Auth:** None (public, **dev deployment only**)
+
+**Purpose:** Resets the bootstrap admin password to `AUTH_BOOTSTRAP_ADMIN_PASSWORD` (or creates the admin if missing). Fixes login after Docker rebuild when Postgres volume `postgres-data` persists but env/password drifted.
+
+**Response (200):**
+
+```json
+{
+  "ok": true,
+  "action": "password_reset",
+  "email": "you@example.com",
+  "message": "Bootstrap admin is ready...",
+  "passwordHint": "temp-admin-pswd"
+}
+```
+
+**Errors:**
+
+- **403** `{ "error": "dev_only" }` — not `DEPLOYMENT_ENV=dev`
+- **400** `{ "error": "bootstrap_email_not_configured" }` — set email via `configure-dev-bootstrap-admin.sh`
+
+**curl:**
+
+```bash
+curl -sS -X POST http://localhost:3000/auth/dev/bootstrap-reset \
+  -H "content-type: application/json" -d '{}'
+```
+
+**Related:** [stack_guide_build_and_run.md](stack_guide_build_and_run.md), `bash scripts/bootstrap-auth-admin.sh --reset-password`
 
 ---
 

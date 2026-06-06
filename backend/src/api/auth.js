@@ -9,6 +9,8 @@ const {
   resetPasswordWithToken,
   getUserUiTheme,
   setUserUiTheme,
+  bootstrapCredentialsFromEnv,
+  resetBootstrapAdminForDev,
 } = require("../auth/authPg");
 const { UI_THEMES, DEFAULT_UI_THEME, isValidUiTheme } = require("../auth/themeConstants");
 const { sendPasswordResetEmail } = require("../auth/email");
@@ -24,12 +26,61 @@ const { authenticate } = require("../http/middleware/auth");
 
 const router = express.Router();
 
+/** Mask email for login hints without exposing the full address in API responses. */
+function maskBootstrapEmail(email) {
+  const normalized = String(email || "").trim().toLowerCase();
+  if (!normalized.includes("@")) {
+    return null;
+  }
+  const [local, domain] = normalized.split("@");
+  if (!local || !domain) {
+    return null;
+  }
+  const visible = local.length <= 2 ? `${local[0] || "*"}*` : `${local.slice(0, 2)}***`;
+  return `${visible}@${domain}`;
+}
+
 /** Public auth capabilities for the SPA (Google button visibility, delivery mode hints). */
 router.get("/config", (req, res) => {
+  const dev = isDevDeployment();
+  const { email, password } = bootstrapCredentialsFromEnv();
+  const emailConfigured = Boolean(email && !email.endsWith("@local.test"));
   res.json({
     googleLoginEnabled: googleLoginEnabled(),
     emailDelivery: process.env.EMAIL_DELIVERY || process.env.SMTP_DELIVERY || "mailpit",
+    devLoginAssist: dev,
+    bootstrapEmailConfigured: emailConfigured,
+    maskedBootstrapEmail: emailConfigured ? maskBootstrapEmail(email) : null,
+    bootstrapPasswordHint: dev ? password : null,
   });
+});
+
+/**
+ * POST /auth/dev/bootstrap-reset — dev only, no JWT.
+ * Resets bootstrap admin password to AUTH_BOOTSTRAP_* (fixes post-rebuild login).
+ */
+router.post("/dev/bootstrap-reset", async (req, res) => {
+  if (!isDevDeployment()) {
+    return res.status(403).json({ error: "dev_only" });
+  }
+  try {
+    const result = await resetBootstrapAdminForDev();
+    if (!result.ok) {
+      return res.status(400).json(result);
+    }
+    const { password } = bootstrapCredentialsFromEnv();
+    return res.json({
+      ok: true,
+      action: result.action,
+      email: result.email,
+      message:
+        "Bootstrap admin is ready. Sign in with the configured email and dev password from backend/.env.dev.",
+      passwordHint: password,
+    });
+  } catch (err) {
+    logger.error("auth", "dev bootstrap reset failed", { error: err.message });
+    return res.status(500).json({ error: "bootstrap_reset_failed" });
+  }
 });
 
 /** Redirect browser to Google OAuth consent (Sign in with Google). */

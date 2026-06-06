@@ -6,7 +6,8 @@ This walkthrough shows how to **try and demo** the Neo4j features in this projec
 
 **Setup first:** [tech_neo4j_setup_wsl_windows.md](tech_neo4j_setup_wsl_windows.md)  
 **Concepts & code map:** [graph_guide_neo4j_phishing.md](graph_guide_neo4j_phishing.md)  
-**Neo4j Browser (Cypher UI):** [tech_neo4j_browser_guide.md](tech_neo4j_browser_guide.md)
+**Neo4j Browser (Cypher UI):** [tech_neo4j_browser_guide.md](tech_neo4j_browser_guide.md)  
+**Manual QA checklist (phishing verdict + campaign):** [graph_test_manual_phishing_identification.md](graph_test_manual_phishing_identification.md)
 
 ---
 

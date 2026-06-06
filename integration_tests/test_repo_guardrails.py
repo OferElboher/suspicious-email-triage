@@ -252,3 +252,34 @@ def test_dev_login_uses_cra_proxy_in_development():
     src = (ROOT / "frontend/src/lib/apiBase.js").read_text(encoding="utf-8")
     assert 'process.env.NODE_ENV === "development"' in src
     assert 'return ""' in src
+
+
+def test_dev_bootstrap_reset_wired():
+    """Post-rebuild login fix: API route, authPg helper, script flag, and UI button."""
+    auth_api = (ROOT / "backend/src/api/auth.js").read_text(encoding="utf-8")
+    auth_pg = (ROOT / "backend/src/auth/authPg.js").read_text(encoding="utf-8")
+    script = (ROOT / "scripts/bootstrap-auth-admin.sh").read_text(encoding="utf-8")
+    login_ui = (ROOT / "frontend/src/views/AuthViews.jsx").read_text(encoding="utf-8")
+    assert "/dev/bootstrap-reset" in auth_api
+    assert "resetBootstrapAdminForDev" in auth_api
+    assert "resetBootstrapAdminForDev" in auth_pg
+    assert "--reset-password" in script
+    assert "bootstrap-reset" in login_ui
+    assert (ROOT / "docs/stack_guide_build_and_run.md").is_file()
+    readme = (ROOT / "docs/README.md").read_text(encoding="utf-8")
+    assert "stack_guide_build_and_run.md" in readme
+    assert "graph_test_manual_phishing_identification.md" in readme
+
+
+def test_docs_avoid_hardcoded_private_env_values():
+    """Guides must reference env var names, not copy gitignored backend/.env secrets."""
+    forbidden_substrings = (
+        "AUTH_BOOTSTRAP_ADMIN_EMAIL=ofer",
+        "AUTH_BOOTSTRAP_ADMIN_EMAIL=admin@company",
+        "GOOGLE_OAUTH_CLIENT_SECRET=GOCSPX-",
+        "JWT_SECRET=prod-",
+    )
+    for path in sorted((ROOT / "docs").glob("*.md")):
+        text = path.read_text(encoding="utf-8")
+        for bad in forbidden_substrings:
+            assert bad not in text, f"{path.name} must not contain {bad!r}"

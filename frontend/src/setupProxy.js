@@ -6,7 +6,7 @@ const { createProxyMiddleware } = require("http-proxy-middleware");
 
 /** API path prefixes served by the Node backend (not static React assets). */
 const API_PREFIXES = [
-  "/auth",
+  "/auth", // includes POST /auth/dev/bootstrap-reset in dev
   "/health",
   "/reviews",
   "/metrics",

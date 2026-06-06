@@ -18,6 +18,8 @@ This guide lists **every operation and command** for the **local dev** bootstrap
 | Bootstrap temporary password | `temp-admin-pswd` (`AUTH_BOOTSTRAP_ADMIN_PASSWORD` in `backend/.env.dev` and `backend/.env`) |
 | Configure email (one-time or change before bootstrap) | `bash scripts/configure-dev-bootstrap-admin.sh YOUR_EMAIL@example.com` |
 | Create admin when DB has zero users | `bash scripts/bootstrap-auth-admin.sh` |
+| **Reset bootstrap password after Docker rebuild** | `bash scripts/bootstrap-auth-admin.sh --reset-password` or sign-in UI **Reset dev bootstrap password** |
+| Full build → login workflow | [stack_guide_build_and_run.md](stack_guide_build_and_run.md) |
 | Reset auth tables + new admin | [auth_guide_dev_auth_recovery.md](auth_guide_dev_auth_recovery.md) |
 | UI sign-in | `http://localhost:3001` (or the port CRA prints) |
 | API base URL | `http://localhost:3000` |
@@ -84,11 +86,20 @@ Docker Compose loads `backend/.env.dev` first, then optional gitignored `backend
 
 ---
 
-## Part 2 — Create the bootstrap admin (first time only)
+## Part 2 — Create or reset the bootstrap admin
 
-Bootstrap runs **only when `auth_users` has zero rows**. It does **not** overwrite an existing admin.
+### Why two different commands?
 
-### Operation 2a — Start postgres + backend, then bootstrap
+| Situation | Postgres state | Command |
+|-----------|----------------|---------|
+| First install | `auth_users` empty | `bash scripts/bootstrap-auth-admin.sh` |
+| After `docker compose build` | Rows exist; password may not match `AUTH_BOOTSTRAP_*` | `bash scripts/bootstrap-auth-admin.sh --reset-password` |
+
+Docker volume **`postgres-data`** keeps `auth_users` across image rebuilds. The original bootstrap script only **creates** a user when the table is empty — it never updates bcrypt hashes. That is why login fails even when DBeaver shows your email.
+
+**Technologies involved:** bcrypt password hashes in PostgreSQL (`authPg.js`), env injection via Docker Compose `env_file`, and dev-only `POST /auth/dev/bootstrap-reset` (Express route) used by the React sign-in button.
+
+### Operation 2a — Start postgres + backend, then bootstrap (first time)
 
 ```bash
 cd ~/suspicious-email-triage
@@ -102,11 +113,41 @@ Bootstrap admin created: you@example.com
 Roles: admin
 ```
 
-**Expected output (admin already exists):**
+**Expected output (admin already exists, no `--reset-password`):**
 
 ```text
 Users already exist; bootstrap skipped. Existing: you@example.com
+Tip: bash scripts/bootstrap-auth-admin.sh --reset-password
 ```
+
+### Operation 2a-reset — Fix login after Docker rebuild
+
+Pick **one**:
+
+**UI (recommended):** Open `http://localhost:3001` → click **Reset dev bootstrap password** → sign in with the email and password shown in the green help box.
+
+**Terminal:**
+
+```bash
+cd ~/suspicious-email-triage
+bash scripts/bootstrap-auth-admin.sh --reset-password
+```
+
+**Expected:**
+
+```text
+Bootstrap admin password_reset: you@example.com
+```
+
+Then sign in with `temp-admin-pswd` (or your `AUTH_BOOTSTRAP_ADMIN_PASSWORD`).
+
+If you recently edited `backend/.env`, recreate the backend container so it reads the new values:
+
+```bash
+DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --force-recreate backend
+```
+
+See [stack_guide_build_and_run.md](stack_guide_build_and_run.md) for the full narrative.
 
 ### Operation 2b — Verify in PostgreSQL (WSL)
 
