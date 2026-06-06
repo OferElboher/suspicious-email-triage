@@ -95,6 +95,17 @@ def test_llm_provider_mock_commercial_wired():
     assert (ROOT / "ai_service/mock_commercial_llm/server.py").is_file()
 
 
+def test_campaign_subgraph_api_wired():
+    """Per-campaign graph UI must expose GET /graph/campaign-subgraph."""
+    graph_api = (ROOT / "backend/src/api/graph.js").read_text(encoding="utf-8")
+    queries = (ROOT / "backend/src/graph/graphQueries.js").read_text(encoding="utf-8")
+    assert "campaign-subgraph" in graph_api
+    assert "getCampaignSubgraph" in graph_api
+    assert "getCampaignSubgraph" in queries
+    canvas = (ROOT / "frontend/src/components/CampaignGraphCanvas.jsx").is_file()
+    assert canvas
+
+
 def test_neo4j_graph_module_wired():
     """Neo4j phishing graph must ship driver, sync, API routes, and Celery callback."""
     compose = (ROOT / "infra/docker/docker-compose.yml").read_text(encoding="utf-8")

@@ -113,9 +113,10 @@ All routes under `/graph` require permission **`graph.read`** (seeded for analys
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/graph/status` | Whether Neo4j is enabled |
-| GET | `/graph/campaigns` | Shared-indicator campaign list |
+| GET | `/graph/campaigns` | Shared-indicator campaign list (sorted by size) |
+| GET | `/graph/campaign-subgraph?indicator=HOST` | One campaign subgraph for the React UI |
 | GET | `/graph/review/:id/neighborhood` | Subgraph around one review |
-| GET | `/graph/visualization` | Nodes + edges for the React SVG view |
+| GET | `/graph/visualization` | Legacy full-graph JSON (API clients) |
 | POST | `/graph/sync/:id` | Manual re-sync (troubleshooting) |
 | POST | `/graph/internal/sync/:id` | **No JWT** — `X-Graph-Internal-Token` only |
 
@@ -125,12 +126,29 @@ All routes under `/graph` require permission **`graph.read`** (seeded for analys
 
 Open the triage app → **Phishing graph** tab (`#graph` in the URL hash).
 
-`GraphView.jsx` fetches `/graph/visualization` and `/graph/campaigns`, then draws:
+**Pattern (campaign-first UI):** the graph is shown **only when Neo4j reports at least one campaign**. Showing the entire database at once overloaded the SVG layout and disagreed with an empty campaign list.
 
-- **Nodes** on a circle (color by type: Sender, Review, Url, Domain, Campaign)
-- **Edges** as lines labeled by relationship type in the API payload
+1. `GraphView.jsx` calls **`GET /graph/campaigns`** and sorts by **`reviewCount`** (largest clusters first).
+2. If the list is empty, analysts see guidance only — **no graph canvas**.
+3. If campaigns exist, the UI loads **`GET /graph/campaign-subgraph?indicator=…`** for the selected campaign and renders:
+   - **Prev / Next campaign** buttons to flip between clusters
+   - **Zoom − / + / Reset** on the SVG (`CampaignGraphCanvas.jsx`)
+   - **Hover tooltips** on nodes and relationships (`frontend/src/lib/graphLayout.js` describes labels)
 
-This is intentionally lightweight (plain SVG, no D3) so the demo stays easy to maintain.
+Technology: plain **SVG** + React state (no D3/vis-network) for a small bundle and predictable maintenance.
+
+<div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
+
+<p><strong>Run in terminal</strong> — fetch one campaign subgraph (replace JWT and host)</p>
+
+```bash
+cd ~/suspicious-email-triage
+curl -sS -H "Authorization: Bearer YOUR_JWT" \
+  "http://localhost:3000/graph/campaign-subgraph?indicator=secure-login.example-phish.test" \
+  | python3 -m json.tool
+```
+
+</div>
 
 ---
 

@@ -5,6 +5,12 @@ jest.mock("../src/graph/campaignDetection", () => ({
 jest.mock("../src/graph/graphQueries", () => ({
   getReviewNeighborhood: jest.fn().mockResolvedValue({ nodes: [], edges: [] }),
   getVisualizationGraph: jest.fn().mockResolvedValue({ nodes: [], edges: [], stats: {} }),
+  getCampaignSubgraph: jest.fn().mockResolvedValue({
+    nodes: [{ id: "campaign:evil.com", label: "evil.com", type: "Campaign" }],
+    edges: [],
+    indicator: "evil.com",
+    reviewCount: 2,
+  }),
 }));
 
 jest.mock("../src/graph/neo4jClient", () => ({
@@ -39,5 +45,18 @@ describe("graph API routes", () => {
     const res = await request(app).get("/graph/campaigns");
     expect(res.status).toBe(200);
     expect(res.body.campaigns[0].indicator).toBe("evil.com");
+  });
+
+  it("GET /graph/campaign-subgraph returns one campaign graph", async () => {
+    const res = await request(app).get("/graph/campaign-subgraph?indicator=evil.com");
+    expect(res.status).toBe(200);
+    expect(res.body.indicator).toBe("evil.com");
+    expect(res.body.nodes).toHaveLength(1);
+  });
+
+  it("GET /graph/campaign-subgraph requires indicator query", async () => {
+    const res = await request(app).get("/graph/campaign-subgraph");
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("indicator_required");
   });
 });

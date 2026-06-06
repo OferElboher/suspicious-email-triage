@@ -306,6 +306,13 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 
 **Status:** Shipped — [graph_guide_neo4j_phishing.md](graph_guide_neo4j_phishing.md), UI tab `#graph`.
 
+**Implemented UX (2026):**
+
+- Graph canvas renders **only when campaigns exist** (fixes overload + “graph visible but no campaigns” confusion).
+- Campaigns ordered **largest → smallest** by linked review count.
+- **One campaign per view** with Prev/Next controls; **zoom** and **hover tooltips** on nodes/edges.
+- API: `GET /graph/campaign-subgraph?indicator=…` (per-campaign Cypher in `graphQueries.js`).
+
 **Free path:** Neo4j Community in Docker — **already free**.
 
 ---
@@ -395,11 +402,13 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 
 ## 6. Frontend and UX
 
-### 6.1 Accessible graph visualization (P1)
+### 6.1 Accessible graph visualization (P1 — partial)
 
 **User value:** Keyboard and screen-reader users can navigate the phishing graph.
 
 **Exact demand:** WCAG 2.1 AA for graph tab; focusable nodes; text alternatives.
+
+**Partially delivered:** per-campaign SVG with `role="img"`, native `<title>` on nodes/edges, mouse hover detail box, campaign list buttons (keyboard-activatable). Full keyboard traversal of individual nodes remains **P1**.
 
 **Tech pattern:** Improved SVG + ARIA, or library like vis-network.
 

@@ -159,4 +159,71 @@ async function getVisualizationGraph(limit = 40) {
   };
 }
 
-module.exports = { nodeToJson, getReviewNeighborhood, getVisualizationGraph };
+/**
+ * Subgraph for one Campaign node and its linked senders, reviews, URLs, and domains.
+ * Used by the React UI so analysts see one campaign at a time (avoids full-graph overload).
+ */
+async function getCampaignSubgraph(indicator) {
+  const normalized = String(indicator || "").trim();
+  if (!normalized) {
+    return { nodes: [], edges: [], indicator: "", reviewCount: 0 };
+  }
+
+  const rows = await runRead(
+    `
+    MATCH (c:Campaign {indicator: $indicator})
+    OPTIONAL MATCH (r:Review)-[:PART_OF_CAMPAIGN]->(c)
+    OPTIONAL MATCH (s:Sender)-[:SENT]->(r)
+    OPTIONAL MATCH (r)-[:CONTAINS_URL]->(u:Url)-[:RESOLVES_TO]->(d:Domain)
+    WITH c,
+         collect(DISTINCT r) AS reviews,
+         collect(DISTINCT s) AS senders,
+         collect(DISTINCT u) AS urls,
+         collect(DISTINCT d) AS domains
+    WITH [c] + reviews + senders + urls + domains AS rawNodes
+    UNWIND rawNodes AS n
+    WITH collect(DISTINCT n) AS nodes
+    WHERE size(nodes) > 0
+    UNWIND nodes AS a
+    MATCH (a)-[rel]->(b)
+    WHERE b IN nodes
+    RETURN nodes, collect(DISTINCT rel) AS rels, $indicator AS indicator, size([x IN nodes WHERE x:Review]) AS reviewCount
+    `,
+    { indicator: normalized }
+  );
+
+  if (!rows.length) {
+    return { nodes: [], edges: [], indicator: normalized, reviewCount: 0 };
+  }
+
+  const record = rows[0];
+  const nodeRecords = record.get("nodes") || [];
+  const relRecords = record.get("rels") || [];
+  const nodes = nodeRecords.filter(Boolean).map((n) => nodeToJson(n));
+  const nodeIds = new Set(nodes.map((n) => n.id));
+  const edges = relRecords
+    .filter(Boolean)
+    .map((rel) => {
+      const source = nodeToJson(rel.start).id;
+      const target = nodeToJson(rel.end).id;
+      if (!nodeIds.has(source) || !nodeIds.has(target)) {
+        return null;
+      }
+      return { source, target, label: rel.type };
+    })
+    .filter(Boolean);
+
+  return {
+    nodes,
+    edges,
+    indicator: record.get("indicator") || normalized,
+    reviewCount: Number(record.get("reviewCount") || 0),
+  };
+}
+
+module.exports = {
+  nodeToJson,
+  getReviewNeighborhood,
+  getVisualizationGraph,
+  getCampaignSubgraph,
+};

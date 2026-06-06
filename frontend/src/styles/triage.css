@@ -342,10 +342,32 @@ button.danger {
   grid-column: 1 / -1;
 }
 
+.graph-layout--campaign {
+  grid-template-columns: 1fr;
+}
+
 @media (max-width: 960px) {
   .graph-layout {
     grid-template-columns: 1fr;
   }
+}
+
+.graph-toolbar {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.graph-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.graph-canvas-wrap {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
 }
 
 .graph-svg {
@@ -360,4 +382,25 @@ button.danger {
 .graph-label {
   font-size: 10px;
   fill: var(--muted);
+}
+
+.graph-tooltip {
+  position: fixed;
+  z-index: 1000;
+  max-width: 280px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: #1a1a1a;
+  background: #f4f6fa;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  pointer-events: none;
+  white-space: pre-wrap;
+}
+
+.review-row-toggle.active-campaign {
+  background: #eef4ff;
+  border-radius: var(--radius);
 }

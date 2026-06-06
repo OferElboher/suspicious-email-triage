@@ -7,7 +7,11 @@ const Review = require("../models/Review");
 const { requirePermission } = require("../http/middleware/auth");
 const { isNeo4jEnabled } = require("../graph/neo4jClient");
 const { listCampaigns } = require("../graph/campaignDetection");
-const { getReviewNeighborhood, getVisualizationGraph } = require("../graph/graphQueries");
+const {
+  getReviewNeighborhood,
+  getVisualizationGraph,
+  getCampaignSubgraph,
+} = require("../graph/graphQueries");
 const { syncReviewGraphById } = require("../services/graphSyncService");
 const logger = require("../lib/logger");
 
@@ -43,7 +47,22 @@ router.get("/review/:id/neighborhood", requirePermission("graph.read"), async (r
   }
 });
 
-/** GET /graph/visualization — nodes + edges for the React SVG graph view. */
+/** GET /graph/campaign-subgraph — nodes + edges for one campaign (React per-campaign view). */
+router.get("/campaign-subgraph", requirePermission("graph.read"), async (req, res) => {
+  try {
+    const indicator = String(req.query.indicator || "").trim();
+    if (!indicator) {
+      return res.status(400).json({ error: "indicator_required" });
+    }
+    const graph = await getCampaignSubgraph(indicator);
+    return res.json(graph);
+  } catch (err) {
+    logger.error("graph", "campaign subgraph failed", { error: err.message });
+    return res.status(500).json({ error: "graph_campaign_subgraph_failed" });
+  }
+});
+
+/** GET /graph/visualization — legacy full-graph payload (still used by API clients). */
 router.get("/visualization", requirePermission("graph.read"), async (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit || "40", 10), 100);
