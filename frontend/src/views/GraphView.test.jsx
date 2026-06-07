@@ -18,7 +18,35 @@ describe("GraphView", () => {
     await waitFor(() => {
       expect(screen.getByText(/No campaigns detected yet/i)).toBeInTheDocument();
     });
+    expect(screen.queryByText(/graph_demo_neo4j_phishing/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("img", { name: /campaign relationship graph/i })).not.toBeInTheDocument();
+  });
+
+  it("exposes first and last campaign navigation", async () => {
+    getJson
+      .mockResolvedValueOnce({
+        campaigns: [
+          { indicator: "a.test", reviewCount: 3, kind: "shared_domain" },
+          { indicator: "b.test", reviewCount: 2, kind: "shared_domain" },
+        ],
+      })
+      .mockResolvedValueOnce({
+        nodes: [{ id: "campaign:a.test", label: "a.test", type: "Campaign", properties: {} }],
+        edges: [],
+        indicator: "a.test",
+        reviewCount: 3,
+      })
+      .mockResolvedValueOnce({
+        nodes: [{ id: "campaign:b.test", label: "b.test", type: "Campaign", properties: {} }],
+        edges: [],
+        indicator: "b.test",
+        reviewCount: 2,
+      });
+    render(<GraphView />);
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /First/i })).toBeInTheDocument();
+    });
+    expect(screen.getByRole("button", { name: /Last/i })).toBeInTheDocument();
   });
 
   it("loads campaign subgraph when campaigns exist", async () => {

@@ -1,44 +1,62 @@
-# Manual test — phishing identification end to end
+# Manual test — phishing identification and campaigns (LLM off)
 
-This document is a **standalone manual test procedure** for proving that the triage stack correctly **identifies phishing-like email**, persists results, and (when graph services run) links related messages into a **campaign** in Neo4j.
+This guide walks you through a **repeatable manual test** when **`DISABLE_LLM=true`** (the default in `backend/.env.dev`). You will submit two related test emails, check how the **rule engine** scores them, optionally **override** verdicts as an analyst, and confirm whether a **Neo4j campaign** appears.
 
-**Audience:** QA engineers or developers who want a repeatable checklist without reading the full Neo4j demo narrative.
+**Who this is for:** developers or QA who want step-by-step instructions without assuming LLM scoring is enabled.
 
-**Broader demo (Cypher, APIs, screenshots):** [graph_demo_neo4j_phishing.md](graph_demo_neo4j_phishing.md)  
-**Concepts:** [graph_guide_neo4j_phishing.md](graph_guide_neo4j_phishing.md)  
-**Build + login first:** [stack_guide_build_and_run.md](stack_guide_build_and_run.md)
+**Related:** [graph_demo_neo4j_phishing.md](graph_demo_neo4j_phishing.md) (full demo), [graph_guide_neo4j_phishing.md](graph_guide_neo4j_phishing.md) (concepts), [data_guide_mock_llm.md](data_guide_mock_llm.md) (optional LLM path), [stack_guide_build_and_run.md](stack_guide_build_and_run.md) (login + Docker).
 
 ---
 
-## What you are validating
+## How scoring works in your setup (no LLM)
 
-| Layer | Technology | Pass criterion |
-|-------|------------|----------------|
-| **Rule engine** | Python in `ai_service/app/rule_engine.py` | URLs/domains like `example-phish` raise risk score |
-| **Optional LLM** | `mock_commercial` HTTP API (`DISABLE_LLM=false`) | Model agrees with suspicious verdict |
-| **Merge** | `ai_service/app/merge.py` | Final verdict `likely_phishing` or `suspicious` |
-| **Persistence** | MongoDB + Postgres statistics | Review reaches `completed` in UI |
-| **Graph sync** | Celery task `sync_review_graph` → Neo4j | Shared domain creates a **campaign** with ≥2 reviews |
+| Step | Technology | What happens |
+|------|------------|--------------|
+| 1 | React UI → `POST /reviews` | Review saved in **MongoDB**, status `pending` |
+| 2 | **Kafka** + **Celery** (`ai_service/app/tasks.py`) | Worker picks up the review |
+| 3 | **Rule engine** (`ai_service/app/rule_engine.py`) | Deterministic Python heuristics (URL hostnames like `example-phish`, urgent + link, etc.) |
+| 4 | **LLM stub** (`ai_service/app/llm_client.py`, `DISABLE_LLM=true`) | Returns `_llmDisabled: true` — **must not** force `benign` |
+| 5 | **Merge** (`ai_service/app/merge.py`) | Final verdict = rule engine output when LLM is disabled |
+| 6 | Mongo update | `analysisResult.verdict`, status `completed` |
+| 7 | **Graph sync** (Celery → Neo4j) | `Review.verdict` on graph nodes; campaigns need **risky** verdicts |
+
+**Important:** Campaign detection (`backend/src/graph/campaignDetection.js`) only clusters reviews whose effective verdict is **`suspicious`** or **`likely_phishing`**. **`benign`** reviews never join a campaign.
+
+After rebuilding Docker images, recreate the Celery worker so it runs the latest Python code:
+
+```bash
+cd ~/suspicious-email-triage
+DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --build ai-celery
+```
 
 ---
 
 ## Prerequisites
 
 1. Signed in at `http://localhost:3001` — [stack_guide_build_and_run.md](stack_guide_build_and_run.md).
-2. Backend + databases running; for graph/campaign checks, also start workers:
+2. Stack running (backend, databases, workers, Neo4j):
 
 ```bash
 cd ~/suspicious-email-triage
-DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d backend ai-celery ai-kafka-dispatch mock-llm neo4j
+DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d \
+  backend ai-celery ai-kafka-dispatch neo4j
 ```
 
-3. In the Triage workspace, **disable simulation** (Simulation panel → uncheck synthetic ingests) so Recent reviews shows only your test rows.
+3. **Turn off simulation** in the Triage workspace (Simulation panel) so Recent reviews is not flooded with synthetic rows.
+4. Confirm LLM is off inside the worker (optional):
+
+```bash
+docker compose -f infra/docker/docker-compose.yml exec ai-celery \
+  printenv DISABLE_LLM
+```
+
+**Expected:** `true`
 
 ---
 
-## Test data — two related phishing messages
+## Test messages (copy exactly)
 
-Submit **two** separate reviews via **Queue analysis**. Both bodies share the hostname `secure-login.example-phish.test` (intentional test domain wired in the rule engine).
+Both messages share the hostname **`secure-login.example-phish.test`**. That string is wired into the rule engine as a **demo phishing indicator** (same idea as the Node rule engine in `backend/src/worker/ruleEngine.js`).
 
 ### Message A
 
@@ -60,31 +78,43 @@ Submit **two** separate reviews via **Queue analysis**. Both bodies share the ho
 
 ---
 
-## Step 1 — Submit and wait for completion
+## Step 1 — Submit and wait for `completed`
 
-1. Open **Triage workspace** → **Queue analysis**.
-2. Paste Message A fields → submit.
-3. Repeat for Message B.
-4. Watch the **Result** panel for each submission until **Status: completed** (Kafka → Celery pipeline).
+1. Open **Triage workspace** → fill **Queue analysis** → submit Message A.
+2. Submit Message B the same way.
+3. Watch the **Result** panel until **Status: completed** for each.
 
-**Pass:** Both show `completed` within a few minutes (depends on worker load).
+**Pass:** Both reach `completed` within a few minutes.
 
-**Fail:** Stuck `pending` / `failed` — check `docker compose logs ai-celery` and [arch_guide_worker_pipeline.md](arch_guide_worker_pipeline.md).
+**Fail (stuck pending):** Check `docker compose logs ai-celery` — see [arch_guide_worker_pipeline.md](arch_guide_worker_pipeline.md).
 
 ---
 
-## Step 2 — Verify phishing verdict in UI
+## Step 2 — Check automated verdict (rule engine, LLM off)
 
-For each completed review, open it from **Recent reviews** (user submissions only; simulation rows are hidden by default).
+### Expected result **after a current worker build**
 
-**Pass:**
+| Message | Expected verdict | Why |
+|---------|------------------|-----|
+| A | **`likely_phishing`** | URL contains `example-phish` / `secure-login`; subject contains “verify account”; urgent + link |
+| B | **`likely_phishing`** | URL contains demo phishing hostname |
 
-- Verdict is **`likely_phishing`** or **`suspicious`**.
-- Explanation mentions the suspicious URL/domain (rule engine and/or LLM).
+Summary line should say **`LLM disabled (python stub)`**. Findings should mention the URL or credential language — not only generic follow-ups.
 
-**Note:** With `DISABLE_LLM=true` (default in `.env.dev`), the **rule engine alone** should still flag `example-phish` / `secure-login` patterns. With `DISABLE_LLM=false` and `LLM_PROVIDER=mock_commercial`, the mock LLM reinforces the same verdict.
+### If you see **`benign`** but findings look suspicious (your reported case)
 
-Optional terminal check:
+This usually means the **Celery container is running old code** where the disabled LLM stub returned `verdict: benign` and overwrote the rule engine.
+
+**Fix:**
+
+```bash
+cd ~/suspicious-email-triage
+DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --build ai-celery
+```
+
+Re-submit Message A and B (or use analyst override — Step 3).
+
+**Quick terminal check** (no UI):
 
 ```bash
 cd ~/suspicious-email-triage
@@ -93,64 +123,93 @@ bash scripts/verify-campaign-detection.sh
 
 ---
 
-## Step 3 — Verify campaign in Phishing graph tab
+## Step 3 — Analyst override (when automated verdict is wrong)
 
-1. Click **Phishing graph** in the nav.
-2. Click **Refresh**.
+The **Override reason** field is **notes only**. It does **not** change the verdict by itself.
+
+To manually set a verdict:
+
+1. In the **Result** panel, use the **Override verdict** dropdown → choose **`Likely phishing`**.
+2. Optionally fill **Override reason (notes)** — e.g. `Manual test — shared phish domain`.
+3. Click **Save override**.
+
+**What should happen:**
+
+| Where | Expected after save |
+|-------|---------------------|
+| **Result** panel | Shows **`likely_phishing (analyst override)`** |
+| **Recent reviews** row | Shows **`likely_phishing · override`** (not `benign`) |
+| **Phishing graph** (after Refresh) | Can form a campaign once **two** overridden reviews share the domain |
+
+**Pattern:** Overrides are stored on `review.override` in MongoDB. The UI and Neo4j sync use **effective verdict** = override if present, else `analysisResult.verdict` (`backend/src/lib/effectiveVerdict.js`).
+
+If Recent reviews still shows `benign` after override, click **Refresh** on that panel. If it still fails, pull latest code — this was a known display bug (list showed only `analysisResult.verdict`).
+
+Repeat override for **both** Message A and B before expecting a campaign.
+
+---
+
+## Step 4 — Identify a phishing **campaign** (Neo4j)
+
+A **campaign** means: **two or more** reviews with effective verdict **`suspicious`** or **`likely_phishing`** that share the same URL **domain** (`secure-login.example-phish.test`).
+
+1. Ensure both reviews are `completed` **and** effectively risky (automated or override).
+2. Open **Phishing graph** → **Refresh**.
+3. Use **First / Prev / Next / Last** to move between campaigns.
 
 **Pass:**
 
 - **Detected campaigns** lists `secure-login.example-phish.test` with **2** linked reviews.
-- Graph SVG shows nodes (senders, reviews, URL, domain) and edges.
-- **Prev / Next campaign** and **Zoom** controls work; hover shows tooltips.
+- Graph SVG shows senders, reviews, URLs, and domain nodes.
 
-**Fail — campaigns empty:** Both reviews must be `completed` with risky verdicts; wait and refresh. See [graph_demo_neo4j_phishing.md](graph_demo_neo4j_phishing.md#part-3-react-graph).
+**Fail — no campaigns:**
 
-**Fail — list OK but graph empty:** Usually one review not synced yet; refresh after both complete.
+| Cause | What to do |
+|-------|------------|
+| Verdict still `benign` on one or both | Rebuild `ai-celery` (Step 2) or override both (Step 3) |
+| Only one review completed | Wait and refresh |
+| Neo4j not running | `docker compose … up -d neo4j` |
+| Graph sync lag | Refresh again after ~30s |
 
----
-
-## Step 4 — Optional API verification
-
-With a JWT from login (`POST /auth/login`):
+Optional API check (replace `TOKEN` with JWT from login):
 
 ```bash
-TOKEN="paste-jwt-here"
-curl -sS -H "Authorization: Bearer $TOKEN" \
+curl -sS -H "Authorization: Bearer TOKEN" \
   "http://localhost:3000/graph/campaigns" | python3 -m json.tool
 ```
 
-**Pass:** JSON includes a campaign for `secure-login.example-phish.test` with `reviewCount` ≥ 2.
+---
 
-Campaign subgraph:
+## Step 5 — Optional: enable mock LLM (different path)
+
+If you want the **LLM path** instead of rule-only scoring:
+
+1. In gitignored `backend/.env`, set `DISABLE_LLM=false` and `LLM_PROVIDER=mock_commercial`.
+2. Recreate Celery and start mock LLM:
 
 ```bash
-curl -sS -H "Authorization: Bearer $TOKEN" \
-  "http://localhost:3000/graph/campaign-subgraph?domain=secure-login.example-phish.test" \
-  | python3 -m json.tool
+DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --force-recreate ai-celery mock-llm
 ```
 
+3. Re-submit test messages. See [data_guide_mock_llm.md](data_guide_mock_llm.md).
+
+This is **not required** for campaign testing when the rule engine flags the demo URLs.
+
 ---
 
-## Step 5 — Record results (manual test log)
+## Manual test log
 
-| Step | Result (pass/fail) | Notes |
-|------|-------------------|-------|
+| Step | Pass / fail | Notes |
+|------|-------------|-------|
 | 1 — Both completed | | |
-| 2 — Verdict phishing/suspicious | | |
-| 3 — Campaign in UI | | |
-| 4 — API campaigns (optional) | | |
-
----
-
-## Negative control (optional)
-
-Submit a benign message with no suspicious URLs (e.g. internal newsletter). **Expected:** verdict `benign` or low risk; no new campaign for unrelated domains.
+| 2 — Automated verdict (or rebuilt worker) | | |
+| 3 — Override both to likely_phishing (if needed) | | |
+| 4 — Campaign visible in Phishing graph | | |
 
 ---
 
 ## Related docs
 
-- [graph_demo_neo4j_phishing.md](graph_demo_neo4j_phishing.md) — full demo with Neo4j Browser Cypher
-- [tech_neo4j_setup_wsl_windows.md](tech_neo4j_setup_wsl_windows.md) — Neo4j Docker on WSL
-- [data_guide_mock_llm.md](data_guide_mock_llm.md) — enabling mock LLM scoring
+- [graph_demo_neo4j_phishing.md](graph_demo_neo4j_phishing.md) — narrative demo with Neo4j Browser
+- [tech_neo4j_setup_wsl_windows.md](tech_neo4j_setup_wsl_windows.md) — Neo4j on WSL
+- [arch_guide_worker_pipeline.md](arch_guide_worker_pipeline.md) — Kafka / Celery flow

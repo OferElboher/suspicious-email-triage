@@ -271,10 +271,32 @@ def test_dev_bootstrap_reset_wired():
     assert "graph_test_manual_phishing_identification.md" in readme
 
 
+def test_effective_verdict_and_override_ui_wired():
+    """Analyst override must drive list display and Neo4j sync, not only analysisResult."""
+    assert (ROOT / "backend/src/lib/effectiveVerdict.js").is_file()
+    sync = (ROOT / "backend/src/graph/syncReview.js").read_text(encoding="utf-8")
+    reviews = (ROOT / "backend/src/api/reviews.js").read_text(encoding="utf-8")
+    triage = (ROOT / "frontend/src/TriageApp.jsx").read_text(encoding="utf-8")
+    assert "effectiveVerdict" in sync
+    assert "effectiveVerdict" in reviews
+    assert "Override verdict" in triage
+    assert "overrideVerdict" in triage
+
+
+def test_graph_campaign_nav_includes_first_and_last():
+    """Campaign graph UI must expose first/last navigation controls."""
+    graph = (ROOT / "frontend/src/views/GraphView.jsx").read_text(encoding="utf-8")
+    assert "goFirst" in graph
+    assert "goLast" in graph
+    assert "First" in graph
+    assert "Last" in graph
+
+
 def test_docs_avoid_hardcoded_private_env_values():
     """Guides must reference env var names, not copy gitignored backend/.env secrets."""
     forbidden_substrings = (
         "AUTH_BOOTSTRAP_ADMIN_EMAIL=ofer",
+        "ofer.elboher@gmail.com",
         "AUTH_BOOTSTRAP_ADMIN_EMAIL=admin@company",
         "GOOGLE_OAUTH_CLIENT_SECRET=GOCSPX-",
         "JWT_SECRET=prod-",

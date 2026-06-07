@@ -3,6 +3,7 @@
  */
 import { useCallback, useState } from "react";
 import { getJson } from "../api/client";
+import { effectiveVerdict, hasOverride } from "../lib/effectiveVerdict";
 
 /** Format ISO timestamp for display in the expanded panel. */
 function formatWhen(iso) {
@@ -27,7 +28,8 @@ function ReviewRow({ summary, expanded, onToggle, canReadGraph }) {
           {summary.subject}
         </strong>
         <div className="muted">
-          {summary.senderEmail} · {summary.status} · {summary.analysisResult?.verdict || "—"}
+          {summary.senderEmail} · {summary.status} · {summary.effectiveVerdict || effectiveVerdict(summary)}
+          {hasOverride(summary) ? " · override" : ""}
         </div>
       </button>
       {isOpen && expanded && (
@@ -63,8 +65,10 @@ function ReviewRow({ summary, expanded, onToggle, canReadGraph }) {
             <>
               <p className="muted">Analysis</p>
               <p>
-                Verdict: <strong>{expanded.analysisResult.verdict}</strong> · Action:{" "}
-                {expanded.analysisResult.recommendedAction}
+                Verdict: <strong>{effectiveVerdict(expanded)}</strong>
+                {hasOverride(expanded) ? " (analyst override)" : ""} · Action:{" "}
+                {expanded.override?.recommendedAction ||
+                  expanded.analysisResult?.recommendedAction}
               </p>
               <p>{expanded.analysisResult.summary}</p>
             </>

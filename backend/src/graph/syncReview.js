@@ -5,16 +5,14 @@
 const { domainFromUrl } = require("./domainFromUrl");
 const { runWrite } = require("./neo4jClient");
 const { detectCampaignsForReview } = require("./campaignDetection");
+const { effectiveVerdict } = require("../lib/effectiveVerdict");
 const logger = require("../lib/logger");
 
 /** Normalize Mongo/Mongoose review into plain fields for Cypher parameters. */
 function reviewToGraphPayload(review) {
   const id = String(review._id || review.id || "");
   const links = Array.isArray(review.links) ? review.links : [];
-  const verdict =
-    review.analysisResult?.verdict ||
-    review.override?.verdict ||
-    null;
+  const verdict = effectiveVerdict(review);
   const linkRows = links
     .map((href) => {
       const host = domainFromUrl(href);

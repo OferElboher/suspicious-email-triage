@@ -22,3 +22,24 @@ def test_disabled_llm_stub_does_not_force_benign():
     merged = merge_results(rules, llm_stub)
     assert merged["verdict"] in ("suspicious", "likely_phishing")
     assert merged["verdict"] != "benign"
+
+
+def test_legacy_ollama_disabled_stub_does_not_downgrade_rules():
+    """Regression: old ollama path returned verdict benign without _llmDisabled flag."""
+    rules = run_rule_engine(
+        {
+            "subject": "Urgent: verify your account",
+            "body": "Please verify: https://secure-login.example-phish.test/reset",
+            "senderEmail": "a@fake.test",
+        }
+    )
+    legacy_stub = {
+        "verdict": "benign",
+        "recommendedAction": "close",
+        "summary": "LLM disabled (python stub)",
+        "findings": [],
+        "followUpQuestions": [],
+    }
+    merged = merge_results(rules, legacy_stub)
+    assert merged["verdict"] in ("suspicious", "likely_phishing")
+

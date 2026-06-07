@@ -72,6 +72,16 @@ export default function GraphView() {
     }
   }, [selectedCampaign?.indicator, loadSubgraph]);
 
+  const goFirst = () => {
+    setSelectedIndex(0);
+    setZoom(1);
+  };
+
+  const goLast = () => {
+    setSelectedIndex(Math.max(0, sortedCampaigns.length - 1));
+    setZoom(1);
+  };
+
   const goPrev = () => {
     setSelectedIndex((i) => Math.max(0, i - 1));
     setZoom(1);
@@ -105,12 +115,7 @@ export default function GraphView() {
         {loading && <p className="muted">Loading campaigns…</p>}
         {error && <p className="status-failed">{error}</p>}
         {!loading && !hasCampaigns && !error && (
-          <p className="muted">
-            No campaigns detected yet. Submit two completed reviews with verdict{" "}
-            <code>suspicious</code> or <code>likely_phishing</code> that share the same URL domain
-            — submit them in the Triage workspace (see repo{" "}
-            <code>docs/graph_demo_neo4j_phishing.md</code>).
-          </p>
+          <p className="muted">No campaigns detected yet.</p>
         )}
         {hasCampaigns && (
           <ul className="dashboard-list">
@@ -141,8 +146,11 @@ export default function GraphView() {
           <div className="toolbar graph-toolbar">
             <h2 style={{ margin: 0 }}>Phishing relationship graph</h2>
             <div className="graph-controls">
+              <button type="button" disabled={selectedIndex === 0} onClick={goFirst}>
+                ⏮ First
+              </button>
               <button type="button" disabled={selectedIndex === 0} onClick={goPrev}>
-                ◀ Prev campaign
+                ◀ Prev
               </button>
               <span className="muted">
                 {selectedIndex + 1} / {sortedCampaigns.length}: {selectedCampaign?.indicator}
@@ -152,7 +160,14 @@ export default function GraphView() {
                 disabled={selectedIndex >= sortedCampaigns.length - 1}
                 onClick={goNext}
               >
-                Next campaign ▶
+                Next ▶
+              </button>
+              <button
+                type="button"
+                disabled={selectedIndex >= sortedCampaigns.length - 1}
+                onClick={goLast}
+              >
+                Last ⏭
               </button>
               <button type="button" onClick={zoomOut} aria-label="Zoom out">
                 Zoom −

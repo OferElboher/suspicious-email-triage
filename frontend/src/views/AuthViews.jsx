@@ -10,27 +10,17 @@ export default function LoginView({ onForgotPassword }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [help, setHelp] = useState("");
+  const [notice, setNotice] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [googleLoginEnabled, setGoogleLoginEnabled] = useState(false);
-  const [loginConfig, setLoginConfig] = useState({
-    devLoginAssist: false,
-    bootstrapEmailConfigured: false,
-    maskedBootstrapEmail: null,
-    bootstrapPasswordHint: null,
-  });
+  const [devLoginAssist, setDevLoginAssist] = useState(false);
 
   useEffect(() => {
     getJson("/auth/config", { auth: false })
       .then((cfg) => {
         setGoogleLoginEnabled(Boolean(cfg.googleLoginEnabled));
-        setLoginConfig({
-          devLoginAssist: Boolean(cfg.devLoginAssist),
-          bootstrapEmailConfigured: Boolean(cfg.bootstrapEmailConfigured),
-          maskedBootstrapEmail: cfg.maskedBootstrapEmail || null,
-          bootstrapPasswordHint: cfg.bootstrapPasswordHint || null,
-        });
+        setDevLoginAssist(Boolean(cfg.devLoginAssist));
       })
       .catch(() => setGoogleLoginEnabled(false));
   }, []);
@@ -39,23 +29,14 @@ export default function LoginView({ onForgotPassword }) {
     event.preventDefault();
     setSubmitting(true);
     setError("");
-    setHelp("");
+    setNotice("");
     try {
       await login(email.trim().toLowerCase(), password);
     } catch (err) {
       if (err.networkError) {
-        setError("Cannot reach the API.");
-        setHelp(
-          "Start Docker backend (port 3000) and the React dev server (port 3001). " +
-            "See docs/stack_guide_build_and_run.md."
-        );
+        setError("Cannot reach the server. Check that the API and UI are running.");
       } else if (err.body?.error === "invalid_credentials") {
-        setError("Email or password did not match.");
-        setHelp(
-          loginConfig.bootstrapEmailConfigured
-            ? `Use bootstrap email ${loginConfig.maskedBootstrapEmail} and the dev password from backend/.env.dev (default temp-admin-pswd).`
-            : "Configure bootstrap email first: bash scripts/configure-dev-bootstrap-admin.sh YOUR_EMAIL@example.com"
-        );
+        setError("Incorrect email or password.");
       } else {
         setError(err.message || "Sign in failed.");
       }
@@ -68,24 +49,20 @@ export default function LoginView({ onForgotPassword }) {
   const runDevBootstrapReset = async () => {
     setResetting(true);
     setError("");
-    setHelp("");
+    setNotice("");
     try {
       const data = await postJson("/auth/dev/bootstrap-reset", {}, { auth: false });
-      setHelp(
-        `Bootstrap admin ${data.action === "created" ? "created" : "password reset"} for ${data.email}. ` +
-          `Try signing in with password: ${data.passwordHint || loginConfig.bootstrapPasswordHint || "temp-admin-pswd"}.`
-      );
       if (data.email) {
         setEmail(data.email);
       }
+      setNotice("Dev password reset. Sign in with your bootstrap email and temp-admin-pswd.");
     } catch (err) {
       if (err.body?.error === "bootstrap_email_not_configured") {
-        setError("Bootstrap email is not configured in the backend container.");
-        setHelp("Run: bash scripts/configure-dev-bootstrap-admin.sh YOUR_EMAIL@example.com");
+        setError("Bootstrap email is not configured on the server.");
       } else if (err.body?.error === "dev_only") {
-        setError("Bootstrap reset is available only in DEPLOYMENT_ENV=dev.");
+        setError("This action is available in dev only.");
       } else {
-        setError(err.networkError ? err.message : err.message || "Bootstrap reset failed.");
+        setError(err.networkError ? err.message : err.message || "Password reset failed.");
       }
     } finally {
       setResetting(false);
@@ -98,18 +75,6 @@ export default function LoginView({ onForgotPassword }) {
     <div className="auth-shell">
       <form className="card auth-card" onSubmit={submit}>
         <h1>Sign in</h1>
-        <p className="auth-lead">
-          Authentication is required for the triage workspace. In local dev, the API runs in Docker on
-          port <strong>3000</strong>; this UI uses a proxy on port <strong>3001</strong>.
-        </p>
-        {loginConfig.devLoginAssist && loginConfig.bootstrapEmailConfigured && (
-          <p className="auth-hint-box">
-            <strong>Dev bootstrap account:</strong> email like{" "}
-            <code>{loginConfig.maskedBootstrapEmail}</code>, password{" "}
-            <code>{loginConfig.bootstrapPasswordHint || "temp-admin-pswd"}</code> (from{" "}
-            <code>backend/.env.dev</code>).
-          </p>
-        )}
         <label className="field">
           Email
           <input
@@ -128,19 +93,19 @@ export default function LoginView({ onForgotPassword }) {
           required
         />
         {error && <p className="status-failed">{error}</p>}
-        {help && <p className="auth-help-box">{help}</p>}
-        <div className="actions">
+        {notice && <p className="auth-notice">{notice}</p>}
+        <div className="actions auth-actions">
           <button type="submit" className="primary" disabled={submitting}>
             {submitting ? "Signing in…" : "Sign in"}
           </button>
-          {loginConfig.devLoginAssist && (
+          {devLoginAssist && (
             <button
               type="button"
               className="button"
               disabled={resetting}
               onClick={() => runDevBootstrapReset().catch(() => {})}
             >
-              {resetting ? "Resetting…" : "Reset dev bootstrap password"}
+              {resetting ? "Resetting…" : "Reset dev password"}
             </button>
           )}
           {googleLoginEnabled && (
@@ -148,18 +113,10 @@ export default function LoginView({ onForgotPassword }) {
               Sign in with Google
             </a>
           )}
-          <button type="button" onClick={onForgotPassword}>
+          <button type="button" className="link-button" onClick={onForgotPassword}>
             Forgot password
           </button>
         </div>
-        {loginConfig.devLoginAssist && (
-          <p className="muted auth-footnote">
-            After <code>docker compose build</code>, Postgres may keep old users while passwords drift.
-            Use <strong>Reset dev bootstrap password</strong> or{" "}
-            <code>bash scripts/bootstrap-auth-admin.sh --reset-password</code>. Guide:{" "}
-            <code>docs/stack_guide_build_and_run.md</code>.
-          </p>
-        )}
       </form>
     </div>
   );
@@ -190,14 +147,7 @@ export function ForgotPasswordView({ onBackToLogin }) {
   return (
     <div className="auth-shell">
       <form className="card auth-card" onSubmit={submit}>
-        <h1>Recover credentials</h1>
-        <p className="auth-lead">
-          Enter your account email. Dev stack sends reset mail to Mailpit — open{" "}
-          <a href="http://localhost:8025" target="_blank" rel="noreferrer">
-            localhost:8025
-          </a>
-          .
-        </p>
+        <h1>Forgot password</h1>
         <label className="field">
           Email
           <input
@@ -209,11 +159,11 @@ export function ForgotPasswordView({ onBackToLogin }) {
         </label>
         {message && <p className="status-completed">{message}</p>}
         {error && <p className="status-failed">{error}</p>}
-        <div className="actions">
+        <div className="actions auth-actions">
           <button type="submit" className="primary" disabled={submitting}>
             {submitting ? "Sending…" : "Send reset link"}
           </button>
-          <button type="button" onClick={onBackToLogin}>
+          <button type="button" className="link-button" onClick={onBackToLogin}>
             Back to sign in
           </button>
         </div>
@@ -277,7 +227,7 @@ export function ResetPasswordView({ token, onComplete }) {
         />
         {message && <p className="status-completed">{message}</p>}
         {error && <p className="status-failed">{error}</p>}
-        <div className="actions">
+        <div className="actions auth-actions">
           <button type="submit" className="primary" disabled={submitting || !token}>
             {submitting ? "Saving…" : "Update password"}
           </button>

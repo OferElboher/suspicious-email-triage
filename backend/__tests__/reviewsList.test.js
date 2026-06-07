@@ -78,4 +78,28 @@ describe("GET /reviews", () => {
     expect(Review.find).toHaveBeenCalledWith({});
     expect(res.body.data).toHaveLength(2);
   });
+
+  it("includes effectiveVerdict when override is present", async () => {
+    Review.countDocuments.mockResolvedValue(1);
+    const chain = {
+      sort: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      select: jest.fn().mockResolvedValue([
+        {
+          _id: "u1",
+          subject: "Real",
+          senderEmail: "a@b.com",
+          source: "user",
+          analysisResult: { verdict: "benign" },
+          override: { verdict: "likely_phishing" },
+        },
+      ]),
+    };
+    Review.find.mockReturnValue(chain);
+
+    const res = await request(app).get("/reviews");
+    expect(res.status).toBe(200);
+    expect(res.body.data[0].effectiveVerdict).toBe("likely_phishing");
+  });
 });

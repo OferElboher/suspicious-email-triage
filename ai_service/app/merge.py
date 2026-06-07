@@ -16,6 +16,9 @@ def merge_results(rule_out: tuple, llm: Dict[str, Any]) -> Dict[str, Any]:
     llm_disabled = llm.get("_llmDisabled") is True
     llm_verdict = llm.get("verdict")
     final_verdict = verdict_r if llm_disabled or not llm_verdict else llm_verdict
+    # Rule engine is authoritative for security heuristics — LLM must not downgrade to benign.
+    if verdict_r in ("suspicious", "likely_phishing") and final_verdict == "benign":
+        final_verdict = verdict_r
     if llm_disabled:
         final_action = action_r
     else:

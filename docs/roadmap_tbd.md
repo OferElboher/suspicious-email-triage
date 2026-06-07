@@ -178,7 +178,7 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 
 ---
 
-### 2.2 Audit trail for analyst actions (P0)
+### 2.2 Audit trail for analyst actions (P0) — **partial (dev path)**
 
 **User value:** Compliance officer proves who changed a verdict and when.
 
@@ -189,7 +189,15 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 
 **Tech pattern:** Extend Mongo schema; optional WORM storage or SIEM forward.
 
-**Free path:** Current override fields + Postgres/Mongo queries — no extra vendor.
+**Implemented (dev free path):**
+
+- **Override verdict** dropdown + notes in Triage workspace (`POST /reviews/:id/override`)
+- **Effective verdict** helper (`backend/src/lib/effectiveVerdict.js`) — override wins over `analysisResult` in Recent reviews, Result panel, and Neo4j graph sync
+- Mongo `override` stores `analystEmail`, `timestamp`, `reason`, `verdict`, `recommendedAction`
+
+**Guide:** [graph_test_manual_phishing_identification.md](graph_test_manual_phishing_identification.md) (override + campaign section)
+
+**Remaining (paid / later):** Immutable audit export, SIEM forwarding, compliance dashboards.
 
 ---
 

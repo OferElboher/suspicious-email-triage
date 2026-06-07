@@ -16,8 +16,7 @@ def _ollama_url() -> str:
 def analyze_with_ollama(review: Dict[str, Any]) -> Dict[str, Any]:
     if os.environ.get("DISABLE_LLM", "").lower() == "true":
         return {
-            "verdict": "benign",
-            "recommendedAction": "close",
+            "_llmDisabled": True,
             "summary": "LLM disabled (python stub)",
             "findings": [],
             "followUpQuestions": [],

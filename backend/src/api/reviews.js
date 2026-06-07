@@ -10,6 +10,7 @@ const logger = require("../lib/logger");
 const { enqueueAfterCreate } = require("../services/reviewPipeline");
 const { scheduleGraphSync } = require("../services/graphSyncService");
 const { scheduleSearchIndex } = require("../services/reviewSearchSync");
+const { effectiveVerdict } = require("../lib/effectiveVerdict");
 const { incrementReviewsCreated } = require("../lib/appMetrics");
 const { requirePermission } = require("../http/middleware/auth");
 
@@ -92,9 +93,16 @@ router.get("/", requirePermission("reviews.read"), async (req, res) => {
       .sort({ updatedAt: -1 })
       .skip(safePage * safeLimit)
       .limit(safeLimit)
-      .select("senderEmail subject status source analysisResult.verdict updatedAt");
+      .select("senderEmail subject status source analysisResult.verdict override updatedAt");
+    const data = reviews.map((doc) => {
+      const row = doc.toObject ? doc.toObject() : doc;
+      return {
+        ...row,
+        effectiveVerdict: effectiveVerdict(row),
+      };
+    });
     return res.json({
-      data: reviews,
+      data,
       page: safePage,
       limit: safeLimit,
       total,

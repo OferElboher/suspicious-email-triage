@@ -39,7 +39,7 @@ cd ~/suspicious-email-triage
 bash scripts/configure-dev-google-oauth.sh email \
   YOUR_CLIENT_ID.apps.googleusercontent.com \
   YOUR_CLIENT_SECRET \
-  ofer.elboher@gmail.com
+  you@example.com
 ```
 
 What happens:
@@ -59,7 +59,7 @@ Test forgot-password:
 ```bash
 curl -s -X POST http://localhost:3000/auth/forgot-password \
   -H 'Content-Type: application/json' \
-  -d '{"email":"ofer.elboher@gmail.com"}'
+  -d '{"email":"you@example.com"}'
 ```
 
 Check your Gmail inbox. The API always returns HTTP 200; see backend logs if delivery fails.

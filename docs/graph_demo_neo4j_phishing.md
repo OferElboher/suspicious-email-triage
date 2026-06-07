@@ -114,7 +114,7 @@ bash scripts/verify-campaign-detection.sh
 
 - **Detected campaigns** lists `secure-login.example-phish.test` with **2** linked reviews (largest campaigns appear first).
 - The **relationship graph appears only when this list is non-empty** — not while it still says “No campaigns detected”.
-- Use **◀ Prev campaign / Next campaign ▶** to flip between clusters; **Zoom − / +** to scale the SVG.
+- Use **◀ Prev / Next ▶** and **⏮ First / Last ⏭** to flip between clusters; **Zoom − / +** to scale the SVG.
 - **Hover** any node or line for a detail box (sender email, review id, URL, relationship type).
 
 If you see campaigns but an empty graph, wait for both reviews to reach `completed` and click **Refresh** again.

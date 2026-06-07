@@ -14,6 +14,21 @@ import ThemeSelector from "./components/ThemeSelector";
 import RecentReviewsList from "./components/RecentReviewsList";
 import SearchIndexPanel from "./components/SearchIndexPanel";
 import { djangoAdminUrl } from "./lib/appUrls";
+import { effectiveVerdict, hasOverride } from "./lib/effectiveVerdict";
+
+/** Analyst override verdict choices (stored on review.override, not analysisResult). */
+const OVERRIDE_VERDICTS = [
+  { value: "benign", label: "Benign" },
+  { value: "suspicious", label: "Suspicious" },
+  { value: "likely_phishing", label: "Likely phishing" },
+];
+
+/** Recommended action options paired with override verdict saves. */
+const OVERRIDE_ACTIONS = {
+  benign: "close",
+  suspicious: "investigate",
+  likely_phishing: "report_and_block",
+};
 
 /** Page size for the dashboard list; kept aligned with backend pagination limits. */
 const PAGE_SIZE = 20;
@@ -60,6 +75,7 @@ export default function TriageApp() {
   const [body, setBody] = useState("");
   const [active, setActive] = useState(null);
   const [overrideReason, setOverrideReason] = useState("");
+  const [overrideVerdict, setOverrideVerdict] = useState("suspicious");
   const [reviews, setReviews] = useState([]);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -99,6 +115,13 @@ export default function TriageApp() {
   }, []);
 
   useReviewPoller(active?._id, onPoll);
+
+  /** Keep override verdict dropdown aligned with the loaded analysis result. */
+  useEffect(() => {
+    if (active?.analysisResult?.verdict) {
+      setOverrideVerdict(active.analysisResult.verdict);
+    }
+  }, [active?._id, active?.analysisResult?.verdict]);
 
   const fetchPage = useCallback(async () => {
     const sim = includeSimulation ? "&includeSimulation=true" : "";
@@ -162,11 +185,16 @@ export default function TriageApp() {
 
   const saveOverride = async () => {
     if (!active?._id || !active.analysisResult) return;
-    await postJson(`/reviews/${active._id}/override`, {
-      verdict: active.analysisResult.verdict,
-      recommendedAction: active.analysisResult.recommendedAction,
+    const res = await postJson(`/reviews/${active._id}/override`, {
+      verdict: overrideVerdict,
+      recommendedAction: OVERRIDE_ACTIONS[overrideVerdict] || "investigate",
       reason: overrideReason,
     });
+    const updated = res.review
+      ? await getJson(`/reviews/${active._id}`)
+      : { ...active, override: res.override };
+    setActive(updated);
+    await fetchPage();
     window.alert("Override saved");
   };
 
@@ -293,7 +321,10 @@ export default function TriageApp() {
                 {active.analysisResult && (
                   <>
                     <p>
-                      <strong>Verdict:</strong> {active.analysisResult.verdict}
+                      <strong>Verdict:</strong> {effectiveVerdict(active)}
+                      {hasOverride(active) && (
+                        <span className="muted"> (analyst override)</span>
+                      )}
                     </p>
                     <p>
                       <strong>Action:</strong> {active.analysisResult.recommendedAction}
@@ -328,10 +359,26 @@ export default function TriageApp() {
                     {canOverride && (
                       <>
                         <div style={{ marginTop: "0.75rem" }}>
-                          <label className="field">Override reason</label>
+                          <label className="field">
+                            Override verdict
+                            <select
+                              value={overrideVerdict}
+                              onChange={(e) => setOverrideVerdict(e.target.value)}
+                            >
+                              {OVERRIDE_VERDICTS.map((opt) => (
+                                <option key={opt.value} value={opt.value}>
+                                  {opt.label}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        </div>
+                        <div style={{ marginTop: "0.75rem" }}>
+                          <label className="field">Override reason (notes)</label>
                           <input
                             value={overrideReason}
                             onChange={(e) => setOverrideReason(e.target.value)}
+                            placeholder="Why you changed the verdict"
                           />
                         </div>
                         <div className="actions">
