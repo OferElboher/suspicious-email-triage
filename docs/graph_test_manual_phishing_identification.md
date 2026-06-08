@@ -161,10 +161,8 @@ A **campaign** means: **two or more** reviews with effective verdict **`suspicio
 
 - **Detected campaigns** lists `secure-login.example-phish.test` with **2** linked reviews.
 - Graph SVG shows **nodes and connecting lines (edges)** between senders, reviews, URLs, and domains.
-- **Drag** the graph to pan; **Zoom − / +** and **Reset view**; **drag the bottom edge** to resize the viewport.
-- **Jump to date** in the graph toolbar selects a campaign by Neo4j `updatedAt` (when set).
-
-**Fail — nodes but no edges:** Pull latest backend — edges use `edgesFromNeo4j` (Neo4j JavaScript driver v5 element ids). Rebuild and refresh.
+- **Drag** the graph to pan; **Zoom − / +** and **Reset view**; **drag the bottom or right edge** to resize the viewport.
+- Unconnected nodes are **hidden** automatically (stale Url/Domain rows in Neo4j); the hint under the graph explains when orphans were dropped.
 
 **Fail — no campaigns:**
 

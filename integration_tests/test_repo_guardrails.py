@@ -287,13 +287,19 @@ def test_graph_campaign_nav_includes_first_and_last():
     """Campaign graph UI must expose first/last navigation controls."""
     graph = (ROOT / "frontend/src/views/GraphView.jsx").read_text(encoding="utf-8")
     canvas = (ROOT / "frontend/src/components/CampaignGraphCanvas.jsx").read_text(encoding="utf-8")
+    queries = (ROOT / "backend/src/graph/graphQueries.js").read_text(encoding="utf-8")
+    readme = (ROOT / "docs/README.md").read_text(encoding="utf-8")
     assert "goFirst" in graph
     assert "goLast" in graph
     assert "findCampaignIndexForDate" in graph
     assert "onPointerDown" in canvas
-    assert "graph-resize-handle" in canvas
-    queries = (ROOT / "backend/src/graph/graphQueries.js").read_text(encoding="utf-8")
-    assert "edgesFromNeo4j" in queries
+    assert "graph-resize-handle--east" in canvas
+    assert "filterConnectedSubgraph" in queries
+    assert "roadmap_tbd.md" in readme
+    tbd = (ROOT / "docs/roadmap_tbd.md").read_text(encoding="utf-8")
+    assert "## 8. Semantic search, LangChain" in tbd
+    assert "## 9. Wide-column store" in tbd
+    assert "Future idea — LangChain" not in tbd
 
 
 def test_reviews_page_for_date_wired():

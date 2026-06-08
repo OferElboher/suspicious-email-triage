@@ -61,6 +61,33 @@ function edgesFromNeo4j(nodeRecords, relRecords) {
     .filter(Boolean);
 }
 
+/**
+ * Drop orphan nodes with no incident edges (stale Url/Domain debris in Neo4j).
+ * Campaign nodes are kept as the visual anchor even if edge collection missed one.
+ */
+function filterConnectedSubgraph(nodes, edges) {
+  if (!nodes.length) {
+    return { nodes: [], edges: [], droppedOrphanCount: 0 };
+  }
+  const connectedIds = new Set();
+  edges.forEach((edge) => {
+    connectedIds.add(edge.source);
+    connectedIds.add(edge.target);
+  });
+  const kept = nodes.filter(
+    (node) => connectedIds.has(node.id) || node.type === "Campaign"
+  );
+  const keptIds = new Set(kept.map((node) => node.id));
+  const keptEdges = edges.filter(
+    (edge) => keptIds.has(edge.source) && keptIds.has(edge.target)
+  );
+  return {
+    nodes: kept,
+    edges: keptEdges,
+    droppedOrphanCount: nodes.length - kept.length,
+  };
+}
+
 /** Fetch a bounded subgraph around one review for analyst drill-down. */
 async function getReviewNeighborhood(reviewId, depth = 2) {
   // depth is capped by the API (max 4) before interpolation — avoids unbounded Cypher cost.
@@ -192,14 +219,15 @@ async function getCampaignSubgraph(indicator) {
          collect(DISTINCT s) AS senders,
          collect(DISTINCT u) AS urls,
          collect(DISTINCT d) AS domains
-    WITH [c] + reviews + senders + urls + domains AS rawNodes
+    WITH [n IN (reviews + senders + urls + domains + [c]) WHERE n IS NOT NULL] AS rawNodes
     UNWIND rawNodes AS n
     WITH collect(DISTINCT n) AS nodes
     WHERE size(nodes) > 0
-    UNWIND nodes AS a
-    MATCH (a)-[rel]->(b)
-    WHERE b IN nodes
-    RETURN nodes, collect(DISTINCT rel) AS rels, $indicator AS indicator, size([x IN nodes WHERE x:Review]) AS reviewCount
+    MATCH (a)-[rel]-(b)
+    WHERE a IN nodes AND b IN nodes AND id(a) < id(b)
+    WITH nodes, collect(DISTINCT rel) AS rels, $indicator AS indicator,
+         size([x IN nodes WHERE x:Review]) AS reviewCount
+    RETURN nodes, rels, indicator, reviewCount
     `,
     { indicator: normalized }
   );
@@ -211,12 +239,14 @@ async function getCampaignSubgraph(indicator) {
   const record = rows[0];
   const nodeRecords = record.get("nodes") || [];
   const relRecords = record.get("rels") || [];
-  const nodes = nodeRecords.filter(Boolean).map((n) => nodeToJson(n));
-  const edges = edgesFromNeo4j(nodeRecords, relRecords);
+  const rawNodes = nodeRecords.filter(Boolean).map((n) => nodeToJson(n));
+  const rawEdges = edgesFromNeo4j(nodeRecords, relRecords);
+  const { nodes, edges, droppedOrphanCount } = filterConnectedSubgraph(rawNodes, rawEdges);
 
   return {
     nodes,
     edges,
+    droppedOrphanCount,
     indicator: record.get("indicator") || normalized,
     reviewCount: Number(record.get("reviewCount") || 0),
   };
@@ -225,6 +255,7 @@ async function getCampaignSubgraph(indicator) {
 module.exports = {
   nodeToJson,
   edgesFromNeo4j,
+  filterConnectedSubgraph,
   getReviewNeighborhood,
   getVisualizationGraph,
   getCampaignSubgraph,

@@ -8,6 +8,8 @@ export const GRAPH_CANVAS_WIDTH = 720;
 export const GRAPH_CANVAS_HEIGHT = 420;
 export const GRAPH_CANVAS_MIN_HEIGHT = 280;
 export const GRAPH_CANVAS_MAX_HEIGHT = 900;
+export const GRAPH_CANVAS_MIN_WIDTH = 480;
+export const GRAPH_CANVAS_MAX_WIDTH = 1200;
 
 /** Minimum and maximum zoom scale for analyst pan/zoom controls. */
 export const ZOOM_MIN = 0.5;
@@ -90,4 +92,32 @@ export function findCampaignIndexForDate(campaigns, dateStr) {
     (c) => String(c.updatedAt || "").slice(0, 10) === target
   );
   return idx >= 0 ? idx : null;
+}
+
+/**
+ * Remove nodes with no incident edges (orphans from stale Neo4j rows or query gaps).
+ * Keeps anchor types (Campaign) so the cluster label always renders.
+ */
+export function filterConnectedGraph(nodes, edges, anchorTypes = ["Campaign"]) {
+  const list = nodes || [];
+  const edgeList = edges || [];
+  if (list.length === 0) {
+    return { nodes: [], edges: [], droppedOrphanCount: 0 };
+  }
+  const connectedIds = new Set();
+  edgeList.forEach((edge) => {
+    connectedIds.add(edge.source);
+    connectedIds.add(edge.target);
+  });
+  const anchors = new Set(anchorTypes);
+  const kept = list.filter((node) => connectedIds.has(node.id) || anchors.has(node.type));
+  const keptIds = new Set(kept.map((node) => node.id));
+  const keptEdges = edgeList.filter(
+    (edge) => keptIds.has(edge.source) && keptIds.has(edge.target)
+  );
+  return {
+    nodes: kept,
+    edges: keptEdges,
+    droppedOrphanCount: list.length - kept.length,
+  };
 }

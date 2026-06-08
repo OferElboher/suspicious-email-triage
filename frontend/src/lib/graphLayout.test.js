@@ -4,6 +4,7 @@ import {
   describeNode,
   clampZoom,
   findCampaignIndexForDate,
+  filterConnectedGraph,
   ZOOM_MIN,
   ZOOM_MAX,
 } from "./graphLayout";
@@ -52,5 +53,18 @@ describe("graphLayout helpers", () => {
       "2026-05-24"
     );
     expect(idx).toBe(1);
+  });
+
+  it("filterConnectedGraph drops nodes with no edges except Campaign anchor", () => {
+    const result = filterConnectedGraph(
+      [
+        { id: "c:1", type: "Campaign", label: "c" },
+        { id: "r:1", type: "Review", label: "r" },
+        { id: "u:1", type: "Url", label: "orphan" },
+      ],
+      [{ source: "r:1", target: "c:1", label: "PART_OF_CAMPAIGN" }]
+    );
+    expect(result.nodes).toHaveLength(2);
+    expect(result.droppedOrphanCount).toBe(1);
   });
 });

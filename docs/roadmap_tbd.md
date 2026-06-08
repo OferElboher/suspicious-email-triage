@@ -412,15 +412,25 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 
 ### 6.1 Accessible graph visualization (P1 — partial)
 
-**User value:** Keyboard and screen-reader users can navigate the phishing graph.
+**User value:** Keyboard and screen-reader users can navigate the phishing graph; analysts can pan/zoom/resize dense campaign views.
 
 **Exact demand:** WCAG 2.1 AA for graph tab; focusable nodes; text alternatives.
 
-**Partially delivered:** per-campaign SVG with `role="img"`, native `<title>` on nodes/edges, mouse hover detail box, campaign list buttons (keyboard-activatable). Full keyboard traversal of individual nodes remains **P1**.
+**Implemented (dev free path):**
 
-**Tech pattern:** Improved SVG + ARIA, or library like vis-network.
+- Per-campaign SVG with `role="img"`, native `<title>` on nodes/edges, mouse hover detail box
+- **Pan** (drag background), **zoom** toolbar, **resize** (bottom + right edges)
+- **First / Last / Prev / Next** campaign navigation; **Jump to date** by Neo4j `updatedAt`
+- **Connected subgraph only** — orphan Url/Domain nodes filtered (`filterConnectedSubgraph`); undirected Cypher `-` collects all relationship types including `PART_OF_CAMPAIGN`
+- `GET /reviews/page-for-date` for Recent reviews date jump
+
+**Remaining:** Full keyboard traversal of individual SVG nodes (P1).
+
+**Tech pattern:** Plain SVG + React pointer events (no D3); Neo4j driver v5 `startNodeElementId` edge mapping.
 
 **Free path:** Code-only — no paid tools.
+
+**Guide:** [graph_guide_neo4j_phishing.md](graph_guide_neo4j_phishing.md)
 
 ---
 
@@ -453,6 +463,73 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 **Exact demand:** OpenAPI schema tests; k6 load test on `POST /reviews`.
 
 **Free path:** k6 open source locally.
+
+---
+
+## 8. Semantic search, LangChain, vector databases, and AI agents (P2)
+
+**User value:** Analysts find **semantically similar** past phishing messages (not just keyword match) and can run a **guided multi-step investigation** (retrieve context → check graph campaign → summarize) without replacing human override audit trails.
+
+**Exact demand (MVP):**
+
+1. When a review reaches `completed`, embed `subject + body` (e.g. `sentence-transformers/all-MiniLM-L6-v2` via Celery).
+2. Store `{ reviewId, embedding, verdict }` in a **vector database** (Qdrant or Chroma in Docker — a specialized NoSQL index for approximate nearest-neighbor search).
+3. `GET /reviews/:id/similar?k=5` returns Mongo ids + similarity scores.
+4. React **Similar reviews** panel links into Recent reviews and Phishing graph.
+
+**Exact demand (agent phase 2):**
+
+- **LangChain** (or LangGraph) orchestrates a tool-calling loop: `search_similar_reviews`, `get_graph_campaign`, `fetch_rule_findings`.
+- LLM via existing `mock_commercial` or Ollama; analyst **override** remains the compliance source of truth.
+
+**Tech pattern:**
+
+| Piece | Technology | Meaning |
+|-------|------------|---------|
+| Embeddings | HuggingFace / OpenAI-compatible API | Fixed-size numeric vector representing text meaning |
+| Vector DB | Qdrant, Chroma, Pinecone (prod) | Stores vectors + metadata; fast similarity search |
+| Orchestration | LangChain `Embeddings`, `VectorStoreRetriever`, agents | Chains steps and tool calls without bespoke glue code |
+| Agents | ReAct / tool-calling pattern | LLM decides which API to call next until task completes |
+
+**Free path:** Qdrant/Chroma Docker container, local embeddings, LangChain OSS, mock LLM — no cloud spend for demos.
+
+**Widen / deepen:** Hybrid vector + Neo4j traversal; embed SOC runbooks; multi-agent supervisor; managed Pinecone/Weaviate in production.
+
+**Security:** Redact secrets before embedding; enforce `reviews.read` RBAC on similar-results API.
+
+**Priority:** P2 — differentiator after core triage, graph, and search are stable.
+
+---
+
+## 9. Wide-column store for immutable audit timeline (P2)
+
+**User value:** Compliance officers query **years** of analyst actions (overrides, logins, exports) by time range and user without scanning Mongo collections or Postgres row-by-row.
+
+**Context — NoSQL types already in this project:**
+
+| Type | Product | Role here |
+|------|---------|-----------|
+| Document | MongoDB | Full review documents |
+| Relational | PostgreSQL | Auth, statistics events |
+| Graph | Neo4j | Phishing campaigns |
+| Key-value | Redis | Queues, cache |
+| Search | Elasticsearch | Review full-text search |
+
+**Gap:** **Wide-column / column-family** stores (Apache Cassandra, ScyllaDB) — optimized for append-only, time-partitioned writes at very high volume. Not used yet.
+
+**Exact demand:**
+
+- Append-only **audit events** (`analystEmail`, `action`, `reviewId`, `timestamp`, `payload hash`) written on override, export, login.
+- Query API: “all actions for user X between T1 and T2” with predictable latency.
+- TTL or compaction policy for dev (30 days) vs prod (years).
+
+**Tech pattern:** Cassandra/Scylla table partitioned by `(org_id, yyyy_mm)` + clustering on `timestamp`; optional Kafka sink from existing event bus.
+
+**Free path:** ScyllaDB or Cassandra single-node Docker; no managed cloud required for POC.
+
+**Paid path:** Managed Astra DB, Amazon Keyspaces — when HA and multi-region retention are required.
+
+**Priority:** P2 — after Mongo/Postgres audit fields prove the workflow ([section 2.2](#22-audit-trail-for-analyst-actions-p0--partial-dev-path)).
 
 ---
 
@@ -493,37 +570,6 @@ When planning budget, treat **P0 security and backups** on managed databases as 
 ---
 
 When you implement an item, document it in [roadmap_implemented_beyond_requirements.md](roadmap_implemented_beyond_requirements.md) and link runbooks from [README.md](README.md).
-
----
-
-## Future idea — LangChain, vector databases, and AI agents (P2 exploratory)
-
-This section describes how the triage product could **demonstrate** three modern AI stack patterns **without replacing** the existing deterministic rule engine and Kafka/Celery pipeline. Nothing here is scheduled; use it for learning, demos, and budget conversations.
-
-### Why add this at all?
-
-Today the app scores email with **rules + optional LLM JSON** and stores reviews in **MongoDB**. Analysts search via **Elasticsearch** (keyword) and explore relationships in **Neo4j** (graph). That is strong for structured triage but weak at questions like “Show me past campaigns semantically similar to this subject” or “Run a multi-step investigation with tools.”
-
-**LangChain** (orchestration), a **vector database** (semantic retrieval), and **AI agent design** (tool-using loops) address those gaps.
-
-### Proposed demo feature: “Similar past reviews” panel
-
-**User value:** Analyst opens a review and sees the five most **semantically similar** historical messages, with verdicts and campaign ids — even when keywords differ.
-
-**MVP demand:**
-
-1. When a review reaches `completed`, embed `subject + body` (e.g. `sentence-transformers/all-MiniLM-L6-v2`).
-2. Store `{ reviewId, embedding, verdict }` in **Qdrant** or **Chroma** (Docker).
-3. `GET /reviews/:id/similar?k=5` returns Mongo ids + scores.
-4. React panel links into Recent reviews and Phishing graph.
-
-**Tech pattern (free local path):** LangChain `Embeddings` + `VectorStoreRetriever`; Celery embedding task; Express read API; JWT `reviews.read`.
-
-**Agent phase 2:** LangChain tool-calling agent with tools `search_similar_reviews`, `get_graph_campaign`, `fetch_rule_findings` — human override audit trail unchanged.
-
-**Widen later:** Hybrid vector + Neo4j traversal; multi-agent supervisor (LangGraph); managed Pinecone/Weaviate in production.
-
-**Security:** Strip secrets before embed; same RBAC as review reads.
 
 ---
 

@@ -132,8 +132,8 @@ Open the triage app → **Phishing graph** tab (`#graph` in the URL hash).
 2. If the list is empty, analysts see guidance only — **no graph canvas**.
 3. If campaigns exist, the UI loads **`GET /graph/campaign-subgraph?indicator=…`** for the selected campaign and renders:
    - **Nodes** on a circle layout; **edges** as SVG lines (`edgesFromNeo4j` maps Neo4j driver v5 relationship element ids).
-   - **Pan:** drag the graph background; **zoom:** toolbar; **resize:** drag the bottom handle to change viewport height.
-   - **First / Last / Prev / Next** campaign navigation; **Jump to date** picks the first campaign whose Neo4j `updatedAt` matches that day.
+   - **Pan**, **zoom**, **resize** (bottom + right edges); **Jump to date** for campaigns and reviews.
+   - Only **connected** nodes render — orphan Url/Domain rows (stale Neo4j data) are filtered server-side (`filterConnectedSubgraph`) and explained in the UI hint when dropped.
    - **Hover tooltips** on nodes and relationships (`frontend/src/lib/graphLayout.js`).
 
 Technology: plain **SVG** + React pointer events (no D3/vis-network) for a small bundle and predictable maintenance.

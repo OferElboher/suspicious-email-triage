@@ -1,5 +1,5 @@
 /**
- * SVG renderer for one campaign subgraph — pan, zoom, resize, hover tooltips.
+ * SVG renderer for one campaign subgraph — pan, zoom, resize (width + height), hover tooltips.
  * Technology: plain SVG + React pointer events (no D3) for a small bundle and testability.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -8,8 +8,11 @@ import {
   GRAPH_CANVAS_HEIGHT,
   GRAPH_CANVAS_MIN_HEIGHT,
   GRAPH_CANVAS_MAX_HEIGHT,
+  GRAPH_CANVAS_MIN_WIDTH,
+  GRAPH_CANVAS_MAX_WIDTH,
   NODE_COLORS,
   layoutNodesOnCircle,
+  filterConnectedGraph,
   describeNode,
   describeEdge,
 } from "../lib/graphLayout";
@@ -21,25 +24,32 @@ const EDGE_STROKE_WIDTH = 2;
 
 /**
  * @param {object} props
- * @param {{nodes:object[], edges:object[]}} props.graph
+ * @param {{nodes:object[], edges:object[], droppedOrphanCount?:number}} props.graph
  * @param {number} props.zoom — scale factor from parent toolbar (1 = default)
  */
 export default function CampaignGraphCanvas({ graph, zoom = 1 }) {
   const [hover, setHover] = useState(null);
   const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [canvasWidth, setCanvasWidth] = useState(GRAPH_CANVAS_WIDTH);
   const [canvasHeight, setCanvasHeight] = useState(GRAPH_CANVAS_HEIGHT);
   const dragPanRef = useRef(null);
-  const resizeRef = useRef(null);
-  const wrapRef = useRef(null);
+  const resizeHeightRef = useRef(null);
+  const resizeWidthRef = useRef(null);
 
   /** Re-center pan when the analyst switches campaigns (parent remounts via key). */
   useEffect(() => {
     setPan({ x: 0, y: 0 });
   }, [graph.indicator, graph.nodes?.length]);
 
+  /** Hide nodes that have no edges (API also filters; this guards stale client cache). */
+  const displayGraph = useMemo(
+    () => filterConnectedGraph(graph.nodes || [], graph.edges || []),
+    [graph.nodes, graph.edges]
+  );
+
   const positioned = useMemo(
-    () => layoutNodesOnCircle(graph.nodes || [], GRAPH_CANVAS_WIDTH, canvasHeight),
-    [graph.nodes, canvasHeight]
+    () => layoutNodesOnCircle(displayGraph.nodes, canvasWidth, canvasHeight),
+    [displayGraph.nodes, canvasWidth, canvasHeight]
   );
 
   const positionById = useMemo(() => {
@@ -70,7 +80,7 @@ export default function CampaignGraphCanvas({ graph, zoom = 1 }) {
 
   const clearHover = () => setHover(null);
 
-  const originX = GRAPH_CANVAS_WIDTH / 2;
+  const originX = canvasWidth / 2;
   const originY = canvasHeight / 2;
   const transform = `translate(${pan.x} ${pan.y}) translate(${originX} ${originY}) scale(${zoom}) translate(${-originX} ${-originY})`;
 
@@ -109,27 +119,48 @@ export default function CampaignGraphCanvas({ graph, zoom = 1 }) {
     }
   };
 
-  /** Bottom resize handle — adjusts SVG viewport height (stretch / contract). */
-  const onResizePointerDown = useCallback((event) => {
+  /** Bottom handle — adjusts SVG viewport height. */
+  const onResizeHeightPointerDown = useCallback((event) => {
     event.preventDefault();
+    event.stopPropagation();
     event.currentTarget.setPointerCapture(event.pointerId);
-    resizeRef.current = { startY: event.clientY, startHeight: canvasHeight };
+    resizeHeightRef.current = { startY: event.clientY, startHeight: canvasHeight };
   }, [canvasHeight]);
 
-  const onResizePointerMove = useCallback((event) => {
-    if (!resizeRef.current) {
+  const onResizeHeightPointerMove = useCallback((event) => {
+    if (!resizeHeightRef.current) {
       return;
     }
-    const delta = event.clientY - resizeRef.current.startY;
+    const delta = event.clientY - resizeHeightRef.current.startY;
     const next = Math.min(
       GRAPH_CANVAS_MAX_HEIGHT,
-      Math.max(GRAPH_CANVAS_MIN_HEIGHT, resizeRef.current.startHeight + delta)
+      Math.max(GRAPH_CANVAS_MIN_HEIGHT, resizeHeightRef.current.startHeight + delta)
     );
     setCanvasHeight(next);
   }, []);
 
-  const onResizePointerUp = (event) => {
-    resizeRef.current = null;
+  /** Right-edge handle — adjusts SVG viewport width. */
+  const onResizeWidthPointerDown = useCallback((event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    resizeWidthRef.current = { startX: event.clientX, startWidth: canvasWidth };
+  }, [canvasWidth]);
+
+  const onResizeWidthPointerMove = useCallback((event) => {
+    if (!resizeWidthRef.current) {
+      return;
+    }
+    const delta = event.clientX - resizeWidthRef.current.startX;
+    const next = Math.min(
+      GRAPH_CANVAS_MAX_WIDTH,
+      Math.max(GRAPH_CANVAS_MIN_WIDTH, resizeWidthRef.current.startWidth + delta)
+    );
+    setCanvasWidth(next);
+  }, []);
+
+  const releaseResize = (event, ref) => {
+    ref.current = null;
     try {
       event.currentTarget.releasePointerCapture(event.pointerId);
     } catch (_err) {
@@ -137,12 +168,17 @@ export default function CampaignGraphCanvas({ graph, zoom = 1 }) {
     }
   };
 
+  const orphanNote =
+    (graph.droppedOrphanCount || 0) > 0 || displayGraph.droppedOrphanCount > 0
+      ? " Unconnected nodes were hidden (stale graph data or missing relationships)."
+      : "";
+
   return (
-    <div className="graph-canvas-wrap" ref={wrapRef}>
+    <div className="graph-canvas-wrap" style={{ width: canvasWidth, maxWidth: "100%" }}>
       <svg
         className="graph-svg graph-svg--interactive"
-        viewBox={`0 0 ${GRAPH_CANVAS_WIDTH} ${canvasHeight}`}
-        style={{ height: canvasHeight }}
+        viewBox={`0 0 ${canvasWidth} ${canvasHeight}`}
+        style={{ width: canvasWidth, height: canvasHeight, maxWidth: "100%" }}
         role="img"
         aria-label="Campaign relationship graph"
         onMouseLeave={clearHover}
@@ -154,13 +190,13 @@ export default function CampaignGraphCanvas({ graph, zoom = 1 }) {
         <rect
           x="0"
           y="0"
-          width={GRAPH_CANVAS_WIDTH}
+          width={canvasWidth}
           height={canvasHeight}
           fill="transparent"
           aria-hidden="true"
         />
         <g transform={transform}>
-          {(graph.edges || []).map((edge, idx) => {
+          {displayGraph.edges.map((edge, idx) => {
             const from = positionById.get(edge.source);
             const to = positionById.get(edge.target);
             if (!from || !to) {
@@ -220,13 +256,22 @@ export default function CampaignGraphCanvas({ graph, zoom = 1 }) {
         </g>
       </svg>
       <div
-        className="graph-resize-handle"
+        className="graph-resize-handle graph-resize-handle--east"
+        role="separator"
+        aria-label="Resize graph width"
+        onPointerDown={onResizeWidthPointerDown}
+        onPointerMove={onResizeWidthPointerMove}
+        onPointerUp={(e) => releaseResize(e, resizeWidthRef)}
+        onPointerCancel={(e) => releaseResize(e, resizeWidthRef)}
+      />
+      <div
+        className="graph-resize-handle graph-resize-handle--south"
         role="separator"
         aria-label="Resize graph height"
-        onPointerDown={onResizePointerDown}
-        onPointerMove={onResizePointerMove}
-        onPointerUp={onResizePointerUp}
-        onPointerCancel={onResizePointerUp}
+        onPointerDown={onResizeHeightPointerDown}
+        onPointerMove={onResizeHeightPointerMove}
+        onPointerUp={(e) => releaseResize(e, resizeHeightRef)}
+        onPointerCancel={(e) => releaseResize(e, resizeHeightRef)}
       />
       {hover && (
         <div
@@ -239,7 +284,9 @@ export default function CampaignGraphCanvas({ graph, zoom = 1 }) {
           ))}
         </div>
       )}
-      <p className="muted graph-canvas-hint">Drag the graph to pan · drag the bottom edge to resize</p>
+      <p className="muted graph-canvas-hint">
+        Drag to pan · drag bottom or right edge to resize.{orphanNote}
+      </p>
     </div>
   );
 }
