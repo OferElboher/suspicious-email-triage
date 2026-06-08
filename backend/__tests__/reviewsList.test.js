@@ -102,4 +102,15 @@ describe("GET /reviews", () => {
     expect(res.status).toBe(200);
     expect(res.body.data[0].effectiveVerdict).toBe("likely_phishing");
   });
+
+  it("GET /reviews/page-for-date returns page index for calendar day", async () => {
+    Review.countDocuments.mockReset();
+    Review.countDocuments
+      .mockResolvedValueOnce(2)
+      .mockResolvedValueOnce(20);
+    const res = await request(app).get("/reviews/page-for-date?date=2026-05-24");
+    expect(res.status).toBe(200);
+    expect(res.body.page).toBe(1);
+    expect(res.body.onDayCount).toBe(2);
+  });
 });

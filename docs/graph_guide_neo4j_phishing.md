@@ -131,11 +131,12 @@ Open the triage app → **Phishing graph** tab (`#graph` in the URL hash).
 1. `GraphView.jsx` calls **`GET /graph/campaigns`** and sorts by **`reviewCount`** (largest clusters first).
 2. If the list is empty, analysts see guidance only — **no graph canvas**.
 3. If campaigns exist, the UI loads **`GET /graph/campaign-subgraph?indicator=…`** for the selected campaign and renders:
-   - **Prev / Next campaign** buttons to flip between clusters
-   - **Zoom − / + / Reset** on the SVG (`CampaignGraphCanvas.jsx`)
-   - **Hover tooltips** on nodes and relationships (`frontend/src/lib/graphLayout.js` describes labels)
+   - **Nodes** on a circle layout; **edges** as SVG lines (`edgesFromNeo4j` maps Neo4j driver v5 relationship element ids).
+   - **Pan:** drag the graph background; **zoom:** toolbar; **resize:** drag the bottom handle to change viewport height.
+   - **First / Last / Prev / Next** campaign navigation; **Jump to date** picks the first campaign whose Neo4j `updatedAt` matches that day.
+   - **Hover tooltips** on nodes and relationships (`frontend/src/lib/graphLayout.js`).
 
-Technology: plain **SVG** + React state (no D3/vis-network) for a small bundle and predictable maintenance.
+Technology: plain **SVG** + React pointer events (no D3/vis-network) for a small bundle and predictable maintenance.
 
 <div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
 
@@ -159,7 +160,7 @@ curl -sS -H "Authorization: Bearer YOUR_JWT" \
 | Bolt driver singleton | `backend/src/graph/neo4jClient.js` | `cd ~/suspicious-email-triage/backend && npm test -- --watchAll=false --testPathPattern=neo4jParams` |
 | Review → Cypher upsert | `backend/src/graph/syncReview.js` | `cd ~/suspicious-email-triage/backend && npm test -- --watchAll=false --testPathPattern=graphSync` |
 | Campaign detection | `backend/src/graph/campaignDetection.js` | `cd ~/suspicious-email-triage/backend && npm test -- --watchAll=false --testPathPattern=campaignDetection` |
-| Read queries / viz JSON | `backend/src/graph/graphQueries.js` | `cd ~/suspicious-email-triage/backend && npm test -- --watchAll=false --testPathPattern=graphApi` |
+| Read queries / viz JSON | `backend/src/graph/graphQueries.js` | `cd ~/suspicious-email-triage/backend && npm test -- --watchAll=false --testPathPattern=graphQueriesEdges` |
 | Domain parsing | `backend/src/graph/domainFromUrl.js` | `cd ~/suspicious-email-triage/backend && npm test -- --watchAll=false --testPathPattern=domainFromUrl` |
 | Public REST routes | `backend/src/api/graph.js` | `cd ~/suspicious-email-triage/backend && npm test -- --watchAll=false --testPathPattern=graphApi` |
 | Internal worker route | `backend/src/api/graphInternal.js` | `cd ~/suspicious-email-triage/backend && npm test -- --watchAll=false --testPathPattern=graphInternal` |

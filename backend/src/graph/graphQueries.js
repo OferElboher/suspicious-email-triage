@@ -32,6 +32,35 @@ function nodeToJson(node) {
   return { id, label: String(label), type, properties: props };
 }
 
+/**
+ * Build UI edges from Neo4j nodes + relationships.
+ * Driver v5 links relationships via startNodeElementId/endNodeElementId (not rel.start nodes).
+ */
+function edgesFromNeo4j(nodeRecords, relRecords) {
+  const jsonByElementId = new Map();
+  (nodeRecords || [])
+    .filter(Boolean)
+    .forEach((node) => {
+      jsonByElementId.set(node.elementId, nodeToJson(node));
+    });
+  const nodeIds = new Set([...jsonByElementId.values()].map((n) => n.id));
+
+  return (relRecords || [])
+    .filter(Boolean)
+    .map((rel) => {
+      const startJson = jsonByElementId.get(rel.startNodeElementId);
+      const endJson = jsonByElementId.get(rel.endNodeElementId);
+      if (!startJson || !endJson) {
+        return null;
+      }
+      if (!nodeIds.has(startJson.id) || !nodeIds.has(endJson.id)) {
+        return null;
+      }
+      return { source: startJson.id, target: endJson.id, label: rel.type };
+    })
+    .filter(Boolean);
+}
+
 /** Fetch a bounded subgraph around one review for analyst drill-down. */
 async function getReviewNeighborhood(reviewId, depth = 2) {
   // depth is capped by the API (max 4) before interpolation — avoids unbounded Cypher cost.
@@ -58,24 +87,7 @@ async function getReviewNeighborhood(reviewId, depth = 2) {
   const nodeRecords = rows[0].get("allNodes") || [];
   const relRecords = rows[0].get("allRels") || [];
   const nodes = nodeRecords.filter(Boolean).map((n) => nodeToJson(n));
-  const nodeIds = new Set(nodes.map((n) => n.id));
-  const edges = relRecords
-    .filter(Boolean)
-    .map((rel) => {
-      const start = rel.start;
-      const end = rel.end;
-      const source = nodeToJson(start).id;
-      const target = nodeToJson(end).id;
-      if (!nodeIds.has(source) || !nodeIds.has(target)) {
-        return null;
-      }
-      return {
-        source,
-        target,
-        label: rel.type,
-      };
-    })
-    .filter(Boolean);
+  const edges = edgesFromNeo4j(nodeRecords, relRecords);
 
   return { nodes, edges };
 }
@@ -200,18 +212,7 @@ async function getCampaignSubgraph(indicator) {
   const nodeRecords = record.get("nodes") || [];
   const relRecords = record.get("rels") || [];
   const nodes = nodeRecords.filter(Boolean).map((n) => nodeToJson(n));
-  const nodeIds = new Set(nodes.map((n) => n.id));
-  const edges = relRecords
-    .filter(Boolean)
-    .map((rel) => {
-      const source = nodeToJson(rel.start).id;
-      const target = nodeToJson(rel.end).id;
-      if (!nodeIds.has(source) || !nodeIds.has(target)) {
-        return null;
-      }
-      return { source, target, label: rel.type };
-    })
-    .filter(Boolean);
+  const edges = edgesFromNeo4j(nodeRecords, relRecords);
 
   return {
     nodes,
@@ -223,6 +224,7 @@ async function getCampaignSubgraph(indicator) {
 
 module.exports = {
   nodeToJson,
+  edgesFromNeo4j,
   getReviewNeighborhood,
   getVisualizationGraph,
   getCampaignSubgraph,

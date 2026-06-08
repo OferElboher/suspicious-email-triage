@@ -1,11 +1,13 @@
 /**
- * SVG renderer for one campaign subgraph — zoom transform, hover tooltips on nodes/edges.
- * Technology: plain SVG + React state (no graph library) for maintainability and small bundle.
+ * SVG renderer for one campaign subgraph — pan, zoom, resize, hover tooltips.
+ * Technology: plain SVG + React pointer events (no D3) for a small bundle and testability.
  */
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   GRAPH_CANVAS_WIDTH,
   GRAPH_CANVAS_HEIGHT,
+  GRAPH_CANVAS_MIN_HEIGHT,
+  GRAPH_CANVAS_MAX_HEIGHT,
   NODE_COLORS,
   layoutNodesOnCircle,
   describeNode,
@@ -13,19 +15,31 @@ import {
 } from "../lib/graphLayout";
 
 /** Invisible wide stroke makes thin edges easier to hover. */
-const EDGE_HIT_WIDTH = 10;
+const EDGE_HIT_WIDTH = 12;
+/** Visible relationship line width once edges resolve correctly from Neo4j. */
+const EDGE_STROKE_WIDTH = 2;
 
 /**
  * @param {object} props
  * @param {{nodes:object[], edges:object[]}} props.graph
- * @param {number} props.zoom — SVG scale factor (1 = default)
+ * @param {number} props.zoom — scale factor from parent toolbar (1 = default)
  */
 export default function CampaignGraphCanvas({ graph, zoom = 1 }) {
   const [hover, setHover] = useState(null);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [canvasHeight, setCanvasHeight] = useState(GRAPH_CANVAS_HEIGHT);
+  const dragPanRef = useRef(null);
+  const resizeRef = useRef(null);
+  const wrapRef = useRef(null);
+
+  /** Re-center pan when the analyst switches campaigns (parent remounts via key). */
+  useEffect(() => {
+    setPan({ x: 0, y: 0 });
+  }, [graph.indicator, graph.nodes?.length]);
 
   const positioned = useMemo(
-    () => layoutNodesOnCircle(graph.nodes || []),
-    [graph.nodes]
+    () => layoutNodesOnCircle(graph.nodes || [], GRAPH_CANVAS_WIDTH, canvasHeight),
+    [graph.nodes, canvasHeight]
   );
 
   const positionById = useMemo(() => {
@@ -56,20 +70,96 @@ export default function CampaignGraphCanvas({ graph, zoom = 1 }) {
 
   const clearHover = () => setHover(null);
 
-  const transform = `scale(${zoom})`;
   const originX = GRAPH_CANVAS_WIDTH / 2;
-  const originY = GRAPH_CANVAS_HEIGHT / 2;
+  const originY = canvasHeight / 2;
+  const transform = `translate(${pan.x} ${pan.y}) translate(${originX} ${originY}) scale(${zoom}) translate(${-originX} ${-originY})`;
+
+  /** Drag background to pan — keeps zoomed subgraph in view without scrollbars. */
+  const onPanPointerDown = (event) => {
+    if (event.button !== 0) {
+      return;
+    }
+    event.currentTarget.setPointerCapture(event.pointerId);
+    dragPanRef.current = {
+      startX: event.clientX,
+      startY: event.clientY,
+      panX: pan.x,
+      panY: pan.y,
+    };
+  };
+
+  const onPanPointerMove = (event) => {
+    if (!dragPanRef.current) {
+      return;
+    }
+    const dx = event.clientX - dragPanRef.current.startX;
+    const dy = event.clientY - dragPanRef.current.startY;
+    setPan({
+      x: dragPanRef.current.panX + dx,
+      y: dragPanRef.current.panY + dy,
+    });
+  };
+
+  const onPanPointerUp = (event) => {
+    dragPanRef.current = null;
+    try {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    } catch (_err) {
+      /* pointer already released */
+    }
+  };
+
+  /** Bottom resize handle — adjusts SVG viewport height (stretch / contract). */
+  const onResizePointerDown = useCallback((event) => {
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    resizeRef.current = { startY: event.clientY, startHeight: canvasHeight };
+  }, [canvasHeight]);
+
+  const onResizePointerMove = useCallback((event) => {
+    if (!resizeRef.current) {
+      return;
+    }
+    const delta = event.clientY - resizeRef.current.startY;
+    const next = Math.min(
+      GRAPH_CANVAS_MAX_HEIGHT,
+      Math.max(GRAPH_CANVAS_MIN_HEIGHT, resizeRef.current.startHeight + delta)
+    );
+    setCanvasHeight(next);
+  }, []);
+
+  const onResizePointerUp = (event) => {
+    resizeRef.current = null;
+    try {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    } catch (_err) {
+      /* ignore */
+    }
+  };
 
   return (
-    <div className="graph-canvas-wrap">
+    <div className="graph-canvas-wrap" ref={wrapRef}>
       <svg
-        className="graph-svg"
-        viewBox={`0 0 ${GRAPH_CANVAS_WIDTH} ${GRAPH_CANVAS_HEIGHT}`}
+        className="graph-svg graph-svg--interactive"
+        viewBox={`0 0 ${GRAPH_CANVAS_WIDTH} ${canvasHeight}`}
+        style={{ height: canvasHeight }}
         role="img"
         aria-label="Campaign relationship graph"
         onMouseLeave={clearHover}
+        onPointerDown={onPanPointerDown}
+        onPointerMove={onPanPointerMove}
+        onPointerUp={onPanPointerUp}
+        onPointerCancel={onPanPointerUp}
       >
-        <g transform={`translate(${originX} ${originY}) ${transform} translate(${-originX} ${-originY})`}>
+        <rect
+          x="0"
+          y="0"
+          width={GRAPH_CANVAS_WIDTH}
+          height={canvasHeight}
+          fill="transparent"
+          aria-hidden="true"
+        />
+        <g transform={transform}>
           {(graph.edges || []).map((edge, idx) => {
             const from = positionById.get(edge.source);
             const to = positionById.get(edge.target);
@@ -77,6 +167,7 @@ export default function CampaignGraphCanvas({ graph, zoom = 1 }) {
               return null;
             }
             const edgeKey = `${edge.source}-${edge.target}-${idx}`;
+            const highlighted = hover?.kind === "edge" && hover.edgeKey === edgeKey;
             return (
               <g key={edgeKey}>
                 <line
@@ -95,8 +186,8 @@ export default function CampaignGraphCanvas({ graph, zoom = 1 }) {
                   y1={from.y}
                   x2={to.x}
                   y2={to.y}
-                  stroke={hover?.kind === "edge" && hover.edgeKey === edgeKey ? "#2f6fed" : "#666"}
-                  strokeWidth="1.5"
+                  stroke={highlighted ? "#2f6fed" : "#555"}
+                  strokeWidth={EDGE_STROKE_WIDTH}
                   pointerEvents="none"
                 />
                 <title>{describeEdge(edge)}</title>
@@ -110,6 +201,7 @@ export default function CampaignGraphCanvas({ graph, zoom = 1 }) {
               onMouseMove={handleNodeEnter(node)}
               onMouseLeave={clearHover}
               style={{ cursor: "pointer" }}
+              onPointerDown={(e) => e.stopPropagation()}
             >
               <circle
                 cx={node.x}
@@ -127,6 +219,15 @@ export default function CampaignGraphCanvas({ graph, zoom = 1 }) {
           ))}
         </g>
       </svg>
+      <div
+        className="graph-resize-handle"
+        role="separator"
+        aria-label="Resize graph height"
+        onPointerDown={onResizePointerDown}
+        onPointerMove={onResizePointerMove}
+        onPointerUp={onResizePointerUp}
+        onPointerCancel={onResizePointerUp}
+      />
       {hover && (
         <div
           className="graph-tooltip"
@@ -138,6 +239,7 @@ export default function CampaignGraphCanvas({ graph, zoom = 1 }) {
           ))}
         </div>
       )}
+      <p className="muted graph-canvas-hint">Drag the graph to pan · drag the bottom edge to resize</p>
     </div>
   );
 }

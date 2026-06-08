@@ -114,8 +114,13 @@ bash scripts/verify-campaign-detection.sh
 
 - **Detected campaigns** lists `secure-login.example-phish.test` with **2** linked reviews (largest campaigns appear first).
 - The **relationship graph appears only when this list is non-empty** — not while it still says “No campaigns detected”.
-- Use **◀ Prev / Next ▶** and **⏮ First / Last ⏭** to flip between clusters; **Zoom − / +** to scale the SVG.
+- **Prev / Next** and **⏮ First / Last ⏭** to flip between clusters; **Zoom − / +** and **Reset view** (pan + zoom).
+- **Drag** the graph background to **pan** when zoom pushes nodes off-screen.
+- **Drag the bottom edge** of the graph panel to **resize** the SVG viewport (taller/shorter).
+- **Jump to date** — pick a calendar day to open the first campaign whose Neo4j `updatedAt` falls on that day.
 - **Hover** any node or line for a detail box (sender email, review id, URL, relationship type).
+
+Relationship **edges** render as lines between nodes (`edgesFromNeo4j` maps Neo4j driver v5 `startNodeElementId` / `endNodeElementId`).
 
 If you see campaigns but an empty graph, wait for both reviews to reach `completed` and click **Refresh** again.
 

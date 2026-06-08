@@ -87,6 +87,37 @@ label.field {
   margin-bottom: 0.35rem;
 }
 
+.field--stacked {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.field-select-spaced {
+  margin-top: 0.1rem;
+}
+
+.field--inline-date {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0;
+}
+
+.field--inline-date input[type="date"] {
+  width: auto;
+}
+
+select {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.55rem 0.65rem;
+  font: inherit;
+  background: #fff;
+}
+
 input,
 textarea {
   width: 100%;
@@ -392,17 +423,42 @@ button.danger {
 
 .graph-canvas-wrap {
   position: relative;
-  display: inline-block;
+  display: block;
   max-width: 100%;
+  user-select: none;
 }
 
 .graph-svg {
   width: 100%;
   max-width: 720px;
-  height: auto;
+  display: block;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: #fafbfd;
+}
+
+.graph-svg--interactive {
+  cursor: grab;
+  touch-action: none;
+}
+
+.graph-svg--interactive:active {
+  cursor: grabbing;
+}
+
+.graph-resize-handle {
+  width: 100%;
+  max-width: 720px;
+  height: 10px;
+  margin-top: 2px;
+  border-radius: 0 0 var(--radius) var(--radius);
+  background: linear-gradient(180deg, #e2e8f0, #cbd5e1);
+  cursor: ns-resize;
+}
+
+.graph-canvas-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
 }
 
 .graph-label {

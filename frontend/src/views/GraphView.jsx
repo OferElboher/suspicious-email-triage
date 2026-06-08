@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getJson } from "../api/client";
 import CampaignGraphCanvas from "../components/CampaignGraphCanvas";
-import { clampZoom, sortCampaignsBySize, ZOOM_STEP } from "../lib/graphLayout";
+import { clampZoom, findCampaignIndexForDate, sortCampaignsBySize, ZOOM_STEP } from "../lib/graphLayout";
 
 /** Empty subgraph placeholder before fetch completes. */
 const EMPTY_GRAPH = { nodes: [], edges: [], indicator: "", reviewCount: 0 };
@@ -18,6 +18,9 @@ export default function GraphView() {
   const [loading, setLoading] = useState(true);
   const [subgraphLoading, setSubgraphLoading] = useState(false);
   const [zoom, setZoom] = useState(1);
+  const [viewEpoch, setViewEpoch] = useState(0);
+  const [jumpDate, setJumpDate] = useState("");
+  const [jumpMessage, setJumpMessage] = useState("");
 
   const sortedCampaigns = useMemo(() => sortCampaignsBySize(campaigns), [campaigns]);
   const selectedCampaign = sortedCampaigns[selectedIndex] || null;
@@ -75,26 +78,47 @@ export default function GraphView() {
   const goFirst = () => {
     setSelectedIndex(0);
     setZoom(1);
+    setViewEpoch((n) => n + 1);
   };
 
   const goLast = () => {
     setSelectedIndex(Math.max(0, sortedCampaigns.length - 1));
     setZoom(1);
+    setViewEpoch((n) => n + 1);
   };
 
   const goPrev = () => {
     setSelectedIndex((i) => Math.max(0, i - 1));
     setZoom(1);
+    setViewEpoch((n) => n + 1);
   };
 
   const goNext = () => {
     setSelectedIndex((i) => Math.min(sortedCampaigns.length - 1, i + 1));
     setZoom(1);
+    setViewEpoch((n) => n + 1);
   };
 
   const zoomIn = () => setZoom((z) => clampZoom(z + ZOOM_STEP));
   const zoomOut = () => setZoom((z) => clampZoom(z - ZOOM_STEP));
-  const resetZoom = () => setZoom(1);
+  const resetView = () => {
+    setZoom(1);
+    setViewEpoch((n) => n + 1);
+  };
+
+  /** Jump to the first campaign whose Neo4j updatedAt matches the picked calendar day. */
+  const jumpToCampaignDate = () => {
+    setJumpMessage("");
+    const idx = findCampaignIndexForDate(sortedCampaigns, jumpDate);
+    if (idx == null) {
+      setJumpMessage(`No campaign found for ${jumpDate || "that date"}.`);
+      return;
+    }
+    setSelectedIndex(idx);
+    setZoom(1);
+    setViewEpoch((n) => n + 1);
+    setJumpMessage(`Showing campaign ${idx + 1} (${sortedCampaigns[idx]?.indicator}).`);
+  };
 
   const hasCampaigns = sortedCampaigns.length > 0;
 
@@ -175,21 +199,37 @@ export default function GraphView() {
               <button type="button" onClick={zoomIn} aria-label="Zoom in">
                 Zoom +
               </button>
-              <button type="button" onClick={resetZoom}>
-                Reset zoom
+              <button type="button" onClick={resetView}>
+                Reset view
+              </button>
+              <label className="field field--inline-date">
+                Jump to date
+                <input
+                  type="date"
+                  value={jumpDate}
+                  onChange={(e) => setJumpDate(e.target.value)}
+                />
+              </label>
+              <button type="button" disabled={!jumpDate} onClick={jumpToCampaignDate}>
+                Go
               </button>
             </div>
           </div>
+          {jumpMessage && <p className="muted">{jumpMessage}</p>}
           <p className="muted">
-            Hover nodes or connections for details. Technology: Neo4j subgraph via{" "}
-            <code>GET /graph/campaign-subgraph</code>, rendered as SVG (no D3).
+            Drag the graph to pan; drag the bottom edge to resize. Hover nodes or edges for details.
+            Neo4j subgraph via <code>GET /graph/campaign-subgraph</code>, SVG rendering (no D3).
           </p>
           {subgraphLoading && <p className="muted">Loading campaign graph…</p>}
           {!subgraphLoading && subgraph.nodes.length === 0 && (
             <p className="muted">No graph nodes for this campaign yet — try Refresh after reviews complete.</p>
           )}
           {!subgraphLoading && subgraph.nodes.length > 0 && (
-            <CampaignGraphCanvas graph={subgraph} zoom={zoom} />
+            <CampaignGraphCanvas
+              key={`${selectedCampaign?.indicator}-${viewEpoch}`}
+              graph={subgraph}
+              zoom={zoom}
+            />
           )}
         </section>
       )}

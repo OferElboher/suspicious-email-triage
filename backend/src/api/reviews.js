@@ -11,6 +11,7 @@ const { enqueueAfterCreate } = require("../services/reviewPipeline");
 const { scheduleGraphSync } = require("../services/graphSyncService");
 const { scheduleSearchIndex } = require("../services/reviewSearchSync");
 const { effectiveVerdict } = require("../lib/effectiveVerdict");
+const { dayBoundsUtc, pageIndexForDate } = require("../lib/dateNav");
 const { incrementReviewsCreated } = require("../lib/appMetrics");
 const { requirePermission } = require("../http/middleware/auth");
 
@@ -111,6 +112,49 @@ router.get("/", requirePermission("reviews.read"), async (req, res) => {
   } catch (err) {
     logger.error("reviews", "list failed", { error: err.message });
     return res.status(500).json({ error: "Failed to fetch reviews" });
+  }
+});
+
+/**
+ * GET /reviews/page-for-date — page index (zero-based) for first review on a calendar day.
+ * List sort is updatedAt DESC; page = count of rows newer than end-of-day / page size.
+ */
+router.get("/page-for-date", requirePermission("reviews.read"), async (req, res) => {
+  try {
+    const bounds = dayBoundsUtc(req.query.date);
+    if (!bounds) {
+      return res.status(400).json({ error: "invalid_date", hint: "Use YYYY-MM-DD" });
+    }
+    const limit = Math.min(
+      Math.max(parseInt(req.query.limit ?? DEFAULT_LIMIT, 10), 1),
+      REVIEW_PAGE_SIZE
+    );
+    const includeSimulation =
+      String(req.query.includeSimulation || "").toLowerCase() === "true" ||
+      req.query.includeSimulation === "1";
+    const filter = includeSimulation ? {} : { source: { $ne: "dev_simulation" } };
+    const onDayCount = await Review.countDocuments({
+      ...filter,
+      updatedAt: { $gte: bounds.start, $lte: bounds.end },
+    });
+    if (onDayCount === 0) {
+      return res.status(404).json({ error: "no_reviews_on_date", date: bounds.date });
+    }
+    const newerCount = await Review.countDocuments({
+      ...filter,
+      updatedAt: { $gt: bounds.end },
+    });
+    const page = pageIndexForDate(newerCount, limit);
+    return res.json({
+      date: bounds.date,
+      page,
+      limit,
+      onDayCount,
+      totalNewer: newerCount,
+    });
+  } catch (err) {
+    logger.error("reviews", "page-for-date failed", { error: err.message });
+    return res.status(500).json({ error: "page_for_date_failed" });
   }
 });
 

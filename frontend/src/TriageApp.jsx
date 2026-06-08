@@ -139,6 +139,28 @@ export default function TriageApp() {
     setTotalReviews(Number(data.total) || 0);
   }, [page, includeSimulation]);
 
+  /** Jump pagination to the page that contains the first review on a calendar day (UTC). */
+  const jumpToReviewDate = useCallback(
+    async (dateStr) => {
+      const sim = includeSimulation ? "&includeSimulation=true" : "";
+      try {
+        const data = await getJson(
+          `/reviews/page-for-date?date=${encodeURIComponent(dateStr)}&limit=${PAGE_SIZE}${sim}`
+        );
+        setPage(data.page);
+        return {
+          message: `Page ${data.page + 1} — ${data.onDayCount} review(s) on ${data.date}.`,
+        };
+      } catch (err) {
+        if (err.body?.error === "no_reviews_on_date") {
+          throw new Error(`No reviews on ${dateStr}.`);
+        }
+        throw err;
+      }
+    },
+    [includeSimulation]
+  );
+
   useEffect(() => {
     if (hasPermission("reviews.read")) {
       fetchPage().catch(() => setReviews([]));
@@ -359,9 +381,10 @@ export default function TriageApp() {
                     {canOverride && (
                       <>
                         <div style={{ marginTop: "0.75rem" }}>
-                          <label className="field">
+                          <label className="field field--stacked">
                             Override verdict
                             <select
+                              className="field-select-spaced"
                               value={overrideVerdict}
                               onChange={(e) => setOverrideVerdict(e.target.value)}
                             >
@@ -414,6 +437,7 @@ export default function TriageApp() {
             onIncludeSimulationChange={setIncludeSimulation}
             onRefresh={() => fetchPage().catch(() => {})}
             onPageChange={setPage}
+            onJumpToDate={jumpToReviewDate}
           />
         </main>
       )}

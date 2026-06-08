@@ -57,6 +57,7 @@ async function listCampaigns(limit = 50) {
     RETURN c.indicator AS indicator,
            c.kind AS kind,
            c.reviewCount AS reviewCount,
+           c.updatedAt AS updatedAt,
            reviewIds
     ORDER BY c.reviewCount DESC
     LIMIT $limit
@@ -64,12 +65,23 @@ async function listCampaigns(limit = 50) {
     { limit: Number(limit) }
   );
 
-  return rows.map((record) => ({
-    indicator: record.get("indicator"),
-    kind: record.get("kind") || "shared_domain",
-    reviewCount: Number(record.get("reviewCount") || 0),
-    reviewIds: record.get("reviewIds") || [],
-  }));
+  return rows.map((record) => {
+    const updatedRaw = record.get("updatedAt");
+    let updatedAt = null;
+    if (updatedRaw != null) {
+      updatedAt =
+        typeof updatedRaw.toString === "function"
+          ? updatedRaw.toString().slice(0, 10)
+          : String(updatedRaw).slice(0, 10);
+    }
+    return {
+      indicator: record.get("indicator"),
+      kind: record.get("kind") || "shared_domain",
+      reviewCount: Number(record.get("reviewCount") || 0),
+      reviewIds: record.get("reviewIds") || [],
+      updatedAt,
+    };
+  });
 }
 
 module.exports = { RISKY_VERDICTS, isRiskyVerdict, detectCampaignsForReview, listCampaigns };

@@ -6,6 +6,8 @@
 /** Default canvas size for one campaign subgraph. */
 export const GRAPH_CANVAS_WIDTH = 720;
 export const GRAPH_CANVAS_HEIGHT = 420;
+export const GRAPH_CANVAS_MIN_HEIGHT = 280;
+export const GRAPH_CANVAS_MAX_HEIGHT = 900;
 
 /** Minimum and maximum zoom scale for analyst pan/zoom controls. */
 export const ZOOM_MIN = 0.5;
@@ -71,4 +73,21 @@ export function describeEdge(edge) {
 /** Clamp zoom scale to supported range. */
 export function clampZoom(scale) {
   return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, scale));
+}
+
+/**
+ * Find first campaign index whose Neo4j updatedAt falls on YYYY-MM-DD (client-side date jump).
+ * @param {Array<{updatedAt?:string}>} campaigns
+ * @param {string} dateStr — YYYY-MM-DD from <input type="date">
+ * @returns {number|null}
+ */
+export function findCampaignIndexForDate(campaigns, dateStr) {
+  const target = String(dateStr || "").trim().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(target)) {
+    return null;
+  }
+  const idx = (campaigns || []).findIndex(
+    (c) => String(c.updatedAt || "").slice(0, 10) === target
+  );
+  return idx >= 0 ? idx : null;
 }

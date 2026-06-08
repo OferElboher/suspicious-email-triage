@@ -160,7 +160,11 @@ A **campaign** means: **two or more** reviews with effective verdict **`suspicio
 **Pass:**
 
 - **Detected campaigns** lists `secure-login.example-phish.test` with **2** linked reviews.
-- Graph SVG shows senders, reviews, URLs, and domain nodes.
+- Graph SVG shows **nodes and connecting lines (edges)** between senders, reviews, URLs, and domains.
+- **Drag** the graph to pan; **Zoom − / +** and **Reset view**; **drag the bottom edge** to resize the viewport.
+- **Jump to date** in the graph toolbar selects a campaign by Neo4j `updatedAt` (when set).
+
+**Fail — nodes but no edges:** Pull latest backend — edges use `edgesFromNeo4j` (Neo4j JavaScript driver v5 element ids). Rebuild and refresh.
 
 **Fail — no campaigns:**
 
@@ -180,7 +184,15 @@ curl -sS -H "Authorization: Bearer TOKEN" \
 
 ---
 
-## Step 5 — Optional: enable mock LLM (different path)
+## Step 5 — Jump to date (optional)
+
+**Recent reviews:** **Jump to date** + **Go** calls `GET /reviews/page-for-date?date=YYYY-MM-DD` and opens the page containing the first review on that day (`updatedAt`, newest-first sort).
+
+**Phishing graph:** **Jump to date** in the graph toolbar selects the first campaign whose Neo4j `updatedAt` matches that day.
+
+---
+
+## Step 6 — Optional: enable mock LLM (different path)
 
 If you want the **LLM path** instead of rule-only scoring:
 

@@ -3,6 +3,7 @@ import {
   layoutNodesOnCircle,
   describeNode,
   clampZoom,
+  findCampaignIndexForDate,
   ZOOM_MIN,
   ZOOM_MAX,
 } from "./graphLayout";
@@ -40,5 +41,16 @@ describe("graphLayout helpers", () => {
     expect(clampZoom(0.1)).toBe(ZOOM_MIN);
     expect(clampZoom(99)).toBe(ZOOM_MAX);
     expect(clampZoom(1)).toBe(1);
+  });
+
+  it("findCampaignIndexForDate matches Neo4j updatedAt prefix", () => {
+    const idx = findCampaignIndexForDate(
+      [
+        { indicator: "a.test", updatedAt: "2026-05-23" },
+        { indicator: "b.test", updatedAt: "2026-05-24T12:00:00Z" },
+      ],
+      "2026-05-24"
+    );
+    expect(idx).toBe(1);
   });
 });

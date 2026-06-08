@@ -493,6 +493,38 @@ When planning budget, treat **P0 security and backups** on managed databases as 
 ---
 
 When you implement an item, document it in [roadmap_implemented_beyond_requirements.md](roadmap_implemented_beyond_requirements.md) and link runbooks from [README.md](README.md).
+
+---
+
+## Future idea — LangChain, vector databases, and AI agents (P2 exploratory)
+
+This section describes how the triage product could **demonstrate** three modern AI stack patterns **without replacing** the existing deterministic rule engine and Kafka/Celery pipeline. Nothing here is scheduled; use it for learning, demos, and budget conversations.
+
+### Why add this at all?
+
+Today the app scores email with **rules + optional LLM JSON** and stores reviews in **MongoDB**. Analysts search via **Elasticsearch** (keyword) and explore relationships in **Neo4j** (graph). That is strong for structured triage but weak at questions like “Show me past campaigns semantically similar to this subject” or “Run a multi-step investigation with tools.”
+
+**LangChain** (orchestration), a **vector database** (semantic retrieval), and **AI agent design** (tool-using loops) address those gaps.
+
+### Proposed demo feature: “Similar past reviews” panel
+
+**User value:** Analyst opens a review and sees the five most **semantically similar** historical messages, with verdicts and campaign ids — even when keywords differ.
+
+**MVP demand:**
+
+1. When a review reaches `completed`, embed `subject + body` (e.g. `sentence-transformers/all-MiniLM-L6-v2`).
+2. Store `{ reviewId, embedding, verdict }` in **Qdrant** or **Chroma** (Docker).
+3. `GET /reviews/:id/similar?k=5` returns Mongo ids + scores.
+4. React panel links into Recent reviews and Phishing graph.
+
+**Tech pattern (free local path):** LangChain `Embeddings` + `VectorStoreRetriever`; Celery embedding task; Express read API; JWT `reviews.read`.
+
+**Agent phase 2:** LangChain tool-calling agent with tools `search_similar_reviews`, `get_graph_campaign`, `fetch_rule_findings` — human override audit trail unchanged.
+
+**Widen later:** Hybrid vector + Neo4j traversal; multi-agent supervisor (LangGraph); managed Pinecone/Weaviate in production.
+
+**Security:** Strip secrets before embed; same RBAC as review reads.
+
 ---
 
 ## Command you can run (this guide) {#run-one-command}

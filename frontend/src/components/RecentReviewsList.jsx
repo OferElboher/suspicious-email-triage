@@ -94,12 +94,15 @@ export default function RecentReviewsList({
   totalReviews,
   onRefresh,
   onPageChange,
+  onJumpToDate,
   canReadGraph,
   includeSimulation,
   onIncludeSimulationChange,
 }) {
   const [expanded, setExpanded] = useState(null);
   const [loadingId, setLoadingId] = useState(null);
+  const [jumpDate, setJumpDate] = useState("");
+  const [jumpMessage, setJumpMessage] = useState("");
 
   /** Toggle: collapse if same id, else fetch full document from GET /reviews/:id. */
   const handleToggle = useCallback(
@@ -152,11 +155,34 @@ export default function RecentReviewsList({
         <button type="button" disabled={page >= lastPage} onClick={() => onPageChange(lastPage)}>
           Last
         </button>
+        <label className="field field--inline-date">
+          Jump to date
+          <input type="date" value={jumpDate} onChange={(e) => setJumpDate(e.target.value)} />
+        </label>
+        <button
+          type="button"
+          disabled={!jumpDate}
+          onClick={() => {
+            setJumpMessage("");
+            Promise.resolve(onJumpToDate?.(jumpDate))
+              .then((result) => {
+                if (result?.message) {
+                  setJumpMessage(result.message);
+                }
+              })
+              .catch((err) => {
+                setJumpMessage(err.message || "No reviews on that date.");
+              });
+          }}
+        >
+          Go
+        </button>
         <span className="muted">
           Page {page + 1}
           {totalReviews > 0 ? ` of ${lastPage + 1}` : ""}
         </span>
       </div>
+      {jumpMessage && <p className="muted">{jumpMessage}</p>}
       {loadingId && <p className="muted">Loading review details…</p>}
       <ul className="dashboard-list">
         {reviews.map((r) => (
