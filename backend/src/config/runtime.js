@@ -2,10 +2,14 @@
  * Central runtime configuration loaded from process.env and backend/.env.<slice>.
  * deploymentEnv: dev | staging | prod — defaults to dev so local workstations behave predictably.
  * NODE_ENV: standard Node lifecycle hint (development vs production optimizations).
+ *
+ * Credentials (passwords, API keys, JWT signing keys) live in gitignored *.secrets files
+ * loaded by backend/src/secrets — never in committed .env.dev / .env.staging / .env.prod.
  */
 const path = require("path");
 const fs = require("fs");
 const dotenv = require("dotenv");
+const { loadApplicationSecretsSync } = require("../secrets/loadSecrets");
 
 /**
  * DEPLOYMENT_ENV / APP_ENV from the real shell selects which env file is loaded.
@@ -16,6 +20,14 @@ const selectedDeploymentEnv = (
   process.env.APP_ENV ||
   "dev"
 ).toLowerCase();
+
+/** CI and Jest use committed fake secrets only — never real staging/prod credentials. */
+if (process.env.JEST_WORKER_ID || process.env.NODE_ENV === "test") {
+  process.env.SECRETS_PROVIDER = process.env.SECRETS_PROVIDER || "file";
+  if (!process.env.SECRETS_FILE) {
+    process.env.SECRETS_FILE = path.resolve(__dirname, "../../ci.secrets");
+  }
+}
 
 /**
  * defaultEnvFile lets a local backend/.env copy act as the active profile when present.
@@ -43,8 +55,16 @@ function selectEnvFile() {
 /** selectedEnvFile records which profile was loaded for diagnostics/tests. */
 const selectedEnvFile = selectEnvFile();
 
-/** Load the selected environment file before exporting runtime helpers. */
+/** Load non-sensitive profile first; shell exports win over file values (override: false). */
 dotenv.config({ path: selectedEnvFile, override: false, quiet: true });
+
+/**
+ * Inject gitignored secrets when not preloaded by Docker entrypoint (local npm test / scripts).
+ * SECRETS_PRELOAD=1 means docker-entrypoint-with-secrets.sh already fetched from mock AWS.
+ */
+if (process.env.SECRETS_PRELOAD !== "1") {
+  loadApplicationSecretsSync(selectedDeploymentEnv);
+}
 
 /** NODE_ENV: Node’s conventional mode; affects libraries that branch on “production”. */
 const env = process.env.NODE_ENV || "development";

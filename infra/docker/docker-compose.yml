@@ -80,6 +80,22 @@ services:
       - "19092:9092"
     restart: unless-stopped
 
+  # mock-secrets-manager: local stand-in for AWS Secrets Manager — serves gitignored *.secrets at startup.
+  mock-secrets-manager:
+    container_name: triage-mock-secrets-manager
+    build:
+      context: ../../
+      dockerfile: infra/mock-aws-secrets-manager/Dockerfile
+    ports:
+      - "4566:4566"
+    environment:
+      - MOCK_SECRETS_PORT=4566
+      - SECRETS_ROOT=/app/backend
+    volumes:
+      # Mount gitignored dev.secrets so the mock service can serve triage/dev without baking secrets into images.
+      - ../../backend:/app/backend:ro
+    restart: unless-stopped
+
   # elasticsearch: optional full-text search (single-node, 256MB heap — laptop-friendly).
   elasticsearch:
     container_name: triage-elasticsearch
@@ -102,18 +118,18 @@ services:
     build:
       context: ../../
       dockerfile: backend/Dockerfile
+    entrypoint: ["/bin/bash", "/app/scripts/docker-entrypoint-with-secrets.sh"]
+    command: ["node", "scripts/preload-secrets.js"]
     ports:
       # 3000 = REST API (JWT auth, /reviews, /graph, /metrics). React dev server uses 3001 separately.
       - "3000:3000"
     env_file:
       # Profile env: defaults to backend/.env.dev; set DEPLOYMENT_ENV=staging|prod to switch.
       - ../../backend/.env.${DEPLOYMENT_ENV:-dev}
-      # Optional gitignored overrides (bootstrap admin email, private secrets).
-      - path: ../../backend/.env
-        required: false
     volumes:
       - triage-logs:/var/log/triage
     depends_on:
+      - mock-secrets-manager
       - mongo
       - postgres
       - redis
@@ -153,19 +169,26 @@ services:
     build:
       context: ../../
       dockerfile: backend/Dockerfile.django
+    entrypoint: ["/bin/bash", "/app/scripts/docker-entrypoint-with-secrets.sh"]
+    command:
+      [
+        "sh",
+        "-c",
+        "mkdir -p /app/backend/data && python backend/manage.py migrate --noinput && python backend/manage.py runserver 0.0.0.0:8000",
+      ]
     ports:
       - "8000:8000"
     env_file:
       - ../../backend/.env.${DEPLOYMENT_ENV:-dev}
-      - path: ../../backend/.env
-        required: false
     environment:
       - ENVIRONMENT=dev
       - DJANGO_SETTINGS_MODULE=triage_auth.django_admin_settings
       - DJANGO_ADMIN_SQLITE_PATH=/app/backend/data/django_admin.sqlite3
+      - AI_SERVICE_ROOT=/app/ai_service
     volumes:
       - django-admin-state:/app/backend/data
     depends_on:
+      - mock-secrets-manager
       - postgres
     restart: unless-stopped
 
@@ -193,17 +216,19 @@ services:
       context: ../../
       dockerfile: ai_service/Dockerfile
     container_name: triage-ai-celery
+    entrypoint: ["/bin/bash", "/app/scripts/docker-entrypoint-with-secrets.sh"]
     command: ["celery", "-A", "app.celery_app", "worker", "-l", "info"]
     env_file:
       # Profile env: defaults to backend/.env.dev; set DEPLOYMENT_ENV=staging|prod to switch.
       - ../../backend/.env.${DEPLOYMENT_ENV:-dev}
-      - path: ../../backend/.env
-        required: false
+    environment:
+      - AI_SERVICE_ROOT=/app
     volumes:
       - triage-logs:/var/log/triage
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
+      - mock-secrets-manager
       - mongo
       - postgres
       - redis
@@ -217,15 +242,17 @@ services:
       context: ../../
       dockerfile: ai_service/Dockerfile
     container_name: triage-ai-kafka-dispatch
+    entrypoint: ["/bin/bash", "/app/scripts/docker-entrypoint-with-secrets.sh"]
     command: ["python", "kafka_dispatcher.py"]
     env_file:
       # Profile env: defaults to backend/.env.dev; set DEPLOYMENT_ENV=staging|prod to switch.
       - ../../backend/.env.${DEPLOYMENT_ENV:-dev}
-      - path: ../../backend/.env
-        required: false
+    environment:
+      - AI_SERVICE_ROOT=/app
     volumes:
       - triage-logs:/var/log/triage
     depends_on:
+      - mock-secrets-manager
       - redpanda
       - redis
       - mock-llm

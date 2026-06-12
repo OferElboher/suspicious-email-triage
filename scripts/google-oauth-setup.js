@@ -12,8 +12,8 @@ const path = require("path");
 const { URL } = require("url");
 
 const ROOT = path.resolve(__dirname, "..");
-const LOCAL_ENV = path.join(ROOT, "backend/.env");
-const DEV_ENV = path.join(ROOT, "backend/.env.dev");
+const SECRETS_FILE = path.join(ROOT, "backend/dev.secrets");
+const SECRETS_EXAMPLE = path.join(ROOT, "backend/dev.secrets.example");
 const REDIRECT_PORT = Number(process.env.GOOGLE_OAUTH_SETUP_PORT || 3333);
 
 const SCOPES = {
@@ -21,7 +21,7 @@ const SCOPES = {
   login: "openid email profile",
 };
 
-/** Upsert a key=value line in backend/.env (gitignored secrets file). */
+/** Upsert a key=value line in backend/dev.secrets (gitignored credentials file). */
 function upsertVar(file, key, value) {
   let text = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : "";
   const line = `${key}=${value}`;
@@ -30,11 +30,11 @@ function upsertVar(file, key, value) {
   fs.writeFileSync(file, text, "utf8");
 }
 
-/** Ensure backend/.env exists (seed from .env.dev on first run). */
-function ensureEnvFile() {
-  if (!fs.existsSync(LOCAL_ENV)) {
-    fs.copyFileSync(DEV_ENV, LOCAL_ENV);
-    console.log("Created backend/.env from backend/.env.dev");
+/** Ensure backend/dev.secrets exists (seed from dev.secrets.example on first run). */
+function ensureSecretsFile() {
+  if (!fs.existsSync(SECRETS_FILE)) {
+    fs.copyFileSync(SECRETS_EXAMPLE, SECRETS_FILE);
+    console.log("Created backend/dev.secrets from dev.secrets.example");
   }
 }
 
@@ -131,9 +131,9 @@ async function main() {
     process.exit(1);
   }
 
-  ensureEnvFile();
-  upsertVar(LOCAL_ENV, "GOOGLE_OAUTH_CLIENT_ID", clientId);
-  upsertVar(LOCAL_ENV, "GOOGLE_OAUTH_CLIENT_SECRET", clientSecret);
+  ensureSecretsFile();
+  upsertVar(SECRETS_FILE, "GOOGLE_OAUTH_CLIENT_ID", clientId);
+  upsertVar(SECRETS_FILE, "GOOGLE_OAUTH_CLIENT_SECRET", clientSecret);
 
   const tokens = await runOAuthFlow({ mode, clientId, clientSecret, senderEmail });
 
@@ -141,17 +141,17 @@ async function main() {
     if (!tokens.refresh_token) {
       console.warn("No refresh_token returned — revoke prior access at https://myaccount.google.com/permissions and retry with prompt=consent.");
     } else {
-      upsertVar(LOCAL_ENV, "GOOGLE_OAUTH_REFRESH_TOKEN", tokens.refresh_token);
+      upsertVar(SECRETS_FILE, "GOOGLE_OAUTH_REFRESH_TOKEN", tokens.refresh_token);
     }
-    upsertVar(LOCAL_ENV, "GOOGLE_OAUTH_SENDER_EMAIL", senderEmail);
-    upsertVar(LOCAL_ENV, "EMAIL_DELIVERY", "google_oauth");
-    upsertVar(LOCAL_ENV, "SMTP_DELIVERY", "google_oauth");
-    console.log("\nConfigured EMAIL_DELIVERY=google_oauth in backend/.env");
+    upsertVar(SECRETS_FILE, "GOOGLE_OAUTH_SENDER_EMAIL", senderEmail);
+    upsertVar(SECRETS_FILE, "EMAIL_DELIVERY", "google_oauth");
+    upsertVar(SECRETS_FILE, "SMTP_DELIVERY", "google_oauth");
+    console.log("\nConfigured EMAIL_DELIVERY=google_oauth in backend/dev.secrets");
     console.log("Recreate backend: DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --force-recreate backend");
   } else {
-    upsertVar(LOCAL_ENV, "GOOGLE_LOGIN_ENABLED", "true");
-    upsertVar(LOCAL_ENV, "GOOGLE_LOGIN_REDIRECT_URI", "http://localhost:3000/auth/google/callback");
-    console.log("\nConfigured GOOGLE_LOGIN_ENABLED=true in backend/.env");
+    upsertVar(SECRETS_FILE, "GOOGLE_LOGIN_ENABLED", "true");
+    upsertVar(SECRETS_FILE, "GOOGLE_LOGIN_REDIRECT_URI", "http://localhost:3000/auth/google/callback");
+    console.log("\nConfigured GOOGLE_LOGIN_ENABLED=true in backend/dev.secrets");
     console.log("Recreate backend, then open http://localhost:3000/auth/google/start or use the UI button.");
   }
 }

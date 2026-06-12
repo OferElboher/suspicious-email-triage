@@ -10,35 +10,43 @@ Environment variables are the “control panel” for deployments. They let the 
 
 ---
 
-## Profile files
+## Profile files (non-sensitive metadata only)
 
-The backend now loads an environment profile file rather than relying on a single unnamed `.env` file:
+Committed profile files contain **hostnames, ports, and feature flags** — not passwords or API keys. Credentials live in gitignored `*.secrets` files loaded at container startup (see [ops_guide_secrets_management.md](ops_guide_secrets_management.md)).
 
-- `backend/.env` is the active local file and is created as a dev copy by default.
-- `backend/.env.dev` is the fallback when `backend/.env` is absent.
-- `backend/.env.staging` is selected with `DEPLOYMENT_ENV=staging`.
-- `backend/.env.prod` is selected with `DEPLOYMENT_ENV=prod`.
-- `ENV_FILE=/path/to/file` can override the selected file when you need a private local file.
+| File | Role |
+|------|------|
+| `backend/.env.dev` | Local Docker defaults; `SECRETS_BUNDLE_ID=triage/dev` |
+| `backend/.env.staging` | Staging metadata; credentials in `backend/staging.secrets` |
+| `backend/.env.prod` | Production metadata; credentials in `backend/prod.secrets` or real AWS |
+| `backend/dev.secrets` | **Gitignored** — JWT, DB passwords, OAuth secrets for dev |
+| `backend/ci.secrets` | **Committed fake values** for Jest/pytest/CI only |
+| `ENV_FILE=/path/to/file` | Override which profile file dotenv loads |
 
-Real shell environment variables still win over values from these files.
+Real shell environment variables still win over values from profile files. Secrets injected after the profile override credential keys.
 
-## Example dev profile
+## Example dev profile (excerpt — no secrets)
 
 ```
 PORT=3000
 DEPLOYMENT_ENV=dev
-MONGO_URI=mongodb://localhost:27018/triage
-STATISTICS_PG_URL=postgres://triage:triage@localhost:5432/triage_stats
-REDIS_HOST=localhost
-REDIS_PORT=6379
-KAFKA_BROKERS=localhost:19092
+SECRETS_PROVIDER=mock-aws
+SECRETS_MANAGER_URL=http://mock-secrets-manager:4566
+SECRETS_BUNDLE_ID=triage/dev
+MONGO_URI=mongodb://mongo:27017/triage
+POSTGRES_HOST=postgres
+POSTGRES_USER=triage
+REDIS_HOST=redis
 USE_KAFKA_INGEST=true
-USE_BULLMQ_ENQUEUE=false
-SIMULATION_MAX_EVENTS_PER_MIN=30
-MERGED_LOG_PATH=./logs/merged.log
-JWT_SECRET=dev-jwt-secret-change-before-staging-or-prod
-# Set via: bash scripts/configure-dev-bootstrap-admin.sh YOUR_EMAIL@example.com
-AUTH_BOOTSTRAP_ADMIN_PASSWORD=temp-admin-pswd
+```
+
+Example **dev.secrets** keys (read `backend/dev.secrets.example` — never paste values into docs):
+
+```
+JWT_SECRET=<in dev.secrets>
+POSTGRES_PASSWORD=<in dev.secrets>
+NEO4J_PASSWORD=<in dev.secrets>
+AUTH_BOOTSTRAP_ADMIN_EMAIL=<set via configure-dev-bootstrap-admin.sh>
 ```
 
 Authentication variables are documented in `auth_guide_rbac.md`, [auth_guide_dev_admin_credentials.md](auth_guide_dev_admin_credentials.md), and [auth_guide_dev_auth_recovery.md](auth_guide_dev_auth_recovery.md).
@@ -74,9 +82,9 @@ Details: [stack_guide_frontend_api.md](stack_guide_frontend_api.md).
 
 ## Notes
 
-- `MONGO_URI` points to review storage; `STATISTICS_PG_URL` points to chart statistics.
+- `MONGO_URI` points to review storage; `STATISTICS_PG_URL` (password in secrets) points to chart statistics.
 - Never hardcode ports
-- Keep private `.env` overrides out of git
+- Keep `*.secrets` and legacy `backend/.env` overrides out of git
 ---
 
 ## Command you can run (this guide) {#run-one-command}

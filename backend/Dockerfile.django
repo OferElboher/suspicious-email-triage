@@ -10,14 +10,17 @@ COPY backend/requirements-django.txt /app/backend/requirements-django.txt
 RUN pip install --no-cache-dir -r /app/backend/requirements-django.txt
 
 COPY backend /app/backend
+COPY scripts /app/scripts
+COPY ai_service /app/ai_service
 
 # triage_auth lives under /app/backend — required for DJANGO_SETTINGS_MODULE import in CI scripts.
 ENV PYTHONPATH=/app/backend
 ENV DJANGO_SETTINGS_MODULE=triage_auth.django_admin_settings
 ENV ENVIRONMENT=dev
 ENV DJANGO_ADMIN_SQLITE_PATH=/app/backend/data/django_admin.sqlite3
+ENV AI_SERVICE_ROOT=/app/ai_service
 
 EXPOSE 8000
 
-# Migrate only the SQLite default DB (sessions/admin); triage_auth uses existing Postgres tables.
+ENTRYPOINT ["/bin/bash", "/app/scripts/docker-entrypoint-with-secrets.sh"]
 CMD ["sh", "-c", "mkdir -p /app/backend/data && python backend/manage.py migrate --noinput && python backend/manage.py runserver 0.0.0.0:8000"]

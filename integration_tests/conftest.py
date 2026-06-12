@@ -99,12 +99,19 @@ def pg_connect():
     """Open a short-lived psycopg connection to triage_stats (dev defaults)."""
     import psycopg
 
+    host = os.getenv("POSTGRES_HOST", "localhost")
+    # Local Docker Compose always uses password "triage" — ignore ci.secrets pollution from unit tests.
+    if host in ("localhost", "127.0.0.1", "postgres"):
+        password = "triage"
+    else:
+        password = os.getenv("POSTGRES_PASSWORD", "triage")
+
     return psycopg.connect(
-        host=os.getenv("POSTGRES_HOST", "localhost"),
+        host=host,
         port=int(os.getenv("POSTGRES_PORT", "5432")),
         dbname=os.getenv("POSTGRES_DB", "triage_stats"),
         user=os.getenv("POSTGRES_USER", "triage"),
-        password=os.getenv("POSTGRES_PASSWORD", "triage"),
+        password=password,
         connect_timeout=3,
     )
 

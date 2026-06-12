@@ -24,7 +24,7 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 
 ## 1. Production reliability and operations
 
-### 1.1 Secrets management (P0)
+### 1.1 Secrets management (P0) — **implemented (free dev path)**
 
 **User value:** Passwords and API keys are not leaked when a laptop or repo is compromised.
 
@@ -36,7 +36,17 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 
 **Tech pattern:** AWS Secrets Manager, Azure Key Vault, or HashiCorp Vault; injected at container start.
 
-**Free path:** Keep using `backend/.env.dev` locally; use GitHub Actions secrets for staging CI only.
+**Implemented (dev/staging free path):**
+
+- Committed profiles `backend/.env.dev`, `.env.staging`, `.env.prod` — **non-sensitive metadata only**
+- Gitignored `backend/dev.secrets`, `staging.secrets`, `prod.secrets` — real credentials
+- Committed `backend/ci.secrets` — **fake credentials for CI only**
+- Mock AWS Secrets Manager service (`mock-secrets-manager` in Docker Compose, port 4566)
+- Secrets-provider abstraction: `backend/src/secrets/secretsProvider.js`, `ai_service/app/secrets_provider.py`
+- Container entrypoint: `scripts/docker-entrypoint-with-secrets.sh` + `backend/scripts/preload-secrets.js`
+- Rotation runbook: [ops_guide_secrets_management.md](ops_guide_secrets_management.md)
+
+**Remaining (paid / later):** Real AWS Secrets Manager SDK (SigV4), External Secrets Operator in EKS, automatic rotation Lambdas.
 
 ---
 

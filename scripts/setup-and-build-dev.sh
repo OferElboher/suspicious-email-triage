@@ -15,6 +15,7 @@ if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
 fi
 
 bash "$ROOT/scripts/setup-local-dev.sh"
+bash "$ROOT/scripts/ensure-dev-secrets.sh"
 bash "$ROOT/scripts/configure-dev-bootstrap-admin.sh"
 
 cd "$ROOT"

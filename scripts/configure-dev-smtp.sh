@@ -3,8 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-LOCAL_ENV="$ROOT/backend/.env"
-DEV_ENV="$ROOT/backend/.env.dev"
+SECRETS_FILE="$ROOT/backend/dev.secrets"
 COMPOSE="DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml"
 
 usage() {
@@ -28,11 +27,7 @@ fi
 
 mode="$(echo "$1" | tr '[:upper:]' '[:lower:]')"
 
-mkdir -p "$(dirname "$LOCAL_ENV")"
-if [[ ! -f "$LOCAL_ENV" ]]; then
-  cp "$DEV_ENV" "$LOCAL_ENV"
-  echo "Created backend/.env from backend/.env.dev"
-fi
+bash "$ROOT/scripts/ensure-dev-secrets.sh"
 
 upsert_var() {
   local file="$1"
@@ -45,22 +40,25 @@ upsert_var() {
   fi
 }
 
+remove_var() {
+  local file="$1"
+  local key="$2"
+  sed -i "/^${key}=/d" "$file" 2>/dev/null || true
+}
+
 if [[ "$mode" == "mailpit" ]]; then
-  upsert_var "$LOCAL_ENV" "EMAIL_DELIVERY" "mailpit"
-  upsert_var "$LOCAL_ENV" "SMTP_DELIVERY" "mailpit"
-  upsert_var "$LOCAL_ENV" "SMTP_HOST" "mailpit"
-  upsert_var "$LOCAL_ENV" "SMTP_PORT" "1025"
-  upsert_var "$LOCAL_ENV" "SMTP_SECURE" "false"
-  upsert_var "$LOCAL_ENV" "SMTP_FROM" "noreply@local.test"
-  # Remove external/Gmail SMTP creds so mailpit mode is not overridden to external.
-  sed -i '/^SMTP_USER=/d;/^SMTP_PASS=/d' "$LOCAL_ENV" 2>/dev/null || true
-  echo "Configured Mailpit in backend/.env (inbox UI: http://localhost:8025)"
+  upsert_var "$SECRETS_FILE" "EMAIL_DELIVERY" "mailpit"
+  upsert_var "$SECRETS_FILE" "SMTP_DELIVERY" "mailpit"
+  upsert_var "$SECRETS_FILE" "SMTP_HOST" "mailpit"
+  upsert_var "$SECRETS_FILE" "SMTP_PORT" "1025"
+  upsert_var "$SECRETS_FILE" "SMTP_SECURE" "false"
+  upsert_var "$SECRETS_FILE" "SMTP_FROM" "noreply@local.test"
+  remove_var "$SECRETS_FILE" "SMTP_USER"
+  remove_var "$SECRETS_FILE" "SMTP_PASS"
+  echo "Configured Mailpit in backend/dev.secrets (inbox UI: http://localhost:8025)"
   echo ""
   echo "IMPORTANT: recreate backend — Docker reads env only at container create time:"
-  echo "  $COMPOSE up -d --force-recreate backend"
-  echo ""
-  echo "Verify mode inside container:"
-  echo "  docker compose -f infra/docker/docker-compose.yml exec backend printenv EMAIL_DELIVERY SMTP_HOST"
+  echo "  $COMPOSE up -d --force-recreate backend mock-secrets-manager"
   exit 0
 fi
 
@@ -85,29 +83,16 @@ if [[ "$host" == *gmail.com* ]] && [[ "$pass" == "temp-admin-pswd" ]]; then
   exit 1
 fi
 
-if [[ "$host" == *gmail.com* ]] && [[ ${#pass} -lt 16 ]]; then
-  echo "Warning: Gmail App Passwords are usually 16 characters. If send fails, create one at:" >&2
-  echo "  https://myaccount.google.com/apppasswords (2-Step Verification must be on)" >&2
-fi
+upsert_var "$SECRETS_FILE" "EMAIL_DELIVERY" "external"
+upsert_var "$SECRETS_FILE" "SMTP_DELIVERY" "external"
+upsert_var "$SECRETS_FILE" "SMTP_HOST" "$host"
+upsert_var "$SECRETS_FILE" "SMTP_PORT" "587"
+upsert_var "$SECRETS_FILE" "SMTP_SECURE" "false"
+upsert_var "$SECRETS_FILE" "SMTP_USER" "$user"
+upsert_var "$SECRETS_FILE" "SMTP_PASS" "$pass"
+upsert_var "$SECRETS_FILE" "SMTP_FROM" "$from"
 
-upsert_var "$LOCAL_ENV" "EMAIL_DELIVERY" "external"
-upsert_var "$LOCAL_ENV" "SMTP_DELIVERY" "external"
-upsert_var "$LOCAL_ENV" "SMTP_HOST" "$host"
-upsert_var "$LOCAL_ENV" "SMTP_PORT" "587"
-upsert_var "$LOCAL_ENV" "SMTP_SECURE" "false"
-upsert_var "$LOCAL_ENV" "SMTP_USER" "$user"
-upsert_var "$LOCAL_ENV" "SMTP_PASS" "$pass"
-upsert_var "$LOCAL_ENV" "SMTP_FROM" "$from"
-
-echo "Configured external SMTP in backend/.env:"
-echo "  SMTP_DELIVERY=external"
-echo "  SMTP_HOST=$host"
-echo "  SMTP_USER=$user"
-echo "  SMTP_FROM=$from"
-echo ""
-echo "Recreate backend (env is read at container create time):"
-echo "  $COMPOSE up -d --force-recreate backend"
-echo ""
-echo "Then POST /auth/forgot-password or use the UI Forgot password link."
-echo "If Gmail rejects credentials, use an App Password — not temp-admin-pswd."
+echo "Configured external SMTP in backend/dev.secrets (credentials are gitignored)."
+echo "Recreate backend and mock-secrets-manager:"
+echo "  $COMPOSE up -d --force-recreate backend mock-secrets-manager"
 echo "See docs/auth_guide_dev_smtp_recovery.md"

@@ -319,8 +319,30 @@ def test_docs_avoid_hardcoded_private_env_values():
         "AUTH_BOOTSTRAP_ADMIN_EMAIL=admin@company",
         "GOOGLE_OAUTH_CLIENT_SECRET=GOCSPX-",
         "JWT_SECRET=prod-",
+        "JWT_SECRET=dev-jwt-secret",
+        "NEO4J_PASSWORD=triage-neo4j",
     )
     for path in sorted((ROOT / "docs").glob("*.md")):
         text = path.read_text(encoding="utf-8")
         for bad in forbidden_substrings:
             assert bad not in text, f"{path.name} must not contain {bad!r}"
+
+
+def test_secrets_management_layer_wired():
+    """P0 secrets management: profiles without credentials, provider + mock AWS + CI fake secrets."""
+    dev_env = (ROOT / "backend/.env.dev").read_text(encoding="utf-8")
+    assert "JWT_SECRET=" not in dev_env
+    assert "POSTGRES_PASSWORD=" not in dev_env
+    assert "SECRETS_PROVIDER=" in dev_env
+    assert (ROOT / "backend/src/secrets/secretsProvider.js").is_file()
+    assert (ROOT / "ai_service/app/secrets_provider.py").is_file()
+    assert (ROOT / "infra/mock-aws-secrets-manager/server.js").is_file()
+    assert (ROOT / "backend/ci.secrets").is_file()
+    assert (ROOT / "backend/dev.secrets.example").is_file()
+    compose = (ROOT / "infra/docker/docker-compose.yml").read_text(encoding="utf-8")
+    assert "mock-secrets-manager" in compose
+    readme = (ROOT / "docs/README.md").read_text(encoding="utf-8")
+    assert "ops_guide_secrets_management.md" in readme
+    tbd = (ROOT / "docs/roadmap_tbd.md").read_text(encoding="utf-8")
+    assert "1.1 Secrets management" in tbd
+    assert "implemented" in tbd.split("1.1 Secrets management")[1].split("---")[0]

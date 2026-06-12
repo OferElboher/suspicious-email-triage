@@ -1,25 +1,26 @@
 #!/usr/bin/env bash
-# configure-dev-bootstrap-admin: set the dev bootstrap admin email (gitignored backend/.env).
+# configure-dev-bootstrap-admin: set bootstrap admin email in gitignored backend/dev.secrets.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-LOCAL_ENV="$ROOT/backend/.env"
-DEV_ENV="$ROOT/backend/.env.dev"
+SECRETS_FILE="$ROOT/backend/dev.secrets"
+EXAMPLE="$ROOT/backend/dev.secrets.example"
 DEFAULT_PASSWORD="temp-admin-pswd"
 
 usage() {
   echo "Usage: bash scripts/configure-dev-bootstrap-admin.sh YOUR_EMAIL@example.com"
   echo "   or: AUTH_BOOTSTRAP_ADMIN_EMAIL=you@example.com bash scripts/configure-dev-bootstrap-admin.sh"
   echo ""
-  echo "Writes AUTH_BOOTSTRAP_ADMIN_EMAIL and AUTH_BOOTSTRAP_ADMIN_PASSWORD into backend/.env"
-  echo "(gitignored). Docker Compose loads backend/.env after backend/.env.dev so your email"
-  echo "overrides the shared dev profile without committing personal data."
+  echo "Writes AUTH_BOOTSTRAP_ADMIN_EMAIL and AUTH_BOOTSTRAP_ADMIN_PASSWORD into backend/dev.secrets"
+  echo "(gitignored). Credentials are loaded at container start via mock AWS Secrets Manager."
   exit "${1:-0}"
 }
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
   usage 0
 fi
+
+bash "$ROOT/scripts/ensure-dev-secrets.sh"
 
 email="${1:-${AUTH_BOOTSTRAP_ADMIN_EMAIL:-}}"
 if [[ -z "$email" ]]; then
@@ -40,12 +41,6 @@ if [[ ! "$email" =~ ^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$ ]]; then
   exit 1
 fi
 
-mkdir -p "$(dirname "$LOCAL_ENV")"
-if [[ ! -f "$LOCAL_ENV" ]]; then
-  cp "$DEV_ENV" "$LOCAL_ENV"
-  echo "Created backend/.env from backend/.env.dev"
-fi
-
 upsert_var() {
   local file="$1"
   local key="$2"
@@ -57,10 +52,10 @@ upsert_var() {
   fi
 }
 
-upsert_var "$LOCAL_ENV" "AUTH_BOOTSTRAP_ADMIN_EMAIL" "$email"
-upsert_var "$LOCAL_ENV" "AUTH_BOOTSTRAP_ADMIN_PASSWORD" "$password"
+upsert_var "$SECRETS_FILE" "AUTH_BOOTSTRAP_ADMIN_EMAIL" "$email"
+upsert_var "$SECRETS_FILE" "AUTH_BOOTSTRAP_ADMIN_PASSWORD" "$password"
 
-echo "Configured bootstrap admin in backend/.env:"
+echo "Configured bootstrap admin in backend/dev.secrets:"
 echo "  AUTH_BOOTSTRAP_ADMIN_EMAIL=$email"
 echo "  AUTH_BOOTSTRAP_ADMIN_PASSWORD=$password"
 echo ""

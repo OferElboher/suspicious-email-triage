@@ -1,0 +1,10 @@
+{
+  "name": "mock-aws-secrets-manager",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Local HTTP stand-in for AWS Secrets Manager GetSecretValue",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

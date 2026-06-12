@@ -55,8 +55,8 @@ describe("graphLayout helpers", () => {
     expect(idx).toBe(1);
   });
 
-  it("filterConnectedGraph drops nodes with no edges except Campaign anchor", () => {
-    const result = filterConnectedGraph(
+  it("filterConnectedGraph drops nodes with no edges including lone Campaign nodes", () => {
+    const connected = filterConnectedGraph(
       [
         { id: "c:1", type: "Campaign", label: "c" },
         { id: "r:1", type: "Review", label: "r" },
@@ -64,7 +64,13 @@ describe("graphLayout helpers", () => {
       ],
       [{ source: "r:1", target: "c:1", label: "PART_OF_CAMPAIGN" }]
     );
-    expect(result.nodes).toHaveLength(2);
-    expect(result.droppedOrphanCount).toBe(1);
+    expect(connected.nodes).toHaveLength(2);
+    expect(connected.droppedOrphanCount).toBe(1);
+
+    const lone = filterConnectedGraph(
+      [{ id: "c:2", type: "Campaign", label: "lonely" }],
+      []
+    );
+    expect(lone.nodes).toHaveLength(0);
   });
 });

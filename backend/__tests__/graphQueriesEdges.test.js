@@ -24,7 +24,7 @@ describe("edgesFromNeo4j", () => {
     expect(edges[0].target).toBe(nodeToJson(reviewNode).id);
   });
 
-  it("filterConnectedSubgraph removes orphan nodes but keeps Campaign anchor", () => {
+  it("filterConnectedSubgraph removes orphan nodes including lone Campaign rows", () => {
     const nodes = [
       { id: "campaign:x.test", type: "Campaign", label: "x.test" },
       { id: "review:1", type: "Review", label: "r1" },
@@ -33,6 +33,13 @@ describe("edgesFromNeo4j", () => {
     const edges = [{ source: "review:1", target: "campaign:x.test", label: "PART_OF_CAMPAIGN" }];
     const filtered = filterConnectedSubgraph(nodes, edges);
     expect(filtered.nodes.map((n) => n.id)).toEqual(["campaign:x.test", "review:1"]);
+    expect(filtered.droppedOrphanCount).toBe(1);
+  });
+
+  it("filterConnectedSubgraph drops Campaign nodes with zero edges", () => {
+    const nodes = [{ id: "campaign:lonely.test", type: "Campaign", label: "lonely" }];
+    const filtered = filterConnectedSubgraph(nodes, []);
+    expect(filtered.nodes).toHaveLength(0);
     expect(filtered.droppedOrphanCount).toBe(1);
   });
 });

@@ -62,8 +62,8 @@ function edgesFromNeo4j(nodeRecords, relRecords) {
 }
 
 /**
- * Drop orphan nodes with no incident edges (stale Url/Domain debris in Neo4j).
- * Campaign nodes are kept as the visual anchor even if edge collection missed one.
+ * Drop orphan nodes with no incident edges (stale Url/Domain debris or lone Campaign rows).
+ * Every visible node must participate in at least one edge — no anchor exceptions.
  */
 function filterConnectedSubgraph(nodes, edges) {
   if (!nodes.length) {
@@ -74,9 +74,7 @@ function filterConnectedSubgraph(nodes, edges) {
     connectedIds.add(edge.source);
     connectedIds.add(edge.target);
   });
-  const kept = nodes.filter(
-    (node) => connectedIds.has(node.id) || node.type === "Campaign"
-  );
+  const kept = nodes.filter((node) => connectedIds.has(node.id));
   const keptIds = new Set(kept.map((node) => node.id));
   const keptEdges = edges.filter(
     (edge) => keptIds.has(edge.source) && keptIds.has(edge.target)
@@ -223,9 +221,11 @@ async function getCampaignSubgraph(indicator) {
     UNWIND rawNodes AS n
     WITH collect(DISTINCT n) AS nodes
     WHERE size(nodes) > 0
-    MATCH (a)-[rel]-(b)
+    OPTIONAL MATCH (a)-[rel]-(b)
     WHERE a IN nodes AND b IN nodes AND id(a) < id(b)
-    WITH nodes, collect(DISTINCT rel) AS rels, $indicator AS indicator,
+    WITH nodes,
+         [r IN collect(DISTINCT rel) WHERE r IS NOT NULL] AS rels,
+         $indicator AS indicator,
          size([x IN nodes WHERE x:Review]) AS reviewCount
     RETURN nodes, rels, indicator, reviewCount
     `,

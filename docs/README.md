@@ -10,7 +10,7 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 
 **Deep links:** sections use `{#anchor-id}` where noted; link as `[text](file.md#anchor-id)`.
 
-**Security:** docs never contain real passwords or private env values — use variable names and read `backend/.env.dev` locally.
+**Security:** docs never contain real passwords or private env values — use variable names and read gitignored `backend/dev.secrets` locally (see [ops_guide_secrets_management.md](ops_guide_secrets_management.md)).
 
 ---
 
@@ -79,6 +79,7 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 
 ### Operations & roadmap
 
+- [ops_guide_secrets_management.md](ops_guide_secrets_management.md) — mock AWS Secrets Manager, *.secrets files, rotation
 - [ops_guide_kubernetes_helm.md](ops_guide_kubernetes_helm.md) — Helm / Kubernetes
 - [ops_guide_health_uptime.md](ops_guide_health_uptime.md) — health probes
 - [ops_guide_central_logging.md](ops_guide_central_logging.md) — merged logs

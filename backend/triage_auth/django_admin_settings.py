@@ -17,6 +17,23 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 ENVIRONMENT = os.getenv("ENVIRONMENT", "dev")
 load_dotenv(BASE_DIR / f".env.{ENVIRONMENT}", override=False)
+
+# Load gitignored *.secrets via the same provider pattern as Node/Celery (mock AWS or file fallback).
+try:
+    import sys
+
+    ai_root = BASE_DIR.parent / "ai_service"
+    if str(ai_root) not in sys.path:
+        sys.path.insert(0, str(ai_root))
+    from app.secrets_provider import load_application_secrets
+
+    load_application_secrets()
+except Exception:
+    # Django manage.py check_settings in CI may run before ai_service is on PYTHONPATH — file fallback.
+    secrets_path = BASE_DIR / f"{ENVIRONMENT}.secrets"
+    if secrets_path.is_file():
+        load_dotenv(secrets_path, override=True)
+
 load_dotenv(BASE_DIR / ".env", override=False)
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-secret")

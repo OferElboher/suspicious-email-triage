@@ -96,9 +96,9 @@ export function findCampaignIndexForDate(campaigns, dateStr) {
 
 /**
  * Remove nodes with no incident edges (orphans from stale Neo4j rows or query gaps).
- * Keeps anchor types (Campaign) so the cluster label always renders.
+ * Every rendered node must have at least one edge — lone Campaign nodes are hidden.
  */
-export function filterConnectedGraph(nodes, edges, anchorTypes = ["Campaign"]) {
+export function filterConnectedGraph(nodes, edges) {
   const list = nodes || [];
   const edgeList = edges || [];
   if (list.length === 0) {
@@ -109,8 +109,7 @@ export function filterConnectedGraph(nodes, edges, anchorTypes = ["Campaign"]) {
     connectedIds.add(edge.source);
     connectedIds.add(edge.target);
   });
-  const anchors = new Set(anchorTypes);
-  const kept = list.filter((node) => connectedIds.has(node.id) || anchors.has(node.type));
+  const kept = list.filter((node) => connectedIds.has(node.id));
   const keptIds = new Set(kept.map((node) => node.id));
   const keptEdges = edgeList.filter(
     (edge) => keptIds.has(edge.source) && keptIds.has(edge.target)

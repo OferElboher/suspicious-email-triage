@@ -24,6 +24,13 @@ frontend/build/
 .env
 backend/.env
 frontend/.env
+backend/dev.secrets
+backend/staging.secrets
+backend/prod.secrets
+
+# CI uses committed fake secrets only (ci.secrets — never real credentials)
+!backend/ci.secrets
+!backend/*.secrets.example
 
 # Tracked environment profiles with sample/dev values
 !backend/.env.dev

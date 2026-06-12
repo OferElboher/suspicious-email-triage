@@ -78,6 +78,7 @@ RUN npm install
 # Copy application source & shared code into container
 ###############################################################################
 COPY shared ../shared
+COPY scripts ../scripts
 COPY backend/ .
 
 ###############################################################################
@@ -87,7 +88,7 @@ COPY backend/ .
 EXPOSE 3000
 
 ###############################################################################
-# Start command
-# Runs the Express API server
+# Start command — secrets preload then HTTP server (see ops_guide_secrets_management.md)
 ###############################################################################
-CMD ["node", "src/server.js"]
+ENTRYPOINT ["/bin/bash", "/app/scripts/docker-entrypoint-with-secrets.sh"]
+CMD ["node", "scripts/preload-secrets.js"]
