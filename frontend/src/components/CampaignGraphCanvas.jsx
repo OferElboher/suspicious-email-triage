@@ -12,7 +12,7 @@ import {
   GRAPH_CANVAS_MAX_WIDTH,
   NODE_COLORS,
   layoutNodesOnCircle,
-  filterConnectedGraph,
+  filterToPrimaryComponent,
   describeNode,
   describeEdge,
 } from "../lib/graphLayout";
@@ -41,11 +41,11 @@ export default function CampaignGraphCanvas({ graph, zoom = 1 }) {
     setPan({ x: 0, y: 0 });
   }, [graph.indicator, graph.nodes?.length]);
 
-  /** Hide nodes that have no edges (API also filters; this guards stale client cache). */
-  const displayGraph = useMemo(
-    () => filterConnectedGraph(graph.nodes || [], graph.edges || []),
-    [graph.nodes, graph.edges]
-  );
+  /** Hide nodes outside the Campaign-anchored component (API also filters; guards stale cache). */
+  const displayGraph = useMemo(() => {
+    const campaignAnchor = (graph.nodes || []).find((node) => node.type === "Campaign")?.id || null;
+    return filterToPrimaryComponent(graph.nodes || [], graph.edges || [], campaignAnchor);
+  }, [graph.nodes, graph.edges]);
 
   const positioned = useMemo(
     () => layoutNodesOnCircle(displayGraph.nodes, canvasWidth, canvasHeight),

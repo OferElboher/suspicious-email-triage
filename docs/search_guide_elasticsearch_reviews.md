@@ -131,10 +131,27 @@ All routes are mounted at **`/search`** (see `backend/src/api/search.js`). They 
 | Method | Path | Permission | Description |
 |--------|------|------------|-------------|
 | GET | `/search/status` | `reviews.read` | Whether ES is enabled, reachable, index name, document count |
-| GET | `/search/reviews?q=` | `reviews.read` | Full-text search; empty `q` returns recent docs by `updatedAt` |
+| GET | `/search/reviews?q=` | `reviews.read` | Full-text search with optional advanced filters (see below) |
 | DELETE | `/search/index` | `dev.reset` **and** role `developer` or `admin` | Wipes the index (drop + recreate) |
 
-Optional query params on search: `limit` (1–100, default 20). Alias: `query` instead of `q`.
+### Query parameters (simple + advanced)
+
+| Parameter | Meaning |
+|-----------|---------|
+| `q` or `query` | Full-text keyword (multi_match on subject, body, sender, links) |
+| `limit` | 1–100 (default 20) |
+| `offset` | Pagination skip |
+| `verdict` | Exact filter: `benign`, `suspicious`, `likely_phishing` |
+| `status` | Exact filter: `pending`, `processing`, `completed`, `failed` |
+| `senderEmail` | Exact sender address (lowercase) |
+| `updatedFrom`, `updatedTo` | ISO date range on `updatedAt` |
+| `subjectRegex`, `bodyRegex`, `linksRegex` | Lucene regexp filters on individual fields |
+
+Empty `q` with filters still returns matching documents sorted by `updatedAt`.
+
+### React UI
+
+The Triage workspace includes **Search past reviews** (`ReviewSearchPanel.jsx`) for any user with `reviews.read`. It exposes keyword search plus verdict, status, sender, date range, and regex fields — the same parameters as the REST API.
 
 ### Examples (replace email, password, and token)
 

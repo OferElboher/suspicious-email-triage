@@ -51,13 +51,29 @@ function createApp() {
 
   app.get("/logs/search", requirePermission("logs.read"), async (req, res) => {
     try {
-      const { keyword, topic, from, to, limit } = req.query;
+      const {
+        keyword,
+        topic,
+        from,
+        to,
+        limit,
+        offset,
+        level,
+        service,
+        regex,
+        messagePattern,
+      } = req.query;
       const result = await searchLogs({
         keyword,
         topic,
         fromTs: from,
         toTs: to,
         limit,
+        offset,
+        level,
+        service,
+        regex,
+        messagePattern,
       });
       res.json(result);
     } catch (err) {

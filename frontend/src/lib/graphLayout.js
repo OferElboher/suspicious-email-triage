@@ -94,6 +94,92 @@ export function findCampaignIndexForDate(campaigns, dateStr) {
   return idx >= 0 ? idx : null;
 }
 
+/** Build undirected adjacency for BFS component selection (mirrors backend connectedGraphFilter.js). */
+function buildAdjacency(nodes, edges) {
+  const adj = new Map();
+  (nodes || []).forEach((node) => adj.set(node.id, new Set()));
+  (edges || []).forEach((edge) => {
+    if (!adj.has(edge.source) || !adj.has(edge.target)) {
+      return;
+    }
+    adj.get(edge.source).add(edge.target);
+    adj.get(edge.target).add(edge.source);
+  });
+  return adj;
+}
+
+/** Breadth-first set of node ids reachable from `startId`. */
+function bfsReachable(adj, startId) {
+  const visited = new Set();
+  if (!adj.has(startId)) {
+    return visited;
+  }
+  const queue = [startId];
+  while (queue.length) {
+    const id = queue.shift();
+    if (visited.has(id)) {
+      continue;
+    }
+    visited.add(id);
+    for (const neighbor of adj.get(id) || []) {
+      if (!visited.has(neighbor)) {
+        queue.push(neighbor);
+      }
+    }
+  }
+  return visited;
+}
+
+/** Drop zero-degree nodes, then keep Campaign-anchored (or largest) connected component. */
+export function filterToPrimaryComponent(nodes, edges, anchorNodeId = null) {
+  const zeroPass = filterConnectedGraph(nodes, edges);
+  const { nodes: connected, edges: connectedEdges } = zeroPass;
+  if (!connected.length) {
+    return { ...zeroPass, droppedComponentCount: 0 };
+  }
+
+  const adj = buildAdjacency(connected, connectedEdges);
+  let mainIds = null;
+
+  if (anchorNodeId && adj.has(anchorNodeId)) {
+    mainIds = bfsReachable(adj, anchorNodeId);
+  } else {
+    const campaign = connected.find((node) => node.type === "Campaign");
+    if (campaign && adj.has(campaign.id)) {
+      mainIds = bfsReachable(adj, campaign.id);
+    }
+  }
+
+  if (!mainIds || mainIds.size === 0) {
+    let largest = new Set();
+    const seen = new Set();
+    for (const node of connected) {
+      if (seen.has(node.id)) {
+        continue;
+      }
+      const comp = bfsReachable(adj, node.id);
+      comp.forEach((id) => seen.add(id));
+      if (comp.size > largest.size) {
+        largest = comp;
+      }
+    }
+    mainIds = largest;
+  }
+
+  const kept = connected.filter((node) => mainIds.has(node.id));
+  const keptIds = new Set(kept.map((node) => node.id));
+  const keptEdges = connectedEdges.filter(
+    (edge) => keptIds.has(edge.source) && keptIds.has(edge.target)
+  );
+
+  return {
+    nodes: kept,
+    edges: keptEdges,
+    droppedOrphanCount: zeroPass.droppedOrphanCount,
+    droppedComponentCount: connected.length - kept.length,
+  };
+}
+
 /**
  * Remove nodes with no incident edges (orphans from stale Neo4j rows or query gaps).
  * Every rendered node must have at least one edge — lone Campaign nodes are hidden.
@@ -103,7 +189,8 @@ export function findCampaignIndexForDate(campaigns, dateStr) {
  * GraphView uses this so empty edge arrays do not mount an blank canvas.
  */
 export function hasDisplayableGraph(nodes, edges) {
-  const filtered = filterConnectedGraph(nodes, edges);
+  const campaignAnchor = (nodes || []).find((node) => node.type === "Campaign")?.id || null;
+  const filtered = filterToPrimaryComponent(nodes, edges, campaignAnchor);
   return filtered.nodes.length > 0 && filtered.edges.length > 0;
 }
 

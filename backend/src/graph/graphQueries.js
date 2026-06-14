@@ -1,7 +1,11 @@
 /**
  * Read-side Cypher helpers for graph visualization and neighborhood APIs.
+ *
+ * Pattern: Neo4j driver v5 + Cypher OPTIONAL MATCH chains → JSON nodes/edges for React SVG.
+ * Display safety: `filterToPrimaryComponent` removes orphan and multi-component debris.
  */
 const { runRead } = require("./neo4jClient");
+const { filterToPrimaryComponent } = require("../lib/connectedGraphFilter");
 
 /** Map Neo4j node labels + properties to a stable JSON node id for the UI. */
 function nodeToJson(node) {
@@ -89,28 +93,11 @@ function edgesFromNeo4j(nodeRecords, relRecords) {
 }
 
 /**
- * Drop orphan nodes with no incident edges (stale Url/Domain debris or lone Campaign rows).
- * Every visible node must participate in at least one edge — no anchor exceptions.
+ * Drop orphan nodes and unrelated connected components before returning subgraph JSON.
+ * Delegates to shared `filterToPrimaryComponent` (Campaign-anchored BFS).
  */
-function filterConnectedSubgraph(nodes, edges) {
-  if (!nodes.length) {
-    return { nodes: [], edges: [], droppedOrphanCount: 0 };
-  }
-  const connectedIds = new Set();
-  edges.forEach((edge) => {
-    connectedIds.add(edge.source);
-    connectedIds.add(edge.target);
-  });
-  const kept = nodes.filter((node) => connectedIds.has(node.id));
-  const keptIds = new Set(kept.map((node) => node.id));
-  const keptEdges = edges.filter(
-    (edge) => keptIds.has(edge.source) && keptIds.has(edge.target)
-  );
-  return {
-    nodes: kept,
-    edges: keptEdges,
-    droppedOrphanCount: nodes.length - kept.length,
-  };
+function filterConnectedSubgraph(nodes, edges, anchorNodeId = null) {
+  return filterToPrimaryComponent(nodes, edges, anchorNodeId);
 }
 
 /** Fetch a bounded subgraph around one review for analyst drill-down. */
@@ -266,12 +253,19 @@ async function getCampaignSubgraph(indicator) {
   const nodeRecords = rows[0].get("nodes") || [];
   const rawNodes = nodeRecords.filter(Boolean).map((n) => nodeToJson(n));
   const rawEdges = edgesFromRelTripleRows(rows);
-  const { nodes, edges, droppedOrphanCount } = filterConnectedSubgraph(rawNodes, rawEdges);
+  const campaignAnchor = rawNodes.find((node) => node.type === "Campaign")?.id || null;
+  const {
+    nodes,
+    edges,
+    droppedOrphanCount,
+    droppedComponentCount,
+  } = filterConnectedSubgraph(rawNodes, rawEdges, campaignAnchor);
 
   return {
     nodes,
     edges,
-    droppedOrphanCount,
+    droppedOrphanCount: (droppedOrphanCount || 0) + (droppedComponentCount || 0),
+    droppedComponentCount: droppedComponentCount || 0,
     indicator: rows[0].get("indicator") || normalized,
     reviewCount: Number(rows[0].get("reviewCount") || 0),
   };

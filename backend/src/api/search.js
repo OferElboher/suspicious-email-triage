@@ -27,12 +27,21 @@ router.get("/status", authenticate, requirePermission("reviews.read"), async (_r
   }
 });
 
-/** GET /search/reviews?q=keyword — full-text search (reviews.read). */
+/** GET /search/reviews — full-text + field/range/regex filters (reviews.read). */
 router.get("/reviews", authenticate, requirePermission("reviews.read"), async (req, res) => {
   try {
     const result = await searchReviews({
       query: req.query.q || req.query.query || "",
       limit: req.query.limit,
+      offset: req.query.offset,
+      verdict: req.query.verdict,
+      status: req.query.status,
+      senderEmail: req.query.senderEmail,
+      updatedFrom: req.query.updatedFrom || req.query.from,
+      updatedTo: req.query.updatedTo || req.query.to,
+      subjectRegex: req.query.subjectRegex,
+      bodyRegex: req.query.bodyRegex,
+      linksRegex: req.query.linksRegex,
     });
     res.json(result);
   } catch (err) {

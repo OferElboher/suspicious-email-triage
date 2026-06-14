@@ -121,6 +121,18 @@ cd ~/suspicious-email-triage
 bash scripts/verify-campaign-detection.sh
 ```
 
+**Full automated manual test** (submits both demo emails, waits for Celery, verifies connected subgraph):
+
+```bash
+bash scripts/run-manual-phishing-campaign-test.sh YOUR_EMAIL YOUR_PASSWORD
+```
+
+Optional: prune stale orphan Neo4j nodes first (also runs automatically in the script):
+
+```bash
+curl -sS -X POST -H "Authorization: Bearer TOKEN" http://localhost:3000/dev/prune-graph
+```
+
 ---
 
 ## Step 3 — Analyst override (when automated verdict is wrong)

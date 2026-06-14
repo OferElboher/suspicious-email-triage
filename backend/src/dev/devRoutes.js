@@ -16,6 +16,7 @@ const {
 } = require("../config/runtime");
 const { resetStats } = require("../stats/statsPg");
 const { resetGraph } = require("../graph/neo4jClient");
+const { pruneOrphanGraphNodes } = require("../graph/graphMaintenance");
 const { writeSimulation, readSimulation, MAX_EVENTS_PER_MIN } = require("./simulationStore");
 const { applySimulationFromStore, clearLoop } = require("./simulationLoop");
 const { requirePermission, hasPermission } = require("../http/middleware/auth");
@@ -107,6 +108,20 @@ router.get("/simulation", requirePermission("dev.simulation"), async (req, res) 
   } catch (err) {
     logger.error("dev", "simulation read failed", { error: err.message });
     res.status(500).json({ error: "simulation_failed" });
+  }
+});
+
+/** POST /dev/prune-graph — delete orphan Neo4j nodes (stale Url/Domain debris from old sync code). */
+router.post("/prune-graph", requirePermission("dev.reset"), async (req, res) => {
+  if (!req.auth.roles.includes("developer")) {
+    return res.status(403).json({ error: "developer_role_required" });
+  }
+  try {
+    const result = await pruneOrphanGraphNodes();
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    logger.error("dev", "neo4j prune failed", { error: err.message });
+    res.status(500).json({ error: "neo4j_prune_failed" });
   }
 });
 

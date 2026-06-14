@@ -62,7 +62,11 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 
 ### Search (Elasticsearch)
 
-- [search_guide_elasticsearch_reviews.md](search_guide_elasticsearch_reviews.md) — review full-text search
+- [search_guide_elasticsearch_reviews.md](search_guide_elasticsearch_reviews.md) — review full-text + advanced filters (API + UI)
+
+### Operations logging
+
+- [ops_guide_central_logging.md](ops_guide_central_logging.md) — merged.log unified search (API + UI)
 
 ### Stack & deployment
 

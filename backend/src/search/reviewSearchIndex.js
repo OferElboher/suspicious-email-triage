@@ -89,43 +89,93 @@ async function indexReviewDocument(review) {
   }
 }
 
-/** Full-text search across subject, body, sender (simple query_string for novices). */
-async function searchReviews({ query = "", limit = 20 } = {}) {
+/** Full-text and field-filter search across indexed review documents. */
+async function searchReviews({
+  query = "",
+  limit = 20,
+  offset = 0,
+  verdict = "",
+  status = "",
+  senderEmail = "",
+  updatedFrom = null,
+  updatedTo = null,
+  subjectRegex = "",
+  bodyRegex = "",
+  linksRegex = "",
+} = {}) {
   const es = await getElasticsearchClient();
   if (!es) {
     return { enabled: false, hits: [], total: 0 };
   }
   await ensureReviewIndex();
   const size = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
+  const from = Math.max(parseInt(offset, 10) || 0, 0);
   const q = String(query || "").trim();
-  if (!q) {
-    const list = await es.search({
-      index: INDEX_NAME,
-      size,
-      sort: [{ updatedAt: "desc" }],
-    });
-    return {
-      enabled: true,
-      hits: list.hits.hits.map((h) => ({ id: h._id, ...h._source })),
-      total: list.hits.total?.value ?? list.hits.hits.length,
-    };
-  }
-  const result = await es.search({
-    index: INDEX_NAME,
-    size,
-    query: {
+
+  const must = [];
+  const filter = [];
+
+  if (q) {
+    must.push({
       multi_match: {
         query: q,
         fields: ["subject^2", "body", "senderEmail", "senderName", "links"],
         type: "best_fields",
       },
-    },
+    });
+  }
+
+  if (verdict) {
+    filter.push({ term: { verdict: String(verdict).toLowerCase() } });
+  }
+  if (status) {
+    filter.push({ term: { status: String(status).toLowerCase() } });
+  }
+  if (senderEmail) {
+    filter.push({ term: { senderEmail: String(senderEmail).toLowerCase() } });
+  }
+
+  const range = {};
+  if (updatedFrom) {
+    range.gte = updatedFrom;
+  }
+  if (updatedTo) {
+    range.lte = updatedTo;
+  }
+  if (Object.keys(range).length) {
+    filter.push({ range: { updatedAt: range } });
+  }
+
+  const addRegexFilter = (field, pattern) => {
+    const trimmed = String(pattern || "").trim();
+    if (!trimmed) {
+      return;
+    }
+    filter.push({ regexp: { [field]: trimmed } });
+  };
+  addRegexFilter("subject", subjectRegex);
+  addRegexFilter("body", bodyRegex);
+  addRegexFilter("links", linksRegex);
+
+  const esQuery =
+    must.length || filter.length
+      ? { bool: { ...(must.length ? { must } : {}), ...(filter.length ? { filter } : {}) } }
+      : { match_all: {} };
+
+  const result = await es.search({
+    index: INDEX_NAME,
+    from,
+    size,
+    sort: [{ updatedAt: "desc" }],
+    query: esQuery,
   });
+
   return {
     enabled: true,
-    query: q,
+    query: q || null,
     hits: result.hits.hits.map((h) => ({ id: h._id, ...h._source })),
     total: result.hits.total?.value ?? result.hits.hits.length,
+    offset: from,
   };
 }
 

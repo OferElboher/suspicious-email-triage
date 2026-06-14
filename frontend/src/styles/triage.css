@@ -500,3 +500,36 @@ button.danger {
   background: #eef4ff;
   border-radius: var(--radius);
 }
+
+/* Advanced search panels (ReviewSearchPanel, LogSearchPanel) */
+.search-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem 1rem;
+  margin: 0.75rem 0;
+}
+
+.field--checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-direction: row;
+  padding-top: 1.5rem;
+}
+
+.log-search-results {
+  max-height: 320px;
+  overflow: auto;
+  font-size: 0.75rem;
+  background: #f8f9fb;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem;
+}
+
+.log-search-results code {
+  display: block;
+  margin-bottom: 0.35rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

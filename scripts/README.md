@@ -12,7 +12,9 @@
 - `bootstrap-auth-admin.sh` — seeds PostgreSQL auth tables/roles and creates bootstrap admin when `auth_users` is empty.
 - `configure-dev-bootstrap-admin.sh` — writes bootstrap admin email/password to gitignored `backend/.env`.
 - `configure-dev-smtp.sh` — Mailpit or legacy SMTP password delivery (Gmail: prefer `configure-dev-google-oauth.sh`).
-- `configure-dev-google-oauth.sh` — Sign in with Google OAuth for Gmail send + app login (no App Passwords).
+- `verify-campaign-detection.sh` — Jest + pytest unit checks for campaign detection logic.
+- `run-manual-phishing-campaign-test.sh` — end-to-end demo: submit two `secure-login.example-phish.test` reviews, wait for Celery, assert connected Neo4j subgraph (see [graph_test_manual_phishing_identification.md](../docs/graph_test_manual_phishing_identification.md)).
+- `curl-graph-api.sh` — login helper for authenticated `/graph/*` curl calls.
 
 Auth table reset and login recovery: [docs/auth_guide_dev_auth_recovery.md](../docs/auth_guide_dev_auth_recovery.md).
 

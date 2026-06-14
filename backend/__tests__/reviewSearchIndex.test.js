@@ -9,6 +9,7 @@ const {
   reviewToSearchDocument,
   indexReviewDocument,
   clearReviewIndex,
+  searchReviews,
 } = require("../src/search/reviewSearchIndex");
 
 describe("review search index", () => {
@@ -60,5 +61,29 @@ describe("review search index", () => {
     const result = await clearReviewIndex();
     expect(result.cleared).toBe(true);
     expect(del).toHaveBeenCalled();
+  });
+
+  it("searchReviews builds bool query with verdict and date filters", async () => {
+    const search = jest.fn().mockResolvedValue({
+      hits: { hits: [], total: { value: 0 } },
+    });
+    const exists = jest.fn().mockResolvedValue(true);
+    getElasticsearchClient.mockResolvedValue({
+      indices: { exists },
+      search,
+    });
+
+    await searchReviews({
+      query: "phish",
+      verdict: "likely_phishing",
+      updatedFrom: "2026-06-01T00:00:00Z",
+      subjectRegex: ".*verify.*",
+    });
+
+    expect(search).toHaveBeenCalled();
+    const body = search.mock.calls[0][0];
+    expect(body.query.bool.must[0].multi_match.query).toBe("phish");
+    expect(body.query.bool.filter.some((f) => f.term?.verdict === "likely_phishing")).toBe(true);
+    expect(body.query.bool.filter.some((f) => f.regexp?.subject)).toBe(true);
   });
 });

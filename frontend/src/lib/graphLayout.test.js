@@ -5,6 +5,7 @@ import {
   clampZoom,
   findCampaignIndexForDate,
   filterConnectedGraph,
+  filterToPrimaryComponent,
   hasDisplayableGraph,
   ZOOM_MIN,
   ZOOM_MAX,
@@ -91,5 +92,21 @@ describe("graphLayout helpers", () => {
       []
     );
     expect(lone.nodes).toHaveLength(0);
+  });
+
+  it("filterToPrimaryComponent hides secondary connected components", () => {
+    const nodes = [
+      { id: "campaign:x.test", type: "Campaign", label: "x" },
+      { id: "review:1", type: "Review", label: "r1" },
+      { id: "url:orphan", type: "Url", label: "u" },
+      { id: "domain:orphan.test", type: "Domain", label: "d" },
+    ];
+    const edges = [
+      { source: "review:1", target: "campaign:x.test", label: "PART_OF_CAMPAIGN" },
+      { source: "url:orphan", target: "domain:orphan.test", label: "RESOLVES_TO" },
+    ];
+    const filtered = filterToPrimaryComponent(nodes, edges, "campaign:x.test");
+    expect(filtered.nodes.map((n) => n.id)).toEqual(["campaign:x.test", "review:1"]);
+    expect(filtered.droppedComponentCount).toBe(2);
   });
 });

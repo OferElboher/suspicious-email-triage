@@ -1,31 +1,69 @@
 # Worker architecture and execution model
 
-Email analysis is intentionally slower than saving a web form, so the system gently separates **accepting a request** from **processing it**.
+Email analysis is intentionally slower than saving a web form, so the system **separates accepting a request from processing it**. When an analyst clicks **Queue analysis**, the browser receives a fast HTTP response while scoring runs in background workers. That pattern keeps the UI responsive and lets operators scale workers independently of the API.
 
-## Default path
+**Related:** [data_guide_kafka_events.md](data_guide_kafka_events.md), [arch_guide_system_comprehensive.md](arch_guide_system_comprehensive.md), [roadmap_tbd.md](roadmap_tbd.md).
+
+---
+
+## Default production-style path (email reviews)
+
+This is the path used for **every suspicious email** submitted through the React triage UI or `POST /reviews`:
 
 ```text
-Node API -> Kafka/Redpanda -> Python dispatcher -> Celery/Redis -> Python worker
+React UI → Node Express API → MongoDB (Review document, status=pending)
+         → Kafka topic email.review.ingested
+         → Python ai-kafka-dispatch (consumer)
+         → Celery task analyze_review (Redis broker)
+         → Python ai-celery worker
+         → MongoDB (analysisResult, status=completed)
+         → PostgreSQL (review_stats_events for charts)
+         → Node internal graph sync → Neo4j (verdict + campaigns)
+         → Elasticsearch re-index (optional full-text search)
 ```
 
-The Node API stores the review in MongoDB, records a compact PostgreSQL statistics event, publishes a Kafka ingest message, and **schedules a Neo4j graph sync**. The Python worker later reads the MongoDB review, updates the result, writes status statistics to PostgreSQL, and **calls the backend internal graph sync** so verdicts and campaigns are updated.
+| Step | Technology | What it does |
+|------|------------|--------------|
+| 1 | **Express** + **MongoDB** | Persists the raw review and returns immediately |
+| 2 | **Kafka / Redpanda** | Durable event bus — survives brief API restarts |
+| 3 | **kafka_dispatcher.py** | Validates JSON, calls `analyze_review.delay(reviewId)`, sends bad messages to DLQ |
+| 4 | **Celery** + **Redis** | Task queue — workers pull jobs asynchronously |
+| 5 | **analyze_review** (`ai_service/app/tasks.py`) | Rule engine + LLM stub/merge, writes final verdict |
+| 6 | **graph_sync.py** | HTTP callback to Node `POST /graph/internal/sync/:id` |
+| 7 | **Elasticsearch** (optional) | Background index update for keyword search |
 
-## Why separate processes
+**Yes — reviews arriving via Kafka are always handled asynchronously by Celery.** The API never blocks on LLM or rule-engine scoring. If Celery is down, reviews stay `pending` until a worker picks them up (or you enable the optional BullMQ fallback — see below).
 
-Separate processes make the system easier to operate:
+---
 
-- the API can stay responsive,
-- workers can be scaled separately,
-- scoring failures do not directly crash the browser-facing API,
-- statistics can be collected without scanning all MongoDB review documents.
+## Celery tasks in this repository
 
-## Legacy Node worker
+| Task name | Module | Trigger | Purpose |
+|-----------|--------|---------|---------|
+| **`analyze_review`** | `ai_service/app/tasks.py` | Kafka dispatcher after `POST /reviews` | **Production email scoring** — rule engine, LLM, merge, Mongo update, stats, Neo4j sync |
+| `ping` | `backend/core/tasks.py` | Manual / health demos | Django legacy smoke test |
+| `add` | `backend/core/tasks.py` | Django Kafka consumer on topic `ai_tasks` | Demo arithmetic task for the Django `/api/submit` pipeline |
 
-A Node BullMQ worker still exists under `backend/src/worker/`. It is optional and useful for local experiments or fallback work, but the default Docker Compose path is Kafka + Celery.
+The **email triage product** depends on **`analyze_review` only**. The Django `add` task illustrates the same *enqueue now, process later* pattern but is **not** wired to `/reviews`.
+
+---
+
+## Optional fallback: Node BullMQ worker
+
+When `USE_BULLMQ_ENQUEUE=true`, the Node API can enqueue the same scoring work to a **BullMQ** queue processed by `backend/src/worker/processReviewJob.js`. This duplicates logic in Node for local experiments. **Default Docker Compose uses Kafka + Celery**, not BullMQ.
+
+---
+
+## Legacy Django demo pipeline
+
+`POST /api/submit` (Django) publishes JSON to Kafka topic **`ai_tasks`**. A Django-side consumer forwards messages to Celery task **`add`**. This demonstrates distributed processing but does **not** analyze email reviews. Any HTTP verb (`GET`, `PUT`, …) may enqueue work — see `backend/core/views.py`.
+
+---
 
 ## Local dev reset
 
-Development mode includes a reset action that stops simulation, clears MongoDB reviews, truncates PostgreSQL statistics, flushes Redis queues/state, and recreates the local Kafka ingest topic. This keeps long-running demos from growing indefinitely.
+Development mode includes `POST /dev/reset-local-state` which stops simulation, clears MongoDB reviews, truncates PostgreSQL statistics, flushes Redis, recreates the Kafka ingest topic, and clears Neo4j. Use `POST /dev/prune-graph` to delete orphan graph nodes without wiping campaigns.
+
 ---
 
 ## Command you can run (this guide) {#run-one-command}
@@ -40,4 +78,3 @@ DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml logs -f --t
 ```
 
 </div>
-

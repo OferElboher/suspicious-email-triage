@@ -64,10 +64,19 @@ Requires `Authorization: Bearer <JWT>` after login.
 
 | Parameter | Meaning |
 |-----------|---------|
-| `keyword` | Case-insensitive match in `message` and full JSON line |
+| `keyword` | Case-insensitive match in `message` and full JSON line (unless `regex=true`) |
+| `regex` | When `true`, treat `keyword` as a JavaScript regular expression |
+| `messagePattern` | Regex applied to the `message` field only |
 | `topic` | Substring match on `topic` |
+| `level` | Exact match on `level` (`info`, `warn`, `error`, …) |
+| `service` | Exact match on optional `service` field |
 | `from`, `to` | ISO timestamps filtering `ts` |
 | `limit` | Max rows (default 200, maximum 2000) |
+| `offset` | Skip first N matching rows (pagination) |
+
+### React UI
+
+Signed-in users with **`logs.read`** (typically admin) see **Search unified logs** in the Triage workspace. The panel mirrors these query parameters and renders matching NDJSON lines.
 
 ### Example
 

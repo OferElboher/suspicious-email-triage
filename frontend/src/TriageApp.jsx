@@ -13,6 +13,8 @@ import SimulationPanel from "./views/SimulationPanel";
 import ThemeSelector from "./components/ThemeSelector";
 import RecentReviewsList from "./components/RecentReviewsList";
 import SearchIndexPanel from "./components/SearchIndexPanel";
+import ReviewSearchPanel from "./components/ReviewSearchPanel";
+import LogSearchPanel from "./components/LogSearchPanel";
 import { djangoAdminUrl } from "./lib/appUrls";
 import { effectiveVerdict, hasOverride } from "./lib/effectiveVerdict";
 
@@ -48,6 +50,7 @@ export default function TriageApp() {
   const canWrite = hasPermission("reviews.write");
   const canOverride = hasPermission("reviews.override");
   const canDevReset = hasPermission("dev.reset");
+  const canReadLogs = hasPermission("logs.read");
 
   const canAccessScreen = useCallback(
     (view) => {
@@ -425,6 +428,10 @@ export default function TriageApp() {
           )}
 
           {canDevReset && <SearchIndexPanel />}
+
+          {canReadReviews && <ReviewSearchPanel />}
+
+          {canReadLogs && <LogSearchPanel />}
 
           <RecentReviewsList
             reviews={reviews}

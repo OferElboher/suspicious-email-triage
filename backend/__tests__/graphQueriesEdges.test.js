@@ -65,4 +65,27 @@ describe("edgesFromNeo4j", () => {
     expect(filtered.nodes).toHaveLength(0);
     expect(filtered.droppedOrphanCount).toBe(1);
   });
+
+  it("filterConnectedSubgraph keeps only Campaign-anchored component", () => {
+    const nodes = [
+      { id: "campaign:secure-login.example-phish.test", type: "Campaign", label: "c" },
+      { id: "review:1", type: "Review", label: "r1" },
+      { id: "url:orphan", type: "Url", label: "orphan" },
+      { id: "domain:orphan.test", type: "Domain", label: "orphan.test" },
+    ];
+    const edges = [
+      { source: "review:1", target: "campaign:secure-login.example-phish.test", label: "PART_OF_CAMPAIGN" },
+      { source: "url:orphan", target: "domain:orphan.test", label: "RESOLVES_TO" },
+    ];
+    const filtered = filterConnectedSubgraph(
+      nodes,
+      edges,
+      "campaign:secure-login.example-phish.test"
+    );
+    expect(filtered.nodes.map((n) => n.id)).toEqual([
+      "campaign:secure-login.example-phish.test",
+      "review:1",
+    ]);
+    expect(filtered.droppedComponentCount).toBe(2);
+  });
 });

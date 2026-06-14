@@ -90,8 +90,9 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 **Implemented (dev free path):**
 
 - Unified JSON-lines `merged.log` (see logger module)
-- `GET /logs/search` — keyword/topic/time filter (`logs.read` permission)
+- `GET /logs/search` — keyword/topic/time/**level**/service/**regex** filters (`logs.read` permission)
 - `GET /ops/logs/summary` — topic/level counts for dashboards
+- React **Search unified logs** panel in Triage workspace (admin / `logs.read`)
 
 **Guides:** [ops_guide_central_logging.md](ops_guide_central_logging.md), [tech_postgresql_dbeaver_auth_logs.md](tech_postgresql_dbeaver_auth_logs.md)
 
@@ -141,11 +142,12 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 - Env: `ELASTICSEARCH_ENABLED`, `ELASTICSEARCH_URL`, `ELASTICSEARCH_REVIEWS_INDEX`
 - `GET /search/status`, `GET /search/reviews?q=`, `DELETE /search/index`
 - Background indexing via `scheduleSearchIndex` (create, override, Celery internal graph sync)
+- UI **Search past reviews** panel (keyword + verdict/status/sender/date/regex filters)
 - UI **Search index** panel with **Clear search index** for `dev.reset` + admin/developer (`SearchIndexPanel.jsx`)
 
 **Guide:** [search_guide_elasticsearch_reviews.md](search_guide_elasticsearch_reviews.md)
 
-**Remaining (paid / later):** Managed Elastic/OpenSearch cluster, TLS and auth, index lifecycle management, analyst search box in React UI, cross-tenant index isolation.
+**Remaining (paid / later):** Managed Elastic/OpenSearch cluster, TLS and auth, index lifecycle management, cross-tenant index isolation.
 
 ---
 
@@ -431,7 +433,8 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 - Per-campaign SVG with `role="img"`, native `<title>` on nodes/edges, mouse hover detail box
 - **Pan** (drag background), **zoom** toolbar, **resize** (bottom + right edges)
 - **First / Last / Prev / Next** campaign navigation; **Jump to date** by Neo4j `updatedAt`
-- **Connected subgraph only** — orphan Url/Domain nodes filtered (`filterConnectedSubgraph`); undirected Cypher `-` collects all relationship types including `PART_OF_CAMPAIGN`
+- **Connected subgraph only** — orphan Url/Domain nodes and **secondary disconnected components** filtered (`filterToPrimaryComponent` in `connectedGraphFilter.js`); dev route `POST /dev/prune-graph` removes stale zero-degree Neo4j rows
+- Automated manual test: `bash scripts/run-manual-phishing-campaign-test.sh EMAIL PASSWORD`
 - `GET /reviews/page-for-date` for Recent reviews date jump
 
 **Remaining:** Full keyboard traversal of individual SVG nodes (P1).
