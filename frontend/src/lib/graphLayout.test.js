@@ -5,6 +5,7 @@ import {
   clampZoom,
   findCampaignIndexForDate,
   filterConnectedGraph,
+  hasDisplayableGraph,
   ZOOM_MIN,
   ZOOM_MAX,
 } from "./graphLayout";
@@ -53,6 +54,24 @@ describe("graphLayout helpers", () => {
       "2026-05-24"
     );
     expect(idx).toBe(1);
+  });
+
+  it("hasDisplayableGraph is false when edges are empty even if nodes exist", () => {
+    expect(
+      hasDisplayableGraph(
+        [{ id: "campaign:x", type: "Campaign", label: "x" }],
+        []
+      )
+    ).toBe(false);
+    expect(
+      hasDisplayableGraph(
+        [
+          { id: "r:1", type: "Review", label: "r" },
+          { id: "c:1", type: "Campaign", label: "c" },
+        ],
+        [{ source: "r:1", target: "c:1", label: "PART_OF_CAMPAIGN" }]
+      )
+    ).toBe(true);
   });
 
   it("filterConnectedGraph drops nodes with no edges including lone Campaign nodes", () => {

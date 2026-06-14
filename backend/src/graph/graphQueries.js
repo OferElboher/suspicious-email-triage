@@ -33,6 +33,33 @@ function nodeToJson(node) {
 }
 
 /**
+ * Build UI edges from Cypher rows that RETURN a, rel, b (reliable — avoids elementId mapping gaps).
+ * Pattern: same approach as getVisualizationGraph; dedupe undirected pairs once per rel type.
+ */
+function edgesFromRelTripleRows(records) {
+  const seen = new Set();
+  return (records || [])
+    .filter(Boolean)
+    .map((record) => {
+      const a = record.get("a");
+      const b = record.get("b");
+      const rel = record.get("rel");
+      if (!a || !b || !rel) {
+        return null;
+      }
+      const source = nodeToJson(a).id;
+      const target = nodeToJson(b).id;
+      const key = `${[source, target].sort().join("\0")}\0${rel.type}`;
+      if (seen.has(key)) {
+        return null;
+      }
+      seen.add(key);
+      return { source, target, label: rel.type };
+    })
+    .filter(Boolean);
+}
+
+/**
  * Build UI edges from Neo4j nodes + relationships.
  * Driver v5 links relationships via startNodeElementId/endNodeElementId (not rel.start nodes).
  */
@@ -221,13 +248,13 @@ async function getCampaignSubgraph(indicator) {
     UNWIND rawNodes AS n
     WITH collect(DISTINCT n) AS nodes
     WHERE size(nodes) > 0
-    OPTIONAL MATCH (a)-[rel]-(b)
-    WHERE a IN nodes AND b IN nodes AND id(a) < id(b)
-    WITH nodes,
-         [r IN collect(DISTINCT rel) WHERE r IS NOT NULL] AS rels,
-         $indicator AS indicator,
-         size([x IN nodes WHERE x:Review]) AS reviewCount
-    RETURN nodes, rels, indicator, reviewCount
+    UNWIND nodes AS a
+    UNWIND nodes AS b
+    WITH nodes, a, b, $indicator AS indicator
+    WHERE id(a) < id(b)
+    MATCH (a)-[rel]-(b)
+    RETURN nodes, a, rel, b, indicator,
+           size([x IN nodes WHERE x:Review]) AS reviewCount
     `,
     { indicator: normalized }
   );
@@ -236,25 +263,24 @@ async function getCampaignSubgraph(indicator) {
     return { nodes: [], edges: [], indicator: normalized, reviewCount: 0 };
   }
 
-  const record = rows[0];
-  const nodeRecords = record.get("nodes") || [];
-  const relRecords = record.get("rels") || [];
+  const nodeRecords = rows[0].get("nodes") || [];
   const rawNodes = nodeRecords.filter(Boolean).map((n) => nodeToJson(n));
-  const rawEdges = edgesFromNeo4j(nodeRecords, relRecords);
+  const rawEdges = edgesFromRelTripleRows(rows);
   const { nodes, edges, droppedOrphanCount } = filterConnectedSubgraph(rawNodes, rawEdges);
 
   return {
     nodes,
     edges,
     droppedOrphanCount,
-    indicator: record.get("indicator") || normalized,
-    reviewCount: Number(record.get("reviewCount") || 0),
+    indicator: rows[0].get("indicator") || normalized,
+    reviewCount: Number(rows[0].get("reviewCount") || 0),
   };
 }
 
 module.exports = {
   nodeToJson,
   edgesFromNeo4j,
+  edgesFromRelTripleRows,
   filterConnectedSubgraph,
   getReviewNeighborhood,
   getVisualizationGraph,

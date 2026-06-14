@@ -49,6 +49,8 @@ The repository also contains a Django project tree. It can support Django settin
 
 This keeps developer machines safe and repeatable while still allowing staging and production to behave like real deployments.
 
+For a complete inventory of implemented capabilities, see [arch_guide_features_catalog.md](arch_guide_features_catalog.md).
+
 ## Sequence diagram
 
 ```mermaid

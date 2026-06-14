@@ -295,7 +295,9 @@ def test_graph_campaign_nav_includes_first_and_last():
     assert "onPointerDown" in canvas
     assert "graph-resize-handle--east" in canvas
     assert "filterConnectedSubgraph" in queries
-    assert "roadmap_tbd.md" in readme
+    assert "edgesFromRelTripleRows" in queries
+    assert "hasDisplayableGraph" in (ROOT / "frontend/src/lib/graphLayout.js").read_text(encoding="utf-8")
+    assert "arch_guide_features_catalog.md" in readme
     tbd = (ROOT / "docs/roadmap_tbd.md").read_text(encoding="utf-8")
     assert "## 8. Semantic search, LangChain" in tbd
     assert "## 9. Wide-column store" in tbd

@@ -55,8 +55,11 @@ describe("GraphView", () => {
         campaigns: [{ indicator: "evil.test", reviewCount: 3, kind: "shared_domain" }],
       })
       .mockResolvedValueOnce({
-        nodes: [{ id: "campaign:evil.test", label: "evil.test", type: "Campaign", properties: {} }],
-        edges: [],
+        nodes: [
+          { id: "review:1", label: "Phish", type: "Review", properties: {} },
+          { id: "campaign:evil.test", label: "evil.test", type: "Campaign", properties: {} },
+        ],
+        edges: [{ source: "review:1", target: "campaign:evil.test", label: "PART_OF_CAMPAIGN" }],
         indicator: "evil.test",
         reviewCount: 3,
       });
@@ -68,5 +71,23 @@ describe("GraphView", () => {
       "/graph/campaign-subgraph?indicator=evil.test"
     );
     expect(screen.getByText(/1 \/ 1: evil.test/)).toBeInTheDocument();
+  });
+
+  it("does not render SVG when subgraph has nodes but no edges", async () => {
+    getJson
+      .mockResolvedValueOnce({
+        campaigns: [{ indicator: "lonely.test", reviewCount: 2, kind: "shared_domain" }],
+      })
+      .mockResolvedValueOnce({
+        nodes: [{ id: "campaign:lonely.test", label: "lonely.test", type: "Campaign", properties: {} }],
+        edges: [],
+        indicator: "lonely.test",
+        reviewCount: 2,
+      });
+    render(<GraphView />);
+    await waitFor(() => {
+      expect(screen.getByText(/No connected relationships for this campaign yet/i)).toBeInTheDocument();
+    });
+    expect(screen.queryByRole("img", { name: /campaign relationship graph/i })).not.toBeInTheDocument();
   });
 });

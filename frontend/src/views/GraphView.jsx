@@ -5,7 +5,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getJson } from "../api/client";
 import CampaignGraphCanvas from "../components/CampaignGraphCanvas";
-import { clampZoom, findCampaignIndexForDate, sortCampaignsBySize, ZOOM_STEP } from "../lib/graphLayout";
+import {
+  clampZoom,
+  findCampaignIndexForDate,
+  hasDisplayableGraph,
+  sortCampaignsBySize,
+  ZOOM_STEP,
+} from "../lib/graphLayout";
 
 /** Empty subgraph placeholder before fetch completes. */
 const EMPTY_GRAPH = { nodes: [], edges: [], indicator: "", reviewCount: 0 };
@@ -121,6 +127,7 @@ export default function GraphView() {
   };
 
   const hasCampaigns = sortedCampaigns.length > 0;
+  const canShowGraph = hasDisplayableGraph(subgraph.nodes, subgraph.edges);
 
   return (
     <div className="graph-layout graph-layout--campaign">
@@ -221,10 +228,13 @@ export default function GraphView() {
             Neo4j subgraph via <code>GET /graph/campaign-subgraph</code>, SVG rendering (no D3).
           </p>
           {subgraphLoading && <p className="muted">Loading campaign graph…</p>}
-          {!subgraphLoading && subgraph.nodes.length === 0 && (
-            <p className="muted">No graph nodes for this campaign yet — try Refresh after reviews complete.</p>
+          {!subgraphLoading && !canShowGraph && (
+            <p className="muted">
+              No connected relationships for this campaign yet — wait for graph sync after analysis completes,
+              then click Refresh. Unlinked Neo4j nodes are hidden automatically.
+            </p>
           )}
-          {!subgraphLoading && subgraph.nodes.length > 0 && (
+          {!subgraphLoading && canShowGraph && (
             <CampaignGraphCanvas
               key={`${selectedCampaign?.indicator}-${viewEpoch}`}
               graph={subgraph}

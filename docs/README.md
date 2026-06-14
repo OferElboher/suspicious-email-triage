@@ -19,6 +19,7 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 | Goal | Document |
 |------|----------|
 | Non-technical product overview | [biz_guide_user.md](biz_guide_user.md) |
+| **Complete list of implemented features** | [arch_guide_features_catalog.md](arch_guide_features_catalog.md) |
 | Full technical handbook | [arch_guide_system_comprehensive.md](arch_guide_system_comprehensive.md) |
 | **Build → bootstrap → sign in** (after clone or rebuild) | [stack_guide_build_and_run.md](stack_guide_build_and_run.md) |
 | Windows 11 + WSL after reboot | [stack_guide_windows_startup.md](stack_guide_windows_startup.md) |
@@ -44,6 +45,7 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 
 ### Architecture & data
 
+- [arch_guide_features_catalog.md](arch_guide_features_catalog.md) — every implemented feature with technologies
 - [arch_guide_overview.md](arch_guide_overview.md) — component map
 - [arch_guide_worker_pipeline.md](arch_guide_worker_pipeline.md) — Kafka / Celery workers
 - [arch_guide_system_comprehensive.md](arch_guide_system_comprehensive.md) — end-to-end deep dive

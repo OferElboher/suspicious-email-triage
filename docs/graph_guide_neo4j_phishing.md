@@ -69,7 +69,7 @@ Internal sync is mounted **before** JWT middleware so workers do not need a user
 
 ## Environment variables
 
-Values for passwords and service tokens live in **`backend/.env.dev`** (committed template) and optional gitignored **`backend/.env`** (local overrides). **Do not copy secrets into documentation or chat logs** — open the files on your machine.
+Values for passwords and service tokens live in gitignored **`backend/dev.secrets`** (see [ops_guide_secrets_management.md](ops_guide_secrets_management.md)). Committed **`backend/.env.dev`** holds only non-sensitive hostnames and toggles. **Do not copy secrets into documentation or chat logs** — read variable names locally.
 
 | Variable | Purpose |
 |----------|---------|
@@ -131,9 +131,10 @@ Open the triage app → **Phishing graph** tab (`#graph` in the URL hash).
 1. `GraphView.jsx` calls **`GET /graph/campaigns`** and sorts by **`reviewCount`** (largest clusters first).
 2. If the list is empty, analysts see guidance only — **no graph canvas**.
 3. If campaigns exist, the UI loads **`GET /graph/campaign-subgraph?indicator=…`** for the selected campaign and renders:
-   - **Nodes** on a circle layout; **edges** as SVG lines (`edgesFromNeo4j` maps Neo4j driver v5 relationship element ids).
+   - **Nodes** on a circle layout; **edges** as SVG lines. The API builds edges from Cypher rows that return `(a)-[rel]-(b)` triples (`edgesFromRelTripleRows`) — this is more reliable than mapping collected relationship objects by Neo4j internal element ids.
    - **Pan**, **zoom**, **resize** (bottom + right edges); **Jump to date** for campaigns and reviews.
-   - Only **connected** nodes render — orphan Url/Domain rows (stale Neo4j data) are filtered server-side (`filterConnectedSubgraph`) and explained in the UI hint when dropped.
+   - **Display rule:** the SVG canvas appears only when **`hasDisplayableGraph`** is true — at least one node **and** one edge after orphan filtering. A lone `Campaign` node with zero relationships (sync still running, or stale Neo4j row) shows a helpful message instead of an empty circle.
+   - Orphan **Url** / **Domain** / **Campaign** rows with no incident edges are removed server-side (`filterConnectedSubgraph`) and again in the browser (`filterConnectedGraph`); the UI hint mentions when nodes were hidden.
    - **Hover tooltips** on nodes and relationships (`frontend/src/lib/graphLayout.js`).
 
 Technology: plain **SVG** + React pointer events (no D3/vis-network) for a small bundle and predictable maintenance.

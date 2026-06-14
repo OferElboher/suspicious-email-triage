@@ -98,6 +98,16 @@ export function findCampaignIndexForDate(campaigns, dateStr) {
  * Remove nodes with no incident edges (orphans from stale Neo4j rows or query gaps).
  * Every rendered node must have at least one edge — lone Campaign nodes are hidden.
  */
+/**
+ * True when the subgraph has at least one edge-linked node pair (safe to render SVG).
+ * GraphView uses this so empty edge arrays do not mount an blank canvas.
+ */
+export function hasDisplayableGraph(nodes, edges) {
+  const filtered = filterConnectedGraph(nodes, edges);
+  return filtered.nodes.length > 0 && filtered.edges.length > 0;
+}
+
+/** Drop orphan nodes and return only nodes that participate in at least one edge. */
 export function filterConnectedGraph(nodes, edges) {
   const list = nodes || [];
   const edgeList = edges || [];

@@ -72,4 +72,4 @@ bash scripts/reset-dev-admin-password.sh YOUR_EMAIL@example.com 'temp-admin-pswd
 
 ## Security note
 
-These shortcuts are for **local dev only**. Staging/production must use normal recovery flows and secrets management.
+These shortcuts are for **local dev only**. Staging/production must use normal recovery flows and [secrets management](ops_guide_secrets_management.md) (credentials live in gitignored `*.secrets` bundles, not in Git).
