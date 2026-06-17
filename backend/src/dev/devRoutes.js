@@ -17,6 +17,8 @@ const {
 const { resetStats } = require("../stats/statsPg");
 const { resetGraph } = require("../graph/neo4jClient");
 const { pruneOrphanGraphNodes } = require("../graph/graphMaintenance");
+const { publishReviewIngested } = require("../kafka/reviewIngestProducer");
+const { clearAnalyticsTables } = require("../analytics/snowflakeClient");
 const { writeSimulation, readSimulation, MAX_EVENTS_PER_MIN } = require("./simulationStore");
 const { applySimulationFromStore, clearLoop } = require("./simulationLoop");
 const { requirePermission, hasPermission } = require("../http/middleware/auth");
@@ -111,6 +113,25 @@ router.get("/simulation", requirePermission("dev.simulation"), async (req, res) 
   }
 });
 
+/** POST /dev/requeue-review/:id — republish Kafka ingest event when worker missed a review. */
+router.post("/requeue-review/:id", requirePermission("dev.reset"), async (req, res) => {
+  if (!req.auth.roles.includes("developer")) {
+    return res.status(403).json({ error: "developer_role_required" });
+  }
+  try {
+    const review = await Review.findById(req.params.id);
+    if (!review) {
+      return res.status(404).json({ error: "not_found" });
+    }
+    await publishReviewIngested(String(review._id));
+    logger.info("dev", "review requeued to kafka", { reviewId: String(review._id) });
+    res.json({ ok: true, reviewId: String(review._id), status: review.status });
+  } catch (err) {
+    logger.error("dev", "requeue review failed", { error: err.message });
+    res.status(500).json({ error: "requeue_failed" });
+  }
+});
+
 /** POST /dev/prune-graph — delete orphan Neo4j nodes (stale Url/Domain debris from old sync code). */
 router.post("/prune-graph", requirePermission("dev.reset"), async (req, res) => {
   if (!req.auth.roles.includes("developer")) {
@@ -137,6 +158,7 @@ router.post("/reset-local-state", requirePermission("dev.reset"), async (req, re
     redis: "pending",
     kafka: "pending",
     neo4j: "pending",
+    snowflake: "pending",
   };
 
   try {
@@ -166,6 +188,14 @@ router.post("/reset-local-state", requirePermission("dev.reset"), async (req, re
     } catch (err) {
       summary.neo4j = "reset_failed";
       logger.warn("dev", "neo4j reset failed", { error: err.message });
+    }
+
+    try {
+      const sf = await clearAnalyticsTables();
+      summary.snowflake = sf.ok ? "cleared" : "unavailable";
+    } catch (err) {
+      summary.snowflake = "reset_failed";
+      logger.warn("dev", "snowflake clear failed", { error: err.message });
     }
 
     logger.warn("dev", "local state reset", summary);

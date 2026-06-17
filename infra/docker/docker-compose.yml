@@ -96,6 +96,18 @@ services:
       - ../../backend:/app/backend:ro
     restart: unless-stopped
 
+  # mock-snowflake: in-memory Snowflake analytics API — no real AWS/cloud warehouse in dev.
+  mock-snowflake:
+    container_name: triage-mock-snowflake
+    build:
+      context: ../../
+      dockerfile: infra/mock-aws-snowflake/Dockerfile
+    ports:
+      - "4567:4567"
+    environment:
+      - MOCK_SNOWFLAKE_PORT=4567
+    restart: unless-stopped
+
   # elasticsearch: optional full-text search (single-node, 256MB heap — laptop-friendly).
   elasticsearch:
     container_name: triage-elasticsearch
@@ -130,6 +142,7 @@ services:
       - triage-logs:/var/log/triage
     depends_on:
       - mock-secrets-manager
+      - mock-snowflake
       - mongo
       - postgres
       - redis

@@ -12,6 +12,7 @@ const authRoutes = require("../api/auth");
 const healthRoutes = require("../api/health");
 const opsRoutes = require("../api/ops");
 const searchRoutes = require("../api/search");
+const analyticsRoutes = require("../api/analytics");
 const devRoutes = require("../dev/devRoutes");
 const { searchLogs } = require("../lib/logSearch");
 const { enqueueAfterCreate } = require("../services/reviewPipeline");
@@ -47,6 +48,7 @@ function createApp() {
   app.use("/metrics", metricsRoutes);
   app.use("/graph", graphRoutes);
   app.use("/search", searchRoutes);
+  app.use("/analytics", analyticsRoutes);
   app.use("/dev", devRoutes);
 
   app.get("/logs/search", requirePermission("logs.read"), async (req, res) => {

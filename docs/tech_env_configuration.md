@@ -55,6 +55,8 @@ Neo4j graph variables (`NEO4J_*`, `GRAPH_INTERNAL_TOKEN`, `BACKEND_INTERNAL_URL`
 
 LLM and PostgreSQL prompt context variables (`DISABLE_LLM`, `LLM_*`, `STATISTICS_PG_URL`) are documented in [data_guide_mock_llm.md](data_guide_mock_llm.md).
 
+Snowflake analytics variables (`SNOWFLAKE_ENABLED`, `SNOWFLAKE_URL`) are documented in [data_guide_snowflake_analytics.md](data_guide_snowflake_analytics.md).
+
 ---
 
 ## Backend usage

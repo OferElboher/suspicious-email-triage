@@ -64,6 +64,10 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 
 - [search_guide_elasticsearch_reviews.md](search_guide_elasticsearch_reviews.md) — review full-text + advanced filters (API + UI)
 
+### Analytics warehouse (Snowflake mock)
+
+- [data_guide_snowflake_analytics.md](data_guide_snowflake_analytics.md) — MongoDB → Snowflake ETL, reporting APIs, mock warehouse
+
 ### Operations logging
 
 - [ops_guide_central_logging.md](ops_guide_central_logging.md) — merged.log unified search (API + UI)

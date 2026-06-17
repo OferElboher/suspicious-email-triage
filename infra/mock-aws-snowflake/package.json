@@ -1,0 +1,6 @@
+{
+  "name": "mock-aws-snowflake",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local mock Snowflake SQL/analytics API for dev — no real cloud storage"
+}

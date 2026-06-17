@@ -180,6 +180,28 @@ If you are new to a topic (Kafka, Neo4j, JWT, etc.), follow the linked guides in
 
 ---
 
+## Snowflake analytics warehouse
+
+- **MongoDB → Snowflake ETL export**
+  - Exports completed reviews (verdicts, findings, overrides, processing metrics) to analytical tables after Celery analysis and analyst overrides.
+  - Node ETL mappers (`reviewToSnowflakeRow.js`), fire-and-forget scheduler (`snowflakeExport.js`), MongoDB source of truth unchanged.
+
+- **Mock AWS Snowflake service**
+  - In-memory HTTP warehouse on port 4567 — no real cloud storage; deterministic mock confidence scores for demos.
+  - Node HTTP server (`infra/mock-aws-snowflake`), Docker Compose `mock-snowflake` service.
+
+- **Analytical query APIs**
+  - Verdict distribution, phishing trends, override rate, processing stats, model performance — `metrics.read` permission.
+  - Express `/analytics/*`, mock aggregate endpoints.
+
+- **Dev operations**
+  - Batch backfill (`POST /analytics/snowflake/export-batch`), clear mock tables on `POST /dev/reset-local-state`.
+  - RBAC `dev.reset`, developer role.
+
+**Guide:** [data_guide_snowflake_analytics.md](data_guide_snowflake_analytics.md)
+
+---
+
 ## Operations, metrics, and logging
 
 - **Health probes (`/health/live`, `/health/ready`, `/health`)**

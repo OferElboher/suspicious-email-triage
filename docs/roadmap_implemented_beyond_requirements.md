@@ -136,6 +136,14 @@ The system extends beyond the assignment by introducing:
 - Early-stage production-ready patterns (worker separation, queueing)
 
 These additions prepare the system for real-world deployment scenarios beyond the scope of the original exercise.
+
+---
+
+## Snowflake analytics warehouse (mock)
+
+- ETL export of completed reviews from MongoDB to in-memory mock Snowflake tables
+- Reporting APIs: verdict distribution, phishing trends, override rates, processing stats
+- See [data_guide_snowflake_analytics.md](data_guide_snowflake_analytics.md)
 ---
 
 ## Command you can run (this guide) {#run-one-command}

@@ -151,6 +151,33 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 
 ---
 
+### 1.7 Snowflake analytics warehouse — **implemented (free dev path)**
+
+**User value:** SOC managers and data analysts run **trend reports** (phishing volume, verdict mix, override rates, processing latency) over months of reviews without scanning MongoDB documents row-by-row.
+
+**Exact demand:**
+
+- Export completed reviews with AI verdicts, findings, confidence proxy, processing metrics, and analyst overrides.
+- Analytical tables optimized for reporting (denormalized OLAP), not transactional email storage.
+- Query APIs for verdict distribution, phishing trends, override rate, model performance, processing p95.
+- MongoDB remains operational; Snowflake (mock in dev) is the reporting warehouse.
+
+**Tech pattern:** ETL export after Celery completion; HTTP client to mock Snowflake SQL API; tables `REVIEWS_ANALYTICS`, `PROCESSING_METRICS`, `OVERRIDE_EVENTS`.
+
+**Implemented (dev free path):**
+
+- Docker service `mock-snowflake` (`infra/mock-aws-snowflake`, port 4567)
+- Env: `SNOWFLAKE_ENABLED`, `SNOWFLAKE_URL`
+- Auto-export via `scheduleSnowflakeExport` on graph internal sync and analyst override
+- REST: `/analytics/snowflake/status`, `/analytics/verdict-distribution`, `/analytics/phishing-trends`, etc.
+- Dev batch export and clear on reset
+
+**Guide:** [data_guide_snowflake_analytics.md](data_guide_snowflake_analytics.md)
+
+**Remaining (paid / later):** Real Snowflake account, Snowpipe streaming ingest, dbt models in cloud, BI tool connectors (Looker, Tableau).
+
+---
+
 ### 1.5 Backups and restore (P0) — **partial (dev Docker volumes)**
 
 **User value:** Ransomware or bad deploy does not permanently lose reviews and graph intelligence.
@@ -527,6 +554,7 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 | Graph | Neo4j | Phishing campaigns |
 | Key-value | Redis | Queues, cache |
 | Search | Elasticsearch | Review full-text search |
+| Analytics warehouse | Snowflake (mock dev) | OLAP reporting export from MongoDB |
 
 **Gap:** **Wide-column / column-family** stores (Apache Cassandra, ScyllaDB) — optimized for append-only, time-partitioned writes at very high volume. Not used yet.
 
@@ -548,7 +576,7 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 
 ## Summary for managers
 
-**Already delivered (free to run locally):** async triage pipeline, RBAC, analytics charts, Neo4j phishing graph, Elasticsearch review search (optional), mock LLM, Mailpit email, Google OAuth options.
+**Already delivered (free to run locally):** async triage pipeline, RBAC, analytics charts, Neo4j phishing graph, Elasticsearch review search (optional), Snowflake analytics export (mock), mock LLM, Mailpit email, Google OAuth options.
 
 **Next low-cost wins (mostly code, no new vendors):** audit trail polish, case management, CSV export, SPF/DKIM display, CI hardening.
 
@@ -576,7 +604,7 @@ These items **cannot** be fully replicated in production **for free** (mock/loca
 | **Kafka managed (Confluent Cloud)** | Throughput + SLA | Confluent, Redpanda Cloud | Local Redpanda container |
 | **WAF + DDoS protection** | Edge security | Cloudflare Pro, AWS WAF | None in local dev |
 | **SOC2 audit tooling** | Compliance platform | Vanta, Drata | Spreadsheet + policies (manual) |
-| **SMS / voice MFA** | Per-message fees | Twilio | Email-only reset (Mailpit dev) |
+| **Snowflake (hosted warehouse)** | Per-second compute + storage | Snowflake Enterprise | `mock-snowflake` in-memory Docker |
 
 When planning budget, treat **P0 security and backups** on managed databases as the first paid line item before feature expansion.
 

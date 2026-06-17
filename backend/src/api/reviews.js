@@ -10,6 +10,7 @@ const logger = require("../lib/logger");
 const { enqueueAfterCreate } = require("../services/reviewPipeline");
 const { scheduleGraphSync } = require("../services/graphSyncService");
 const { scheduleSearchIndex } = require("../services/reviewSearchSync");
+const { scheduleSnowflakeExport } = require("../analytics/snowflakeExport");
 const { effectiveVerdict } = require("../lib/effectiveVerdict");
 const { dayBoundsUtc, pageIndexForDate } = require("../lib/dateNav");
 const { incrementReviewsCreated } = require("../lib/appMetrics");
@@ -70,6 +71,7 @@ router.post("/:id/override", requirePermission("reviews.override"), async (req, 
     await review.save();
     scheduleGraphSync(review._id);
     scheduleSearchIndex(review._id);
+    scheduleSnowflakeExport(review._id);
     logger.info("reviews", "override saved", { id: String(review._id) });
     return res.json({ ok: true, review });
   } catch (err) {

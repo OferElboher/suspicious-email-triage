@@ -121,17 +121,15 @@ cd ~/suspicious-email-triage
 bash scripts/verify-campaign-detection.sh
 ```
 
-**Full automated manual test** (submits both demo emails, waits for Celery, verifies connected subgraph):
+**Full automated manual test** (submits both demo emails, waits for Celery with progress output, re-queues Kafka if stuck, verifies connected subgraph):
 
 ```bash
 bash scripts/run-manual-phishing-campaign-test.sh YOUR_EMAIL YOUR_PASSWORD
 ```
 
-Optional: prune stale orphan Neo4j nodes first (also runs automatically in the script):
+The script prints `status=` on each poll (so it does not appear frozen). If reviews stay `pending`, ensure `ai-celery` and `ai-kafka-dispatch` are running — the script runs a preflight check and can re-publish the Kafka ingest event via `POST /dev/requeue-review/:id` after five pending polls.
 
-```bash
-curl -sS -X POST -H "Authorization: Bearer TOKEN" http://localhost:3000/dev/prune-graph
-```
+Optional environment variables: `ATTEMPTS=40`, `POLL_SECS=3`, `REQUEUE_AFTER=5` (set `REQUEUE_AFTER=0` to disable auto-requeue).
 
 ---
 
