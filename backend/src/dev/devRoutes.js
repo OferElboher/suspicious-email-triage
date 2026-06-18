@@ -1,6 +1,11 @@
 /**
  * Dev-only HTTP surface for simulation controls and capability advertisement to the SPA.
- * Requires developer role permissions; mutating routes also require dev deployment slice.
+ *
+ * Pattern: Express Router mounted at `/dev` in createApp.js; `requirePermission` middleware
+ * checks PostgreSQL-backed permission codes; `isAdminOrDeveloper` allows bootstrap admin OR
+ * dedicated developer role for mutating dev tools (simulation, reset, graph prune, requeue).
+ *
+ * Technology: Redis (simulation state), KafkaJS (topic recreate on reset), Mongo/Postgres/Neo4j clients.
  */
 const express = require("express");
 const { Kafka, logLevel } = require("kafkajs");
@@ -25,6 +30,11 @@ const { requirePermission, hasPermission } = require("../http/middleware/auth");
 
 /** router: dev-only Express routes mounted at /dev. */
 const router = express.Router();
+
+/** Bootstrap admin and developer roles both satisfy mutating dev-route guards. */
+function isAdminOrDeveloper(req) {
+  return req.auth.roles.includes("developer") || req.auth.roles.includes("admin");
+}
 
 /** resetKafkaTopic clears local dev Kafka backlog by recreating ingest + DLQ topics. */
 async function resetKafkaTopic() {
@@ -58,9 +68,9 @@ async function resetKafkaTopic() {
 router.get("/features", (req, res) => {
   const devEnv = isDevDeployment();
   const canSimulate =
-    devEnv && hasPermission(req.auth, "dev.simulation") && req.auth.roles.includes("developer");
+    devEnv && hasPermission(req.auth, "dev.simulation") && isAdminOrDeveloper(req);
   const canReset =
-    devEnv && hasPermission(req.auth, "dev.reset") && req.auth.roles.includes("developer");
+    devEnv && hasPermission(req.auth, "dev.reset") && isAdminOrDeveloper(req);
   res.json({
     deployment: devEnv ? "dev" : "non-dev",
     simulation: canSimulate,
@@ -82,8 +92,8 @@ router.use((req, res, next) => {
 
 /** POST /dev/simulation { enabled, eventsPerMinute } — updates Redis and restarts the loop. */
 router.post("/simulation", requirePermission("dev.simulation"), async (req, res) => {
-  if (!req.auth.roles.includes("developer")) {
-    return res.status(403).json({ error: "developer_role_required" });
+  if (!isAdminOrDeveloper(req)) {
+    return res.status(403).json({ error: "admin_or_developer_required" });
   }
   try {
     const saved = await writeSimulation({
@@ -101,8 +111,8 @@ router.post("/simulation", requirePermission("dev.simulation"), async (req, res)
 
 /** GET /dev/simulation — read current simulation settings from Redis. */
 router.get("/simulation", requirePermission("dev.simulation"), async (req, res) => {
-  if (!req.auth.roles.includes("developer")) {
-    return res.status(403).json({ error: "developer_role_required" });
+  if (!isAdminOrDeveloper(req)) {
+    return res.status(403).json({ error: "admin_or_developer_required" });
   }
   try {
     const simulation = await readSimulation();
@@ -115,8 +125,8 @@ router.get("/simulation", requirePermission("dev.simulation"), async (req, res) 
 
 /** POST /dev/requeue-review/:id — republish Kafka ingest event when worker missed a review. */
 router.post("/requeue-review/:id", requirePermission("dev.reset"), async (req, res) => {
-  if (!req.auth.roles.includes("developer")) {
-    return res.status(403).json({ error: "developer_role_required" });
+  if (!isAdminOrDeveloper(req)) {
+    return res.status(403).json({ error: "admin_or_developer_required" });
   }
   try {
     const review = await Review.findById(req.params.id);
@@ -134,8 +144,8 @@ router.post("/requeue-review/:id", requirePermission("dev.reset"), async (req, r
 
 /** POST /dev/prune-graph — delete orphan Neo4j nodes (stale Url/Domain debris from old sync code). */
 router.post("/prune-graph", requirePermission("dev.reset"), async (req, res) => {
-  if (!req.auth.roles.includes("developer")) {
-    return res.status(403).json({ error: "developer_role_required" });
+  if (!isAdminOrDeveloper(req)) {
+    return res.status(403).json({ error: "admin_or_developer_required" });
   }
   try {
     const result = await pruneOrphanGraphNodes();
@@ -148,8 +158,8 @@ router.post("/prune-graph", requirePermission("dev.reset"), async (req, res) => 
 
 /** POST /dev/reset-local-state — clears local DBs/queues and disables simulation. */
 router.post("/reset-local-state", requirePermission("dev.reset"), async (req, res) => {
-  if (!req.auth.roles.includes("developer")) {
-    return res.status(403).json({ error: "developer_role_required" });
+  if (!isAdminOrDeveloper(req)) {
+    return res.status(403).json({ error: "admin_or_developer_required" });
   }
   const summary = {
     simulation: "disabled",

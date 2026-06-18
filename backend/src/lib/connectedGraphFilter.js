@@ -9,6 +9,24 @@
  * Technology: plain JavaScript Sets + BFS (no graph library) so Jest tests stay fast.
  */
 
+/**
+ * Collapse duplicate UI node rows that share the same `id` (e.g. two Neo4j Sender nodes
+ * with the same email map to `sender:foo@test`). React keys and adjacency assume ids are unique.
+ * @returns {{ nodes: object[], droppedDuplicateCount: number }}
+ */
+function dedupeNodesById(nodes) {
+  const byId = new Map();
+  let droppedDuplicateCount = 0;
+  for (const node of nodes || []) {
+    if (byId.has(node.id)) {
+      droppedDuplicateCount += 1;
+      continue;
+    }
+    byId.set(node.id, node);
+  }
+  return { nodes: [...byId.values()], droppedDuplicateCount };
+}
+
 /** Build an undirected adjacency list from UI edge rows `{ source, target }`. */
 function buildAdjacency(nodes, edges) {
   const adj = new Map();
@@ -79,7 +97,8 @@ function filterZeroDegreeNodes(nodes, edges) {
  * Anchor priority: explicit `anchorNodeId` → first `Campaign` node → largest component.
  */
 function filterToPrimaryComponent(nodes, edges, anchorNodeId = null) {
-  const zeroPass = filterZeroDegreeNodes(nodes, edges);
+  const deduped = dedupeNodesById(nodes);
+  const zeroPass = filterZeroDegreeNodes(deduped.nodes, edges);
   const { nodes: connected, edges: connectedEdges } = zeroPass;
   if (!connected.length) {
     return { ...zeroPass, droppedComponentCount: 0 };
@@ -122,7 +141,8 @@ function filterToPrimaryComponent(nodes, edges, anchorNodeId = null) {
   return {
     nodes: kept,
     edges: keptEdges,
-    droppedOrphanCount: zeroPass.droppedOrphanCount,
+    droppedOrphanCount: zeroPass.droppedOrphanCount + deduped.droppedDuplicateCount,
+    droppedDuplicateCount: deduped.droppedDuplicateCount,
     droppedComponentCount: connected.length - kept.length,
   };
 }
@@ -130,6 +150,7 @@ function filterToPrimaryComponent(nodes, edges, anchorNodeId = null) {
 module.exports = {
   buildAdjacency,
   bfsReachable,
+  dedupeNodesById,
   filterZeroDegreeNodes,
   filterToPrimaryComponent,
 };

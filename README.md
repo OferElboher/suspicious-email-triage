@@ -21,6 +21,7 @@ This repository contains a **suspicious email triage workbench**: analysts submi
 ## Developer hygiene
 
 - Authentication & RBAC: `docs/auth_guide_rbac.md` (bootstrap admin: your email via `scripts/configure-dev-bootstrap-admin.sh`, temp password `temp-admin-pswd`)
+- **Obtain JWT for API/curl:** `docs/auth_guide_obtain_jwt.md`
 - Auth tables reset / login recovery: `docs/auth_guide_dev_auth_recovery.md`
 - Local setup: `npm run setup:dev`
 - Dev setup + image build: `npm run build:dev` (or `bash scripts/setup-and-build-dev.sh`)

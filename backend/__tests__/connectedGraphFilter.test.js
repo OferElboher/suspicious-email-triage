@@ -32,4 +32,24 @@ describe("connectedGraphFilter", () => {
     expect(filtered.nodes.map((n) => n.id)).toEqual(["campaign:main.test", "review:1"]);
     expect(filtered.droppedComponentCount).toBe(2);
   });
+
+  it("filterToPrimaryComponent dedupes nodes with the same id before rendering", () => {
+    const nodes = [
+      { id: "sender:attacker@test", type: "Sender", label: "attacker@test" },
+      { id: "sender:attacker@test", type: "Sender", label: "attacker@test" },
+      { id: "review:1", type: "Review", label: "r1" },
+      { id: "campaign:main.test", type: "Campaign", label: "main" },
+    ];
+    const edges = [
+      { source: "sender:attacker@test", target: "review:1", label: "SENT" },
+      { source: "review:1", target: "campaign:main.test", label: "PART_OF_CAMPAIGN" },
+    ];
+    const filtered = filterToPrimaryComponent(nodes, edges, "campaign:main.test");
+    expect(filtered.nodes.map((n) => n.id)).toEqual([
+      "sender:attacker@test",
+      "review:1",
+      "campaign:main.test",
+    ]);
+    expect(filtered.droppedDuplicateCount).toBe(1);
+  });
 });

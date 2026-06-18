@@ -460,7 +460,9 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 - Per-campaign SVG with `role="img"`, native `<title>` on nodes/edges, mouse hover detail box
 - **Pan** (drag background), **zoom** toolbar, **resize** (bottom + right edges)
 - **First / Last / Prev / Next** campaign navigation; **Jump to date** by Neo4j `updatedAt`
-- **Connected subgraph only** — orphan Url/Domain nodes and **secondary disconnected components** filtered (`filterToPrimaryComponent` in `connectedGraphFilter.js`); dev route `POST /dev/prune-graph` removes stale zero-degree Neo4j rows
+- **Connected subgraph only** — orphan Url/Domain nodes and **secondary disconnected components** filtered (`filterToPrimaryComponent` in `connectedGraphFilter.js`); **duplicate UI ids** collapsed when legacy Neo4j rows share the same email/URL/domain key (`dedupeNodesById`)
+- Dev route `POST /dev/prune-graph` **merges** duplicate Sender/Url/Domain Neo4j nodes then **DETACH DELETE**s zero-degree orphans (`graphMaintenance.js`)
+- Bootstrap **admin** or **developer** may call dev reset/prune/simulation routes (permission + role gate in `devRoutes.js`)
 - Automated manual test: `bash scripts/run-manual-phishing-campaign-test.sh EMAIL PASSWORD`
 - `GET /reviews/page-for-date` for Recent reviews date jump
 

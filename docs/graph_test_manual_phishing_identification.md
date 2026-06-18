@@ -31,6 +31,54 @@ DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --bui
 
 ---
 
+## After `reset-local-state` — verify the stack end-to-end
+
+Running **`POST /dev/reset-local-state`** clears Mongo reviews, Neo4j campaigns, Redis queues, Kafka backlog, PostgreSQL chart stats, and mock Snowflake analytics. That is expected — **Phishing graph** and **Recent reviews** will be empty until you create new data.
+
+### 1. Confirm dev panels are available (simulation mode)
+
+1. Rebuild backend if you have not since pulling latest code:
+
+   ```bash
+   DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --build --force-recreate backend
+   ```
+
+2. Sign in at `http://localhost:3001` and scroll the Triage workspace — you should see the dashed **Simulation mode (development)** card (bootstrap **admin** qualifies; see [stack_guide_versions_builds.md](stack_guide_versions_builds.md)).
+
+3. Leave simulation **disabled** while testing the phishing graph manually (synthetic rows clutter Recent reviews).
+
+### 2. Run the phishing graph verification test
+
+This submits two demo emails, waits for Celery analysis, optionally prunes Neo4j duplicates, and asserts the campaign subgraph has **no disconnected nodes**:
+
+```bash
+bash scripts/run-manual-phishing-campaign-test.sh YOUR_EMAIL@example.com YOUR_PASSWORD
+```
+
+Ensure workers are up:
+
+```bash
+DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d \
+  backend ai-celery ai-kafka-dispatch neo4j
+```
+
+Then open **Phishing graph** → **Refresh**. Pass criteria: campaign `secure-login.example-phish.test` with **2** reviews, connected SVG edges, **no** duplicate React key warnings in the browser console.
+
+Step-by-step manual checklist: [graph_test_manual_phishing_identification.md](graph_test_manual_phishing_identification.md).
+
+### 3. Smoke-check other UI areas
+
+| Area | What to verify |
+|------|----------------|
+| **Triage workspace** | Submit one review → Result panel reaches `completed` |
+| **Recent reviews** | New row appears; pagination and date jump work |
+| **Analytics** (`/#analytics`) | Charts load (may be empty until events exist) |
+| **Search past reviews** | Keyword search returns indexed rows after analysis |
+| **Search unified logs** | `GET /logs/search` panel returns JSON hits |
+| **Override verdict** | Dropdown saves; Recent reviews shows `(override)` |
+
+---
+
 ## Prerequisites
 
 1. Signed in at `http://localhost:3001` — [stack_guide_build_and_run.md](stack_guide_build_and_run.md).
@@ -172,7 +220,7 @@ A **campaign** means: **two or more** reviews with effective verdict **`suspicio
 - **Detected campaigns** lists `secure-login.example-phish.test` with **2** linked reviews.
 - Graph SVG shows **nodes and connecting lines (edges)** between senders, reviews, URLs, and domains.
 - **Drag** the graph to pan; **Zoom − / +** and **Reset view**; **drag the bottom or right edge** to resize the viewport.
-- Unconnected nodes are **hidden** automatically (stale Url/Domain rows in Neo4j); the hint under the graph explains when orphans were dropped.
+- Unconnected nodes are **hidden** automatically (stale Url/Domain rows in Neo4j, secondary components, or duplicate Sender ids from repeated test runs); the hint under the graph explains when orphans or duplicates were dropped. If the browser console shows **duplicate React key** warnings for `sender:…`, run `POST /dev/prune-graph` then refresh.
 
 **Fail — no campaigns:**
 

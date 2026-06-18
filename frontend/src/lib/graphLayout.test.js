@@ -109,4 +109,20 @@ describe("graphLayout helpers", () => {
     expect(filtered.nodes.map((n) => n.id)).toEqual(["campaign:x.test", "review:1"]);
     expect(filtered.droppedComponentCount).toBe(2);
   });
+
+  it("filterToPrimaryComponent dedupes nodes with the same id", () => {
+    const nodes = [
+      { id: "sender:a@test", type: "Sender", label: "a" },
+      { id: "sender:a@test", type: "Sender", label: "a-dup" },
+      { id: "review:1", type: "Review", label: "r" },
+      { id: "campaign:x.test", type: "Campaign", label: "x" },
+    ];
+    const edges = [
+      { source: "sender:a@test", target: "review:1", label: "SENT" },
+      { source: "review:1", target: "campaign:x.test", label: "PART_OF_CAMPAIGN" },
+    ];
+    const filtered = filterToPrimaryComponent(nodes, edges, "campaign:x.test");
+    expect(filtered.nodes.filter((n) => n.id === "sender:a@test")).toHaveLength(1);
+    expect(filtered.droppedDuplicateCount).toBe(1);
+  });
 });

@@ -94,6 +94,20 @@ export function findCampaignIndexForDate(campaigns, dateStr) {
   return idx >= 0 ? idx : null;
 }
 
+/** Collapse duplicate node rows that share the same UI id (mirrors backend connectedGraphFilter.js). */
+function dedupeNodesById(nodes) {
+  const byId = new Map();
+  let droppedDuplicateCount = 0;
+  for (const node of nodes || []) {
+    if (byId.has(node.id)) {
+      droppedDuplicateCount += 1;
+      continue;
+    }
+    byId.set(node.id, node);
+  }
+  return { nodes: [...byId.values()], droppedDuplicateCount };
+}
+
 /** Build undirected adjacency for BFS component selection (mirrors backend connectedGraphFilter.js). */
 function buildAdjacency(nodes, edges) {
   const adj = new Map();
@@ -132,7 +146,8 @@ function bfsReachable(adj, startId) {
 
 /** Drop zero-degree nodes, then keep Campaign-anchored (or largest) connected component. */
 export function filterToPrimaryComponent(nodes, edges, anchorNodeId = null) {
-  const zeroPass = filterConnectedGraph(nodes, edges);
+  const deduped = dedupeNodesById(nodes);
+  const zeroPass = filterConnectedGraph(deduped.nodes, edges);
   const { nodes: connected, edges: connectedEdges } = zeroPass;
   if (!connected.length) {
     return { ...zeroPass, droppedComponentCount: 0 };
@@ -175,7 +190,8 @@ export function filterToPrimaryComponent(nodes, edges, anchorNodeId = null) {
   return {
     nodes: kept,
     edges: keptEdges,
-    droppedOrphanCount: zeroPass.droppedOrphanCount,
+    droppedOrphanCount: zeroPass.droppedOrphanCount + deduped.droppedDuplicateCount,
+    droppedDuplicateCount: deduped.droppedDuplicateCount,
     droppedComponentCount: connected.length - kept.length,
   };
 }

@@ -23,8 +23,9 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 | Full technical handbook | [arch_guide_system_comprehensive.md](arch_guide_system_comprehensive.md) |
 | **Build → bootstrap → sign in** (after clone or rebuild) | [stack_guide_build_and_run.md](stack_guide_build_and_run.md) |
 | Windows 11 + WSL after reboot | [stack_guide_windows_startup.md](stack_guide_windows_startup.md) |
-| Dev builds, simulation, ports | [stack_guide_versions_builds.md](stack_guide_versions_builds.md) |
+| Dev builds, simulation, ports, post-reset verification | [stack_guide_versions_builds.md](stack_guide_versions_builds.md), [graph_test_manual_phishing_identification.md](graph_test_manual_phishing_identification.md) |
 | Login, roles, JWT, recovery | [auth_guide_rbac.md](auth_guide_rbac.md) |
+| **Obtain a JWT for curl / scripts / Postman** | [auth_guide_obtain_jwt.md](auth_guide_obtain_jwt.md) |
 | REST API reference | [api_reference_rest.md](api_reference_rest.md) |
 | Run tests / pre-push | [stack_guide_running_tests.md](stack_guide_running_tests.md), [stack_guide_pre_push_verification.md](stack_guide_pre_push_verification.md) |
 
@@ -35,6 +36,7 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 ### Authentication & users
 
 - [auth_guide_rbac.md](auth_guide_rbac.md) — JWT login, RBAC, protected routes
+- [auth_guide_obtain_jwt.md](auth_guide_obtain_jwt.md) — all ways to get a JWT (`curl`, UI, scripts, OAuth, Postman)
 - [stack_guide_build_and_run.md](stack_guide_build_and_run.md) — Docker build, bootstrap, login recovery
 - [auth_guide_dev_admin_credentials.md](auth_guide_dev_admin_credentials.md) — bootstrap admin
 - [auth_guide_dev_auth_recovery.md](auth_guide_dev_auth_recovery.md) — reset auth tables

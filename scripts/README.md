@@ -14,7 +14,7 @@
 - `configure-dev-smtp.sh` — Mailpit or legacy SMTP password delivery (Gmail: prefer `configure-dev-google-oauth.sh`).
 - `verify-campaign-detection.sh` — Jest + pytest unit checks for campaign detection logic.
 - `run-manual-phishing-campaign-test.sh` — end-to-end demo: submit two `secure-login.example-phish.test` reviews, wait for Celery, assert connected Neo4j subgraph (see [graph_test_manual_phishing_identification.md](../docs/graph_test_manual_phishing_identification.md)).
-- `curl-graph-api.sh` — login helper for authenticated `/graph/*` curl calls.
+- `curl-graph-api.sh` — login helper for authenticated `/graph/*` curl calls (see [auth_guide_obtain_jwt.md](../docs/auth_guide_obtain_jwt.md)).
 
 Auth table reset and login recovery: [docs/auth_guide_dev_auth_recovery.md](../docs/auth_guide_dev_auth_recovery.md).
 

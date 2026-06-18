@@ -27,8 +27,8 @@ Permission codes enforced by the API:
 - `reviews.write` — create reviews
 - `reviews.override` — save analyst overrides
 - `metrics.read` — analytics charts (`/metrics/*`)
-- `dev.simulation` — simulation controls (requires **`developer` role** and dev deployment)
-- `dev.reset` — reset local dev state (requires **`developer` role** and dev deployment)
+- `dev.simulation` — simulation controls (requires **`admin` or `developer` role** and `DEPLOYMENT_ENV=dev`)
+- `dev.reset` — reset local dev state, prune graph, requeue reviews (requires **`admin` or `developer` role** and dev deployment)
 - `admin.users` — provision/manage users
 - `logs.read` — merged log search
 
@@ -60,6 +60,8 @@ Change the password after first login in non-local environments. Full recovery f
 4. The UI stores the JWT in `localStorage` and loads `/auth/me` for roles/permissions.
 
 Use **Forgot password** to set a new password — see [auth_guide_dev_admin_credentials.md](auth_guide_dev_admin_credentials.md).
+
+For a full list of ways to copy a JWT into `curl`, scripts, or Postman, see [auth_guide_obtain_jwt.md](auth_guide_obtain_jwt.md).
 
 ## Sign in (API / curl)
 
@@ -156,7 +158,7 @@ Summary:
 | `POST /reviews/:id/override` | `reviews.override` |
 | `GET /metrics/*` | `metrics.read` |
 | `GET /dev/features` | authenticated (returns flags for current user) |
-| `GET/POST /dev/simulation`, `POST /dev/reset-local-state` | `dev.*` permission + **`developer` role** + dev deployment |
+| `GET/POST /dev/simulation`, `POST /dev/reset-local-state`, `POST /dev/prune-graph` | `dev.*` permission + **`admin` or `developer` role** + dev deployment |
 | `GET /logs/search` | `logs.read` |
 
 User CRUD is handled in **Django admin** (`/admin/` on port 8000 in dev), not Node REST routes. See [auth_guide_django_admin_users.md](auth_guide_django_admin_users.md).
@@ -200,7 +202,7 @@ See `backend/.env.dev` for local defaults. For real inbox delivery in dev, see [
 - [auth_guide_django_admin_users.md](auth_guide_django_admin_users.md) — Django admin user CRUD
 - [ui_guide_analytics_charts.md](ui_guide_analytics_charts.md) — Analytics & graphs charts
 - [auth_guide_dev_admin_credentials.md](auth_guide_dev_admin_credentials.md) — configure email, change/recover password
-- `stack_guide_versions_builds.md` — dev simulation (developer role)
+- `stack_guide_versions_builds.md` — dev simulation (admin or developer role)
 - `tech_env_configuration.md` — broader environment variable reference
 - `tech_postgresql_dbeaver_auth_logs.md` — DBeaver refresh for auth tables; unified log UI (lnav, glogg, API search)
 - `biz_guide_user.md` — non-technical product overview (sign-in now required)

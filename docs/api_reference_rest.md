@@ -37,6 +37,8 @@ If the token is valid but your user lacks a required permission, you get **403**
 2. Store the token (the React app keeps it in memory/local storage).
 3. Pass `Authorization: Bearer YOUR_JWT_TOKEN` on subsequent calls.
 
+**Detailed guide (curl, browser, scripts, OAuth, Postman):** [auth_guide_obtain_jwt.md](auth_guide_obtain_jwt.md).
+
 JWT lifetime defaults to **12 hours** (`JWT_TTL_HOURS` env). The login response includes `expiresIn` in seconds.
 
 ### GRAPH_INTERNAL_TOKEN (service-to-service)
@@ -74,8 +76,8 @@ Permissions are strings checked by the API. Your JWT embeds the user id; the ser
 | `metrics.read` | Analytics charts, `/ops/alerts` | admin, manager |
 | `graph.read` | Neo4j graph, campaigns, visualization | analyst, manager, developer, viewer |
 | `logs.read` | Search logs, log summary | admin |
-| `dev.simulation` | Dev traffic simulation controls | developer |
-| `dev.reset` | Reset local dev databases/queues | developer |
+| `dev.simulation` | Dev traffic simulation controls | admin, developer |
+| `dev.reset` | Reset local dev databases/queues | admin, developer |
 | `admin.users` | User provisioning (admin UI) | admin |
 
 Default role mappings live in `backend/src/auth/constants.js`.
@@ -133,9 +135,9 @@ Protected (JWT + permission where noted)
 ├── GET  /graph/visualization           (graph.read)
 ├── POST /graph/sync/:id                (graph.read)
 ├── GET  /dev/features
-├── GET  /dev/simulation                (dev.simulation + developer role)
-├── POST /dev/simulation                (dev.simulation + developer role)
-├── POST /dev/reset-local-state         (dev.reset + developer role)
+├── GET  /dev/simulation                (dev.simulation + admin or developer role)
+├── POST /dev/simulation                (dev.simulation + admin or developer role)
+├── POST /dev/reset-local-state         (dev.reset + admin or developer role)
 ├── GET  /logs/search                   (logs.read)
 └── POST /test                          (reviews.write)
 ```
@@ -1200,7 +1202,7 @@ In local dev, the fallback token name is documented in code comments only — al
 
 ## Developer routes (`/dev`)
 
-Dev-only controls for simulation and resetting local state. Mutating routes require **`DEPLOYMENT=dev`** (or equivalent dev slice) **and** the `developer` role in addition to permissions.
+Dev-only controls for simulation and resetting local state. Mutating routes require **`DEPLOYMENT_ENV=dev`** (or equivalent dev slice), the matching permission (`dev.simulation` or `dev.reset`), **and** role **`admin`** or **`developer`**.
 
 ### GET /dev/features
 
@@ -1219,7 +1221,7 @@ Dev-only controls for simulation and resetting local state. Mutating routes requ
   "analytics": true,
   "resetLocalState": true,
   "simulationMaxEventsPerMin": 30,
-  "roles": ["developer"],
+  "roles": ["admin"],
   "permissions": ["reviews.read", "dev.simulation", "dev.reset"]
 }
 ```
@@ -1237,7 +1239,7 @@ curl -s http://localhost:3000/dev/features \
 
 **Auth:** JWT required
 
-**Permission:** `dev.simulation` **and** `developer` role
+**Permission:** `dev.simulation` **and** (`admin` **or** `developer` role)
 
 **Deployment:** Dev only (403 `dev_only` in non-dev)
 
@@ -1265,7 +1267,7 @@ curl -s http://localhost:3000/dev/simulation \
 
 **Auth:** JWT required
 
-**Permission:** `dev.simulation` **and** `developer` role
+**Permission:** `dev.simulation` **and** (`admin` **or** `developer` role)
 
 **Deployment:** Dev only
 
@@ -1307,7 +1309,7 @@ curl -s -X POST http://localhost:3000/dev/simulation \
 
 **Auth:** JWT required
 
-**Permission:** `dev.reset` **and** `developer` role
+**Permission:** `dev.reset` **and** (`admin` **or** `developer` role)
 
 **Deployment:** Dev only
 
