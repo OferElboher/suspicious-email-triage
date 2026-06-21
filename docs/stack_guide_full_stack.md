@@ -65,7 +65,7 @@ Sign in with a provisioned account (bootstrap admin: [auth_guide_dev_admin_crede
 
 **Browser refresh (F5)** stays on the same tab (`#analytics` or default workspace). Admins use Django admin for user management. See [stack_guide_windows_startup.md](stack_guide_windows_startup.md#browser) and [auth_guide_django_admin_users.md](auth_guide_django_admin_users.md).
 
-You should see the triage workspace, analytics graphs (with optional **Auto-refresh** for the rolling last 24 hours), and (for users with the **developer** role in `dev`) the simulation controls.
+You should see the triage workspace, analytics graphs (with optional **Auto-refresh** for the rolling last 24 hours), and (for **admin** or **developer** in `dev`) the **Dev simulation** controls — [stack_guide_dev_simulation.md](stack_guide_dev_simulation.md).
 
 ## Health checks
 

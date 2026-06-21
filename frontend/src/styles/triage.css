@@ -533,3 +533,101 @@ button.danger {
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+/* Dev simulation panel — left-aligned controls and clear Start/Stop affordance */
+.simulation-panel__body {
+  display: flex;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.simulation-panel__main {
+  max-width: 36rem;
+  width: 100%;
+}
+
+.simulation-panel__status {
+  font-weight: 600;
+  margin: 0 0 0.75rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius);
+  display: inline-block;
+}
+
+.simulation-panel__status--running {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+
+.simulation-panel__status--stopped {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.simulation-panel__steps {
+  margin: 0 0 1rem 1.1rem;
+  padding: 0;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.simulation-panel__steps li {
+  margin-bottom: 0.35rem;
+}
+
+.simulation-panel__rate {
+  max-width: 12rem;
+}
+
+.simulation-panel__hint {
+  font-size: 0.85rem;
+  margin: 0.25rem 0 0.85rem;
+}
+
+.simulation-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+  justify-content: flex-start;
+  margin-top: 0.25rem;
+}
+
+.simulation-panel__btn-stop {
+  background: #c62828;
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.simulation-panel__btn-stop:hover:not(:disabled) {
+  background: #b71c1c;
+}
+
+.simulation-panel__btn-stop:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.simulation-panel__reset {
+  margin-top: 1.25rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--border);
+}
+
+.simulation-panel__reset summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #8b4513;
+}
+
+.simulation-panel__feedback {
+  margin-top: 0.85rem;
+  padding: 0.5rem 0.65rem;
+  background: #f8f9fb;
+  border-radius: var(--radius);
+  border-left: 3px solid var(--border);
+}

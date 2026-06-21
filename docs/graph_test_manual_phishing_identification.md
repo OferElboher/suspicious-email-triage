@@ -37,15 +37,9 @@ Running **`POST /dev/reset-local-state`** clears Mongo reviews, Neo4j campaigns,
 
 ### 1. Confirm dev panels are available (simulation mode)
 
-1. Rebuild backend if you have not since pulling latest code:
-
-   ```bash
-   DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --build --force-recreate backend
-   ```
-
-2. Sign in at `http://localhost:3001` and scroll the Triage workspace — you should see the dashed **Simulation mode (development)** card (bootstrap **admin** qualifies; see [stack_guide_versions_builds.md](stack_guide_versions_builds.md)).
-
-3. Leave simulation **disabled** while testing the phishing graph manually (synthetic rows clutter Recent reviews).
+1. Rebuild backend if you have not since pulling latest code — see [stack_guide_full_feature_activation.md](stack_guide_full_feature_activation.md).
+2. Sign in at `http://localhost:3001` — the **Dev simulation (synthetic emails)** card should appear for bootstrap admin ([stack_guide_dev_simulation.md](stack_guide_dev_simulation.md)).
+3. Leave simulation **stopped** while testing the phishing graph manually (synthetic rows clutter Recent reviews).
 
 ### 2. Run the phishing graph verification test
 
@@ -90,7 +84,7 @@ DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d \
   backend ai-celery ai-kafka-dispatch neo4j
 ```
 
-3. **Turn off simulation** in the Triage workspace (Simulation panel) so Recent reviews is not flooded with synthetic rows.
+3. **Turn off simulation** — click **Stop simulation** in the Dev simulation card (or leave it off after reset) so Recent reviews is not flooded with synthetic rows. See [stack_guide_dev_simulation.md](stack_guide_dev_simulation.md).
 4. Confirm LLM is off inside the worker (optional):
 
 ```bash

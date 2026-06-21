@@ -8,7 +8,7 @@ User administration is **not** a React view — admins use **Django admin** via 
 
 - `AnalyticsView.jsx` — charts, time range controls, and optional auto-refresh (rolling last 24 hours from PostgreSQL via `/metrics/*`). See [docs/ui_guide_analytics_charts.md](../../docs/ui_guide_analytics_charts.md).
 - `AuthViews.jsx` — sign-in, forgot password, reset password screens.
-- `SimulationPanel.jsx` — dev-only synthetic traffic controls and local reset button backed by `/dev/*` endpoints.
+- `SimulationPanel.jsx` — dev-only synthetic traffic: **Start simulation** / **Stop simulation** (see `docs/stack_guide_dev_simulation.md`).
 
 ## URL hash routes
 

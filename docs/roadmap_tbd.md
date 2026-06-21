@@ -463,6 +463,7 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 - **Connected subgraph only** — orphan Url/Domain nodes and **secondary disconnected components** filtered (`filterToPrimaryComponent` in `connectedGraphFilter.js`); **duplicate UI ids** collapsed when legacy Neo4j rows share the same email/URL/domain key (`dedupeNodesById`)
 - Dev route `POST /dev/prune-graph` **merges** duplicate Sender/Url/Domain Neo4j nodes then **DETACH DELETE**s zero-degree orphans (`graphMaintenance.js`)
 - Bootstrap **admin** or **developer** may call dev reset/prune/simulation routes (permission + role gate in `devRoutes.js`)
+- **Dev simulation UI (2026):** left-aligned **Start simulation** / **Stop simulation** single-button control; rate persisted in Redis across stop/start — [stack_guide_dev_simulation.md](stack_guide_dev_simulation.md)
 - Automated manual test: `bash scripts/run-manual-phishing-campaign-test.sh EMAIL PASSWORD`
 - `GET /reviews/page-for-date` for Recent reviews date jump
 

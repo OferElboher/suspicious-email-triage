@@ -128,12 +128,12 @@ So status counts reflect **events**, not unique reviews. Heavy re-processing or 
 
 ## Dev simulation and charts
 
-With **simulation enabled** (`developer` role, dev only), synthetic reviews increase:
+With **simulation running** (admin or developer, dev only — **Start simulation** button), synthetic reviews increase:
 
 - Line chart ingests (many `review_created` events)
 - Status bars as the pipeline runs
 
-Use simulation to populate charts on an empty laptop — see [stack_guide_versions_builds.md](stack_guide_versions_builds.md).
+Use simulation to populate charts on an empty laptop — see [stack_guide_dev_simulation.md](stack_guide_dev_simulation.md).
 
 **Reset local databases & queues** (dev button) **truncates** `review_stats_events` — charts go empty until new activity.
 

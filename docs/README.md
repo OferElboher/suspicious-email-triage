@@ -22,8 +22,11 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 | **Complete list of implemented features** | [arch_guide_features_catalog.md](arch_guide_features_catalog.md) |
 | Full technical handbook | [arch_guide_system_comprehensive.md](arch_guide_system_comprehensive.md) |
 | **Build → bootstrap → sign in** (after clone or rebuild) | [stack_guide_build_and_run.md](stack_guide_build_and_run.md) |
+| **Activate all features** (workers, graph, search, simulation) | [stack_guide_full_feature_activation.md](stack_guide_full_feature_activation.md) |
+| **Dev simulation** (start/stop, find synthetic data in UI) | [stack_guide_dev_simulation.md](stack_guide_dev_simulation.md) |
 | Windows 11 + WSL after reboot | [stack_guide_windows_startup.md](stack_guide_windows_startup.md) |
-| Dev builds, simulation, ports, post-reset verification | [stack_guide_versions_builds.md](stack_guide_versions_builds.md), [graph_test_manual_phishing_identification.md](graph_test_manual_phishing_identification.md) |
+| Dev builds, ports, deployment slices | [stack_guide_versions_builds.md](stack_guide_versions_builds.md) |
+| Phishing graph manual QA | [graph_test_manual_phishing_identification.md](graph_test_manual_phishing_identification.md) |
 | Login, roles, JWT, recovery | [auth_guide_rbac.md](auth_guide_rbac.md) |
 | **Obtain a JWT for curl / scripts / Postman** | [auth_guide_obtain_jwt.md](auth_guide_obtain_jwt.md) |
 | REST API reference | [api_reference_rest.md](api_reference_rest.md) |
@@ -76,6 +79,9 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 
 ### Stack & deployment
 
+- [stack_guide_build_and_run.md](stack_guide_build_and_run.md) — Docker build, bootstrap, login recovery
+- [stack_guide_full_feature_activation.md](stack_guide_full_feature_activation.md) — rebuild all images, start every worker/service for full UI
+- [stack_guide_dev_simulation.md](stack_guide_dev_simulation.md) — simulation start/stop, viewing synthetic data in all panels
 - [stack_guide_frontend_api.md](stack_guide_frontend_api.md) — SPA ↔ API (CRA proxy)
 - [stack_guide_full_stack.md](stack_guide_full_stack.md) — bring-up narrative
 - [stack_guide_deployment.md](stack_guide_deployment.md) — containers & ports

@@ -37,7 +37,7 @@ const PAGE_SIZE = 20;
 
 export default function TriageApp() {
   const { user, logout, hasPermission, hasRole } = useAuth();
-  /** Feature flags from API (simulation allowed only for developer role in dev deployment). */
+  /** Feature flags from GET /dev/features (simulation + reset for admin/developer in dev). */
   const [features, setFeatures] = useState(() => ({
     simulation: false,
     analytics: hasPermission("metrics.read"),

@@ -201,77 +201,17 @@ Open `http://localhost:3001` (workspace), `http://localhost:3001/#analytics`, or
 
 Sign in with the email you configured via `configure-dev-bootstrap-admin.sh` and temporary password `temp-admin-pswd` — see [auth_guide_dev_admin_credentials.md](auth_guide_dev_admin_credentials.md). If login fails despite a row in `auth_users`, see [auth_guide_dev_auth_recovery.md](auth_guide_dev_auth_recovery.md).
 
-## Simulation mode (dev only — admin or developer role)
+## Simulation mode (dev only)
 
-Simulation creates synthetic `Review` documents at a capped rate and runs them through the same Kafka → Celery path as real analyst submissions. Each synthetic row is tagged `source: dev_simulation` in MongoDB so the **Recent reviews** panel hides them unless you tick **Show simulation traffic**.
+Simulation generates synthetic reviews through the same Kafka → Celery pipeline as manual triage. **Full guide:** [stack_guide_dev_simulation.md](stack_guide_dev_simulation.md) — configure, **Start/Stop** with one button, and find data in Recent reviews, Search panels, Analytics, and unified logs.
 
-### Who can see the Simulation panel?
+**Quick summary:**
 
-The React app calls `GET /dev/features` after login. The **Simulation mode (development)** card appears when **all** of these are true:
+- Visible when `GET /dev/features` → `simulation: true` (dev deployment + `dev.simulation` permission + **admin** or **developer** role).
+- UI: **Dev simulation (synthetic emails)** card in Triage workspace — **Start simulation** / **Stop simulation** (rate remembered).
+- HTTP: `POST /dev/simulation` with `{ "enabled": true|false, "eventsPerMinute": N }` — see [auth_guide_obtain_jwt.md](auth_guide_obtain_jwt.md) for JWT.
 
-| Requirement | Meaning |
-|-------------|---------|
-| `DEPLOYMENT_ENV=dev` | Backend reports `deployment: "dev"` (Docker Compose default for local work) |
-| Permission `dev.simulation` | Bootstrap **admin** includes this permission |
-| Role **`admin`** or **`developer`** | Either role satisfies the gate (you do **not** need a separate developer account) |
-
-If you ran **`POST /dev/reset-local-state`** and the panel disappeared, sign out and back in, or hard-refresh the browser — the panel should return for admin users on a current backend build.
-
-**Technology pattern:** Redis stores simulation `{ enabled, eventsPerMinute }`; the Node process runs an in-memory `setInterval` loop (`backend/src/dev/simulationLoop.js`) that inserts Mongo reviews and publishes Kafka ingest events — same async pipeline as manual triage.
-
-See [auth_guide_obtain_jwt.md](auth_guide_obtain_jwt.md#dev-routes-devreset-permission-vs-developer-role) for JWT + role troubleshooting.
-
-### Configure via UI
-
-In `dev`, the triage workspace shows a dashed **Simulation mode (development)** card below the main triage form:
-
-1. Toggle **Enable synthetic ingests**
-2. Choose **Target events per minute** (clamped server-side to `simulationMaxEventsPerMin`, default 30)
-3. Click **Update simulation**
-
-**Tip after a full reset:** Leave simulation **off** while running the [manual phishing graph test](graph_test_manual_phishing_identification.md) so Recent reviews stays readable.
-
-The same development card includes **Reset local databases & queues** when `resetLocalState: true` (admin or developer with `dev.reset`).
-
-That reset button:
-
-- turns simulation off,
-- deletes local MongoDB review documents,
-- truncates local PostgreSQL statistics,
-- flushes Redis queues/state,
-- recreates the local Kafka/Redpanda ingest topic,
-- clears Neo4j and the mock Snowflake analytics tables.
-
-This is intentionally available only in `dev`.
-
-### Configure via HTTP (curl)
-
-Obtain a JWT first — [auth_guide_obtain_jwt.md](auth_guide_obtain_jwt.md).
-
-```bash
-TOKEN=$(curl -sS -X POST "http://localhost:3000/auth/login" \
-  -H "Content-Type: application/json" \
-  -d '{"email":"YOUR_EMAIL@example.com","password":"YOUR_PASSWORD"}' \
-  | python3 -c "import json,sys; print(json.load(sys.stdin)['token'])")
-
-# Enable local synthetic traffic at a safe, small rate.
-curl -sS -X POST "http://localhost:3000/dev/simulation" \
-  -H "Authorization: Bearer ${TOKEN}" \
-  -H "content-type: application/json" \
-  -d '{"enabled":true,"eventsPerMinute":3}' | python3 -m json.tool
-```
-
-Expected output shape:
-
-```json
-{ "ok": true, "simulation": { "enabled": true, "eventsPerMinute": 3 } }
-```
-
-If you call this while not in `dev`, you should see:
-
-```json
-{ "error": "dev_only" }
-```
+**Activate full stack (all workers for simulation + graph + search):** [stack_guide_full_feature_activation.md](stack_guide_full_feature_activation.md).
 
 ### Reset local development state with HTTP
 

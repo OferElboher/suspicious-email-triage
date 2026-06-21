@@ -156,7 +156,11 @@ The sign-in form shows a **masked** hint (`yo***@example.com`) from `GET /auth/c
 
 ## Part 6 — Optional workers (triage + graph)
 
-For full email analysis and Neo4j sync:
+For full email analysis, Neo4j graph, Elasticsearch search, and simulation:
+
+See **[stack_guide_full_feature_activation.md](stack_guide_full_feature_activation.md)** for the complete `docker compose up` command list.
+
+Minimal workers only:
 
 ```bash
 DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d ai-celery ai-kafka-dispatch mock-llm
