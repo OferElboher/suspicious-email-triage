@@ -208,7 +208,7 @@ Simulation generates synthetic reviews through the same Kafka → Celery pipelin
 **Quick summary:**
 
 - Visible when `GET /dev/features` → `simulation: true` (dev deployment + `dev.simulation` permission + **admin** or **developer** role).
-- UI: **Dev simulation (synthetic emails)** card in Triage workspace — **Start simulation** / **Stop simulation** (rate remembered).
+- UI: **Dev simulation (synthetic emails)** card in Review dashboard — **Start simulation** / **Stop simulation** (rate remembered).
 - HTTP: `POST /dev/simulation` with `{ "enabled": true|false, "eventsPerMinute": N }` — see [auth_guide_obtain_jwt.md](auth_guide_obtain_jwt.md) for JWT.
 
 **Activate full stack (all workers for simulation + graph + search):** [stack_guide_full_feature_activation.md](stack_guide_full_feature_activation.md).

@@ -6,6 +6,7 @@
  */
 import { useCallback, useState } from "react";
 import { getJson } from "../api/client";
+import HoverHelp from "./HoverHelp";
 
 /** Admin/SOC log search panel (requires logs.read permission). */
 export default function LogSearchPanel() {
@@ -51,22 +52,21 @@ export default function LogSearchPanel() {
 
   return (
     <section className="card" style={{ gridColumn: "1 / -1" }}>
-      <h2>Search unified logs</h2>
-      <p className="muted">
-        Query the merged JSON-lines log (<code>merged.log</code>) written by the Node API,
-        Celery workers, and Kafka dispatcher. Filter by time, topic, level, keyword, or
-        regular expression.
-      </p>
+      <HoverHelp text="Search merged JSON-lines logs from the Node API, Celery workers, and Kafka dispatcher. Requires logs.read permission.">
+        <h2>Search unified logs</h2>
+      </HoverHelp>
 
       <div className="search-form-grid">
-        <label className="field">
-          Keyword
-          <input
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            placeholder="failed, graph sync, reviewId"
-          />
-        </label>
+        <HoverHelp text="Plain text or regex match against log message bodies.">
+          <label className="field">
+            Keyword
+            <input
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              placeholder="failed, graph sync, reviewId"
+            />
+          </label>
+        </HoverHelp>
         <label className="field field--checkbox">
           <input
             type="checkbox"
@@ -112,9 +112,11 @@ export default function LogSearchPanel() {
       </div>
 
       <div className="actions">
-        <button type="button" disabled={loading} onClick={() => runSearch().catch(() => {})}>
-          {loading ? "Searching…" : "Search logs"}
-        </button>
+        <HoverHelp text="Run GET /logs/search with the filters above.">
+          <button type="button" disabled={loading} onClick={() => runSearch().catch(() => {})}>
+            {loading ? "Searching…" : "Search logs"}
+          </button>
+        </HoverHelp>
       </div>
 
       {error && <p className="status-failed">{error}</p>}

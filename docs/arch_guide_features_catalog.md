@@ -56,7 +56,19 @@ If you are new to a topic (Kafka, Neo4j, JWT, etc.), follow the linked guides in
 
 - **Paginated review list**
   - `GET /reviews` with shared page size, optional simulation filter, effective verdict in JSON.
-  - MongoDB, shared `REVIEW_PAGE_SIZE` config, React dashboard.
+  - MongoDB, shared `REVIEW_PAGE_SIZE` config, React **Review dashboard** queue column (`RecentReviewsList.jsx`).
+
+- **Review detail panel**
+  - Right column on Review dashboard; `GET /reviews/:id` loaded on row selection; override form when permitted.
+  - React controlled panel (`ReviewDetailPanel.jsx`), effective-verdict helper.
+
+- **Manual submit modal**
+  - **Submit email** toolbar button opens modal (`ManualReviewSubmitModal.jsx`) — keeps dashboard focused on tracking inbound requests.
+  - React modal overlay, `POST /reviews`, RBAC `reviews.write`.
+
+- **Contextual hover help**
+  - `HoverHelp.jsx` dark tooltip on headings/controls across dashboard, simulation, and search panels.
+  - CSS `position: absolute` tooltip; replaces long static intro paragraphs.
 
 - **Review detail and polling**
   - `GET /reviews/:id` plus React hook polling every 1.5s until `completed` or `failed`.

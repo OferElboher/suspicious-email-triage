@@ -66,7 +66,7 @@ Complete command reference: [stack_guide_full_feature_activation.md](stack_guide
 ## Configure and activate via the UI
 
 1. Sign in at `http://localhost:3001` as bootstrap admin.
-2. Open **Triage workspace** (default tab).
+2. Open **Review dashboard** (default tab).
 3. Scroll to the dashed card **Dev simulation (synthetic emails)** — controls are **left-aligned**.
 4. **Hover** over the title, status badge, rate field, or buttons for short help popups (the UI never shows file paths or documentation links).
 5. Set **Emails per minute**, then click **Start simulation**. Click **Stop simulation** to pause; your rate is remembered.
@@ -107,14 +107,14 @@ Synthetic rows use subject lines like `Simulated ingest 2026-…` and sender `si
 
 ### Search past reviews (Elasticsearch)
 
-- Open the **Search past reviews** panel in the Triage workspace.
+- Open the **Search past reviews** panel in the Review dashboard.
 - Search for keywords such as `Simulated ingest` or `Simulator`.
 - **Technology:** Elasticsearch index `triage-reviews`; indexing runs after analysis completes (`scheduleSearchIndex` in the backend).
 - Requires `elasticsearch` container running — see [search_guide_elasticsearch_reviews.md](search_guide_elasticsearch_reviews.md).
 
 ### Search unified logs (merged.log)
 
-- Open **Search unified logs** in the Triage workspace (requires `logs.read` — admin has it).
+- Open **Search unified logs** in the Review dashboard (requires `logs.read` — admin has it).
 - Useful keyword filters:
   - `simulation` — timer start/stop and synthetic review creation
   - `synthetic review` — each tick log line from `simulationLoop.js`

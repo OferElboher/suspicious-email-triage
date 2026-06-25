@@ -62,11 +62,11 @@ Sign in with a user that has **`graph.read`** (default admin/analyst roles).
 2. Each has verdict **`suspicious`** or **`likely_phishing`** (rule engine + optional mock LLM in `ai_service/app/merge.py`).
 3. Celery calls **`sync_review_graph`** so Neo4j `Review` nodes get the final verdict before campaign Cypher runs.
 
-**Before you submit:** turn **off** dev simulation in the Triage workspace (Simulation panel → uncheck “Enable synthetic ingests”) so **Recent reviews** is not flooded with “Simulated ingest” rows. User submissions are tagged `source: user`; simulation uses `dev_simulation` and is hidden by default.
+**Before you submit:** turn **off** dev simulation in the Review dashboard (Simulation panel → **Stop simulation**) so **Review queue** is not flooded with “Simulated ingest” rows. User submissions are tagged `source: user`; simulation uses `dev_simulation` and is hidden by default.
 
 <div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
 
-<p><strong>Demo test data (UI — Triage workspace)</strong> — open <code>http://localhost:3001</code>, sign in, click <strong>Queue analysis</strong> twice (once per row). Shared hostname: <code>secure-login.example-phish.test</code></p>
+<p><strong>Demo test data (UI — Review dashboard)</strong> — open <code>http://localhost:3001</code>, sign in, click <strong>Submit email</strong> twice (once per row below), then <strong>Queue analysis</strong> in the modal. Shared hostname: <code>secure-login.example-phish.test</code></p>
 
 <p><strong>Review A</strong></p>
 
@@ -88,7 +88,7 @@ Sign in with a user that has **`graph.read`** (default admin/analyst roles).
 
 </div>
 
-**Wait for Result panel:** **Status: completed** on both. Verdict should be **`likely_phishing`** (rule engine matches `example-phish` / `secure-login` in the URL even when `DISABLE_LLM=true`; mock LLM adds the same when `DISABLE_LLM=false` and `LLM_PROVIDER=mock_commercial`).
+**Wait for Review detail panel:** **Status: completed** on both. Verdict should be **`likely_phishing`** (rule engine matches `example-phish` / `secure-login` in the URL even when `DISABLE_LLM=true`; mock LLM adds the same when `DISABLE_LLM=false` and `LLM_PROVIDER=mock_commercial`).
 
 **Verify scoring (optional, terminal):**
 

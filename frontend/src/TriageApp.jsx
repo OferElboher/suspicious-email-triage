@@ -1,6 +1,8 @@
 /**
- * Primary analyst UI shell: navigation between triage workspace and analytics dashboards.
- * Capability flags (`/dev/features`) decide whether dev-only simulation controls render.
+ * Primary analyst UI shell: review dashboard, analytics, and phishing graph tabs.
+ *
+ * Pattern: review dashboard = queue (left) + detail (right); manual submit in modal only.
+ * Capability flags from GET /dev/features gate dev simulation and search panels.
  */
 import { useCallback, useEffect, useState } from "react";
 import { postJson, getJson } from "./api/client";
@@ -12,25 +14,13 @@ import GraphView from "./views/GraphView";
 import SimulationPanel from "./views/SimulationPanel";
 import ThemeSelector from "./components/ThemeSelector";
 import RecentReviewsList from "./components/RecentReviewsList";
+import ReviewDetailPanel, { OVERRIDE_ACTIONS } from "./components/ReviewDetailPanel";
+import ManualReviewSubmitModal from "./components/ManualReviewSubmitModal";
 import SearchIndexPanel from "./components/SearchIndexPanel";
 import ReviewSearchPanel from "./components/ReviewSearchPanel";
 import LogSearchPanel from "./components/LogSearchPanel";
+import HoverHelp from "./components/HoverHelp";
 import { djangoAdminUrl } from "./lib/appUrls";
-import { effectiveVerdict, hasOverride } from "./lib/effectiveVerdict";
-
-/** Analyst override verdict choices (stored on review.override, not analysisResult). */
-const OVERRIDE_VERDICTS = [
-  { value: "benign", label: "Benign" },
-  { value: "suspicious", label: "Suspicious" },
-  { value: "likely_phishing", label: "Likely phishing" },
-];
-
-/** Recommended action options paired with override verdict saves. */
-const OVERRIDE_ACTIONS = {
-  benign: "close",
-  suspicious: "investigate",
-  likely_phishing: "report_and_block",
-};
 
 /** Page size for the dashboard list; kept aligned with backend pagination limits. */
 const PAGE_SIZE = 20;
@@ -46,11 +36,11 @@ export default function TriageApp() {
   const [featuresLoaded, setFeaturesLoaded] = useState(false);
 
   const canReadReviews = hasPermission("reviews.read");
-  const canReadGraph = hasPermission("graph.read");
   const canWrite = hasPermission("reviews.write");
   const canOverride = hasPermission("reviews.override");
   const canDevReset = hasPermission("dev.reset");
   const canReadLogs = hasPermission("logs.read");
+  const canReadGraph = hasPermission("graph.read");
 
   const canAccessScreen = useCallback(
     (view) => {
@@ -72,10 +62,6 @@ export default function TriageApp() {
     featuresLoaded ? canAccessScreen : () => true
   );
 
-  const [senderName, setSenderName] = useState(user?.email?.split("@")[0] || "Analyst");
-  const [senderEmail, setSenderEmail] = useState(user?.email || "");
-  const [subject, setSubject] = useState("");
-  const [body, setBody] = useState("");
   const [active, setActive] = useState(null);
   const [overrideReason, setOverrideReason] = useState("");
   const [overrideVerdict, setOverrideVerdict] = useState("suspicious");
@@ -84,16 +70,9 @@ export default function TriageApp() {
   const [hasMore, setHasMore] = useState(true);
   const [totalReviews, setTotalReviews] = useState(0);
   const [includeSimulation, setIncludeSimulation] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [submitModalOpen, setSubmitModalOpen] = useState(false);
 
   const lastPage = Math.max(0, Math.ceil(totalReviews / PAGE_SIZE) - 1);
-
-  useEffect(() => {
-    if (user?.email) {
-      setSenderEmail(user.email);
-      setSenderName(user.email.split("@")[0]);
-    }
-  }, [user]);
 
   useEffect(() => {
     getJson("/dev/features")
@@ -170,25 +149,29 @@ export default function TriageApp() {
     }
   }, [fetchPage, hasPermission]);
 
-  const submit = async () => {
-    if (submitting) return;
-    setSubmitting(true);
-    setActive(null);
+  /** Load full review into detail panel when analyst selects a queue row. */
+  const selectReview = useCallback(async (reviewId) => {
     try {
-      const created = await postJson("/reviews", {
-        senderName,
-        senderEmail,
-        subject: subject || "(no subject)",
-        body,
-        referenceSources: [],
-      });
+      const doc = await getJson(`/reviews/${reviewId}`);
+      setActive({ ...doc, _polling: doc.status === "pending" });
+    } catch (_err) {
+      setActive(null);
+    }
+  }, []);
+
+  /** POST /reviews from modal — opens detail panel on created id and refreshes queue page 0. */
+  const submitManualReview = useCallback(
+    async (payload) => {
+      const created = await postJson("/reviews", payload);
+      setPage(0);
       setActive({
         _id: created.id,
         status: created.status || "pending",
         analysisResult: null,
         _polling: true,
+        subject: payload.subject,
+        senderEmail: payload.senderEmail,
       });
-      setPage(0);
       const sim = includeSimulation ? "&includeSimulation=true" : "";
       const list = await getJson(`/reviews?limit=${PAGE_SIZE}&page=0${sim}`);
       const rows = list.data || [];
@@ -203,10 +186,10 @@ export default function TriageApp() {
       );
       setHasMore(Boolean(list.hasMore));
       setTotalReviews(Number(list.total) || 0);
-    } finally {
-      setSubmitting(false);
-    }
-  };
+      return created;
+    },
+    [includeSimulation]
+  );
 
   const saveOverride = async () => {
     if (!active?._id || !active.analysisResult) return;
@@ -252,31 +235,37 @@ export default function TriageApp() {
           </div>
           <nav className="nav-tabs" aria-label="Primary views">
             {canReadReviews && (
-              <button
-                type="button"
-                className={screen === "workspace" ? "active" : ""}
-                onClick={() => setScreen("workspace")}
-              >
-                Triage workspace
-              </button>
+              <HoverHelp text="Track review queue, pipeline status, search, and dev tools.">
+                <button
+                  type="button"
+                  className={screen === "workspace" ? "active" : ""}
+                  onClick={() => setScreen("workspace")}
+                >
+                  Review dashboard
+                </button>
+              </HoverHelp>
             )}
             {features.analytics && hasPermission("metrics.read") && (
-              <button
-                type="button"
-                className={screen === "analytics" ? "active" : ""}
-                onClick={() => setScreen("analytics")}
-              >
-                Analytics & graphs
-              </button>
+              <HoverHelp text="PostgreSQL-backed charts for review volume and pipeline status.">
+                <button
+                  type="button"
+                  className={screen === "analytics" ? "active" : ""}
+                  onClick={() => setScreen("analytics")}
+                >
+                  Analytics & graphs
+                </button>
+              </HoverHelp>
             )}
             {canReadGraph && (
-              <button
-                type="button"
-                className={screen === "graph" ? "active" : ""}
-                onClick={() => setScreen("graph")}
-              >
-                Phishing graph
-              </button>
+              <HoverHelp text="Neo4j campaign relationship graph for linked phishing messages.">
+                <button
+                  type="button"
+                  className={screen === "graph" ? "active" : ""}
+                  onClick={() => setScreen("graph")}
+                >
+                  Phishing graph
+                </button>
+              </HoverHelp>
             )}
           </nav>
         </div>
@@ -295,159 +284,73 @@ export default function TriageApp() {
       )}
 
       {screen === "workspace" && canReadReviews && (
-        <main className="layout">
-          {canWrite && (
-            <section className="card">
-              <h2>New review</h2>
-              <div className="row">
-                <div>
-                  <label className="field">Sender name</label>
-                  <input value={senderName} onChange={(e) => setSenderName(e.target.value)} />
-                </div>
-                <div>
-                  <label className="field">Sender email</label>
-                  <input value={senderEmail} onChange={(e) => setSenderEmail(e.target.value)} />
-                </div>
-              </div>
-              <div style={{ marginTop: "0.65rem" }}>
-                <label className="field">Subject</label>
-                <input value={subject} onChange={(e) => setSubject(e.target.value)} />
-              </div>
-              <div style={{ marginTop: "0.65rem" }}>
-                <label className="field">Body</label>
-                <textarea
-                  value={body}
-                  onChange={(e) => setBody(e.target.value)}
-                  placeholder="Paste headers + body…"
-                />
-              </div>
-              <div className="actions">
-                <button
-                  className="primary"
-                  type="button"
-                  disabled={submitting}
-                  onClick={() => submit().catch((e) => window.alert(e.message))}
-                >
-                  {submitting ? "Queuing…" : "Queue analysis"}
-                </button>
-              </div>
-            </section>
-          )}
+        <main className="layout layout--dashboard">
+          <div className="dashboard-column dashboard-column--queue">
+            <div className="dashboard-toolbar">
+              <HoverHelp text="Total reviews in MongoDB matching current filters (simulation hidden unless enabled).">
+                <span className="dashboard-stat-pill">
+                  {totalReviews} review{totalReviews === 1 ? "" : "s"} tracked
+                </span>
+              </HoverHelp>
+              {canWrite && (
+                <HoverHelp text="Open manual paste dialog for dev/QA — production ingests from mailboxes.">
+                  <button
+                    type="button"
+                    className="primary"
+                    onClick={() => setSubmitModalOpen(true)}
+                  >
+                    Submit email
+                  </button>
+                </HoverHelp>
+              )}
+            </div>
 
-          <section className="card">
-            <h2>Result</h2>
-            {!active && <p className="muted">Submit an email to see pipeline status.</p>}
-            {active && (
-              <>
-                <p className={`status-${active.status}`}>
-                  <strong>Status:</strong> {active.status}
-                  {active._polling ? " · updating" : ""}
-                </p>
-                {active.analysisResult && (
-                  <>
-                    <p>
-                      <strong>Verdict:</strong> {effectiveVerdict(active)}
-                      {hasOverride(active) && (
-                        <span className="muted"> (analyst override)</span>
-                      )}
-                    </p>
-                    <p>
-                      <strong>Action:</strong> {active.analysisResult.recommendedAction}
-                    </p>
-                    <p>
-                      <strong>Summary:</strong> {active.analysisResult.summary}
-                    </p>
-                    <h3 className="muted" style={{ fontSize: "0.95rem" }}>
-                      Findings
-                    </h3>
-                    <ul className="findings">
-                      {(active.analysisResult.findings || []).map((f, i) => (
-                        <li key={i}>
-                          <strong>{f.severity}:</strong> {f.explanation}
-                          {f.evidence && (
-                            <>
-                              <br />
-                              <span className="muted">{f.evidence}</span>
-                            </>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                    <h3 className="muted" style={{ fontSize: "0.95rem" }}>
-                      Follow-ups
-                    </h3>
-                    <ul className="findings">
-                      {(active.analysisResult.followUpQuestions || []).map((q, i) => (
-                        <li key={i}>{q}</li>
-                      ))}
-                    </ul>
-                    {canOverride && (
-                      <>
-                        <div style={{ marginTop: "0.75rem" }}>
-                          <label className="field field--stacked">
-                            Override verdict
-                            <select
-                              className="field-select-spaced"
-                              value={overrideVerdict}
-                              onChange={(e) => setOverrideVerdict(e.target.value)}
-                            >
-                              {OVERRIDE_VERDICTS.map((opt) => (
-                                <option key={opt.value} value={opt.value}>
-                                  {opt.label}
-                                </option>
-                              ))}
-                            </select>
-                          </label>
-                        </div>
-                        <div style={{ marginTop: "0.75rem" }}>
-                          <label className="field">Override reason (notes)</label>
-                          <input
-                            value={overrideReason}
-                            onChange={(e) => setOverrideReason(e.target.value)}
-                            placeholder="Why you changed the verdict"
-                          />
-                        </div>
-                        <div className="actions">
-                          <button
-                            type="button"
-                            onClick={() => saveOverride().catch((e) => window.alert(e.message))}
-                          >
-                            Save override
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </>
-                )}
-              </>
+            <RecentReviewsList
+              reviews={reviews}
+              page={page}
+              lastPage={lastPage}
+              hasMore={hasMore}
+              totalReviews={totalReviews}
+              selectedReviewId={active?._id}
+              onSelectReview={selectReview}
+              includeSimulation={includeSimulation}
+              onIncludeSimulationChange={setIncludeSimulation}
+              onRefresh={() => fetchPage().catch(() => {})}
+              onPageChange={setPage}
+              onJumpToDate={jumpToReviewDate}
+            />
+          </div>
+
+          <div className="dashboard-column dashboard-column--detail">
+            <ReviewDetailPanel
+              review={active}
+              canOverride={canOverride}
+              overrideReason={overrideReason}
+              overrideVerdict={overrideVerdict}
+              onOverrideReasonChange={setOverrideReason}
+              onOverrideVerdictChange={setOverrideVerdict}
+              onSaveOverride={saveOverride}
+            />
+          </div>
+
+          <div className="dashboard-tools">
+            {features.simulation && (
+              <SimulationPanel maxPerMin={features.simulationMaxEventsPerMin} />
             )}
-          </section>
-
-          {features.simulation && (
-            <SimulationPanel maxPerMin={features.simulationMaxEventsPerMin} />
-          )}
-
-          {canDevReset && <SearchIndexPanel />}
-
-          {canReadReviews && <ReviewSearchPanel />}
-
-          {canReadLogs && <LogSearchPanel />}
-
-          <RecentReviewsList
-            reviews={reviews}
-            page={page}
-            lastPage={lastPage}
-            hasMore={hasMore}
-            totalReviews={totalReviews}
-            canReadGraph={canReadGraph}
-            includeSimulation={includeSimulation}
-            onIncludeSimulationChange={setIncludeSimulation}
-            onRefresh={() => fetchPage().catch(() => {})}
-            onPageChange={setPage}
-            onJumpToDate={jumpToReviewDate}
-          />
+            {canDevReset && <SearchIndexPanel />}
+            {canReadReviews && <ReviewSearchPanel />}
+            {canReadLogs && <LogSearchPanel />}
+          </div>
         </main>
       )}
+
+      <ManualReviewSubmitModal
+        open={submitModalOpen}
+        onClose={() => setSubmitModalOpen(false)}
+        defaultSenderEmail={user?.email || ""}
+        defaultSenderName={user?.email?.split("@")[0] || "Analyst"}
+        onSubmit={submitManualReview}
+      />
     </div>
   );
 }

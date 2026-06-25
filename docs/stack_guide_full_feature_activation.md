@@ -108,7 +108,7 @@ Open `http://localhost:3001`. Sign in — [auth_guide_dev_admin_credentials.md](
 |-------|----------------------|
 | API alive | `curl -sS http://localhost:3000/health/live` |
 | Login | `curl -sS -X POST http://localhost:3000/auth/login …` — [auth_guide_obtain_jwt.md](auth_guide_obtain_jwt.md) |
-| Simulation panel | Triage workspace → **Dev simulation** card → **Start simulation** — [stack_guide_dev_simulation.md](stack_guide_dev_simulation.md) |
+| Simulation panel | Review dashboard → **Dev simulation** card → **Start simulation** — [stack_guide_dev_simulation.md](stack_guide_dev_simulation.md) |
 | Async pipeline | Submit one review → Result panel → **Status: completed** |
 | Phishing graph | **Phishing graph** tab → Refresh after campaign test — [graph_test_manual_phishing_identification.md](graph_test_manual_phishing_identification.md) |
 | Search reviews | **Search past reviews** keyword query |

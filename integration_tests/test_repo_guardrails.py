@@ -277,9 +277,11 @@ def test_effective_verdict_and_override_ui_wired():
     sync = (ROOT / "backend/src/graph/syncReview.js").read_text(encoding="utf-8")
     reviews = (ROOT / "backend/src/api/reviews.js").read_text(encoding="utf-8")
     triage = (ROOT / "frontend/src/TriageApp.jsx").read_text(encoding="utf-8")
+    detail = (ROOT / "frontend/src/components/ReviewDetailPanel.jsx").read_text(encoding="utf-8")
     assert "effectiveVerdict" in sync
     assert "effectiveVerdict" in reviews
-    assert "Override verdict" in triage
+    assert "ReviewDetailPanel" in triage
+    assert "Override verdict" in detail
     assert "overrideVerdict" in triage
 
 

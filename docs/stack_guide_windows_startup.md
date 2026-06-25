@@ -172,7 +172,7 @@ Expected output:
 1. Open the URL CRA printed (commonly `http://localhost:3001`).
 2. **Sign in** with the email you configured and temporary password `temp-admin-pswd` — see [auth_guide_dev_admin_credentials.md](auth_guide_dev_admin_credentials.md).
 3. You should see:
-   - **Triage workspace** tab for submissions
+   - **Review dashboard** tab for submissions
    - **Analytics & graphs** tab for charts — see [ui_guide_analytics_charts.md](ui_guide_analytics_charts.md)
    - **User administration** button (admin role only) → Django admin — see [auth_guide_django_admin_users.md](auth_guide_django_admin_users.md)
 
@@ -180,7 +180,7 @@ Expected output:
 
 | Tab | URL example |
 |-----|-------------|
-| Triage workspace | `http://localhost:3001/` |
+| Review dashboard | `http://localhost:3001/` |
 | Analytics & graphs | `http://localhost:3001/#analytics` |
 | Phishing graph (Neo4j) | `http://localhost:3001/#graph` |
 | Django user admin | `http://localhost:8000/admin/` (admin role; also via **User administration** button) |

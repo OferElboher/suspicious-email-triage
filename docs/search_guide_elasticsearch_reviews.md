@@ -151,7 +151,7 @@ Empty `q` with filters still returns matching documents sorted by `updatedAt`.
 
 ### React UI
 
-The Triage workspace includes **Search past reviews** (`ReviewSearchPanel.jsx`) for any user with `reviews.read`. It exposes keyword search plus verdict, status, sender, date range, and regex fields — the same parameters as the REST API.
+The Review dashboard includes **Search past reviews** (`ReviewSearchPanel.jsx`) for any user with `reviews.read`. It exposes keyword search plus verdict, status, sender, date range, and regex fields — the same parameters as the REST API.
 
 ### Examples (replace email, password, and token)
 

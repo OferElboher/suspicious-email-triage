@@ -76,7 +76,7 @@ Requires `Authorization: Bearer <JWT>` after login.
 
 ### React UI
 
-Signed-in users with **`logs.read`** (typically admin) see **Search unified logs** in the Triage workspace. The panel mirrors these query parameters and renders matching NDJSON lines.
+Signed-in users with **`logs.read`** (typically admin) see **Search unified logs** in the Review dashboard. The panel mirrors these query parameters and renders matching NDJSON lines.
 
 ### Example
 

@@ -203,7 +203,7 @@ PORT=3001 npm start --prefix frontend
 3. Enter **your email** and password **`temp-admin-pswd`**.
 4. Click **Sign in**.
 
-**Expected:** Triage workspace and **Analytics & graphs** tabs visible; **User administration** button in the header (admin role only).
+**Expected:** Review dashboard and **Analytics & graphs** tabs visible; **User administration** button in the header (admin role only).
 
 ---
 

@@ -92,7 +92,7 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 - Unified JSON-lines `merged.log` (see logger module)
 - `GET /logs/search` — keyword/topic/time/**level**/service/**regex** filters (`logs.read` permission)
 - `GET /ops/logs/summary` — topic/level counts for dashboards
-- React **Search unified logs** panel in Triage workspace (admin / `logs.read`)
+- React **Search unified logs** panel in Review dashboard (admin / `logs.read`)
 
 **Guides:** [ops_guide_central_logging.md](ops_guide_central_logging.md), [tech_postgresql_dbeaver_auth_logs.md](tech_postgresql_dbeaver_auth_logs.md)
 
@@ -230,7 +230,7 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 
 **Implemented (dev free path):**
 
-- **Override verdict** dropdown + notes in Triage workspace (`POST /reviews/:id/override`)
+- **Override verdict** dropdown + notes in Review detail panel (`POST /reviews/:id/override`)
 - **Effective verdict** helper (`backend/src/lib/effectiveVerdict.js`) — override wins over `analysisResult` in Recent reviews, Result panel, and Neo4j graph sync
 - Mongo `override` stores `analystEmail`, `timestamp`, `reason`, `verdict`, `recommendedAction`
 
@@ -464,6 +464,7 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 - Dev route `POST /dev/prune-graph` **merges** duplicate Sender/Url/Domain Neo4j nodes then **DETACH DELETE**s zero-degree orphans (`graphMaintenance.js`)
 - Bootstrap **admin** or **developer** may call dev reset/prune/simulation routes (permission + role gate in `devRoutes.js`)
 - **Dev simulation UI (2026):** left-aligned **Start simulation** / **Stop simulation** single-button control; rate persisted in Redis across stop/start — [stack_guide_dev_simulation.md](stack_guide_dev_simulation.md)
+- **Review dashboard (2026):** two-column **Review queue** + **Review detail**; manual paste in **Submit email** modal (`ManualReviewSubmitModal.jsx`); project-wide **HoverHelp** tooltips — [ui_guide_review_dashboard.md](ui_guide_review_dashboard.md)
 - Automated manual test: `bash scripts/run-manual-phishing-campaign-test.sh EMAIL PASSWORD`
 - `GET /reviews/page-for-date` for Recent reviews date jump
 

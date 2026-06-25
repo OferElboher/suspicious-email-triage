@@ -14,7 +14,7 @@ User administration is **not** a React view — admins use **Django admin** via 
 
 | Tab | Hash |
 |-----|------|
-| Triage workspace | *(none)* |
+| Review dashboard | *(none)* |
 | Analytics & graphs | `#analytics` |
 
 See `../lib/appScreenNavigation.js` and `../hooks/useAppScreen.js`.

@@ -6,6 +6,7 @@
  */
 import { useCallback, useState } from "react";
 import { getJson } from "../api/client";
+import HoverHelp from "./HoverHelp";
 
 /** Search form + results table for indexed review documents. */
 export default function ReviewSearchPanel() {
@@ -59,22 +60,21 @@ export default function ReviewSearchPanel() {
 
   return (
     <section className="card" style={{ gridColumn: "1 / -1" }}>
-      <h2>Search past reviews</h2>
-      <p className="muted">
-        Full-text and advanced filters over the Elasticsearch index{" "}
-        <code>triage-reviews</code>. Combine keyword search with verdict, status, sender,
-        date ranges, and Lucene regex patterns on subject/body.
-      </p>
+      <HoverHelp text="Full-text search over the Elasticsearch triage-reviews index. Combine keywords with verdict, status, sender, dates, and Lucene regex filters.">
+        <h2>Search past reviews</h2>
+      </HoverHelp>
 
       <div className="search-form-grid">
-        <label className="field">
-          Keywords
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="phishing, verify account, example-phish"
-          />
-        </label>
+        <HoverHelp text="Free-text match across subject, body, sender, and extracted links.">
+          <label className="field">
+            Keywords
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="phishing, verify account, example-phish"
+            />
+          </label>
+        </HoverHelp>
         <label className="field">
           Verdict
           <select value={verdict} onChange={(e) => setVerdict(e.target.value)}>
@@ -129,9 +129,11 @@ export default function ReviewSearchPanel() {
       </div>
 
       <div className="actions">
-        <button type="button" disabled={loading} onClick={() => runSearch().catch(() => {})}>
-          {loading ? "Searching…" : "Search reviews"}
-        </button>
+        <HoverHelp text="Run GET /search/reviews with the filters above. Requires elasticsearch container.">
+          <button type="button" disabled={loading} onClick={() => runSearch().catch(() => {})}>
+            {loading ? "Searching…" : "Search reviews"}
+          </button>
+        </HoverHelp>
       </div>
 
       {error && <p className="status-failed">{error}</p>}

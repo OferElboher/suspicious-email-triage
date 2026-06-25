@@ -19,6 +19,7 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 | Goal | Document |
 |------|----------|
 | Non-technical product overview | [biz_guide_user.md](biz_guide_user.md) |
+| **Review dashboard UI** (queue, detail, modal submit, HoverHelp) | [ui_guide_review_dashboard.md](ui_guide_review_dashboard.md) |
 | **Complete list of implemented features** | [arch_guide_features_catalog.md](arch_guide_features_catalog.md) |
 | Full technical handbook | [arch_guide_system_comprehensive.md](arch_guide_system_comprehensive.md) |
 | **Build → bootstrap → sign in** (after clone or rebuild) | [stack_guide_build_and_run.md](stack_guide_build_and_run.md) |
@@ -92,6 +93,7 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 
 ### UI & business
 
+- [ui_guide_review_dashboard.md](ui_guide_review_dashboard.md) — review queue, detail panel, manual submit modal, HoverHelp
 - [ui_guide_analytics_charts.md](ui_guide_analytics_charts.md) — analytics charts
 - [ui_guide_color_themes.md](ui_guide_color_themes.md) — CSS themes
 - [biz_guide_user.md](biz_guide_user.md) — business-facing guide

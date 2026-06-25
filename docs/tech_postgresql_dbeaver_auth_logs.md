@@ -258,7 +258,7 @@ Expected: JSON with `"token"` and `"user"` containing `"roles": ["admin"]` and a
 1. Start frontend: `PORT=3001 npm start --prefix frontend`
 2. Open `http://localhost:3001`
 3. Sign in with **your email** / **`temp-admin-pswd`**
-4. You should see **Triage workspace** and **Analytics & graphs** tabs, plus **User administration** (admin role).
+4. You should see **Review dashboard** and **Analytics & graphs** tabs, plus **User administration** (admin role).
 
 #### Admin already exists but you forgot the password
 

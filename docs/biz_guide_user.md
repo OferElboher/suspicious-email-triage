@@ -12,7 +12,9 @@ This project is a working example of that workflow. It is not “magic security�
 
 The website requires login. Your administrator creates accounts and assigns roles (analyst, manager, developer, and so on). Password recovery uses your email address. Details for staff and integrators are in `auth_guide_rbac.md`.
 
-The main areas (**Triage workspace**, **Analytics & graphs**) each have a URL (for example `…/#analytics`). Refreshing the browser keeps you on the same area. Admins manage users in **Django admin** — see `auth_guide_django_admin_users.md`.
+The main areas (**Review dashboard**, **Analytics & graphs**) each have a URL (for example `…/#analytics`). Refreshing the browser keeps you on the same area. Admins manage users in **Django admin** — see `auth_guide_django_admin_users.md`.
+
+For a full walkthrough of the dashboard layout, modal submit, and hover help, see [ui_guide_review_dashboard.md](ui_guide_review_dashboard.md).
 
 ## The main actors
 
@@ -23,10 +25,10 @@ The main areas (**Triage workspace**, **Analytics & graphs**) each have a URL (f
 ## What a typical day looks like (happy path)
 
 1. An employee forwards a suspicious message to the security mailbox, or an analyst copies the message text from their mail client.
-2. The analyst opens the triage website in a browser.
-3. The analyst fills in sender details and pastes the email body, then clicks **Queue analysis**.
-4. The system stores the message and schedules background processing. The UI shows statuses like **pending** and **processing** while work happens asynchronously.
-5. When processing completes, the UI shows a **verdict**, a **recommended action**, a **short summary**, and a list of **findings** (reasons tied to evidence snippets).
+2. The analyst opens the triage website in a browser and goes to the **Review dashboard** tab.
+3. For manual testing, the analyst clicks **Submit email**, fills in sender details and the message body, then clicks **Queue analysis**. In production, messages normally arrive automatically from mailbox ingest (see [roadmap_tbd.md](roadmap_tbd.md)).
+4. The new item appears in the **Review queue** on the left. The analyst clicks the row; the **Review detail** panel on the right shows statuses like **pending** and **processing** while background workers run.
+5. When processing completes, the detail panel shows a **verdict**, a **recommended action**, a **short summary**, and a list of **findings** (reasons tied to evidence snippets).
 6. If the analyst disagrees with the automated output, they can enter a reason and save an **override** so the company has a record of human judgment.
 
 ## Analytics graphs (for managers and power users)

@@ -1,11 +1,5 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import RecentReviewsList from "./RecentReviewsList";
-
-jest.mock("../api/client", () => ({
-  getJson: jest.fn(),
-}));
-
-const { getJson } = require("../api/client");
 
 const summaries = [
   {
@@ -18,17 +12,6 @@ const summaries = [
 ];
 
 describe("RecentReviewsList", () => {
-  beforeEach(() => {
-    getJson.mockResolvedValue({
-      _id: "abc123",
-      subject: "Test subject",
-      body: "Full body text",
-      senderEmail: "a@b.com",
-      links: ["http://evil.com"],
-      status: "completed",
-    });
-  });
-
   it("prefixes simulation rows in the list", () => {
     render(
       <RecentReviewsList
@@ -45,17 +28,19 @@ describe("RecentReviewsList", () => {
         lastPage={0}
         hasMore={false}
         totalReviews={1}
-        canReadGraph={false}
+        selectedReviewId={null}
         includeSimulation
         onIncludeSimulationChange={() => {}}
         onRefresh={() => {}}
         onPageChange={() => {}}
+        onSelectReview={() => {}}
       />
     );
     expect(screen.getByText(/\[Simulation\]/)).toBeInTheDocument();
   });
 
-  it("expands review details on row click", async () => {
+  it("calls onSelectReview when a row is clicked", () => {
+    const onSelectReview = jest.fn();
     render(
       <RecentReviewsList
         reviews={summaries}
@@ -63,16 +48,35 @@ describe("RecentReviewsList", () => {
         lastPage={0}
         hasMore={false}
         totalReviews={1}
-        canReadGraph={false}
+        selectedReviewId={null}
         onRefresh={() => {}}
         onPageChange={() => {}}
+        onSelectReview={onSelectReview}
       />
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Test subject/i }));
-    await waitFor(() => {
-      expect(getJson).toHaveBeenCalledWith("/reviews/abc123");
-    });
-    expect(await screen.findByText(/Full body text/)).toBeInTheDocument();
+    expect(onSelectReview).toHaveBeenCalledWith("abc123");
+  });
+
+  it("highlights the selected review row", () => {
+    render(
+      <RecentReviewsList
+        reviews={summaries}
+        page={0}
+        lastPage={0}
+        hasMore={false}
+        totalReviews={1}
+        selectedReviewId="abc123"
+        onRefresh={() => {}}
+        onPageChange={() => {}}
+        onSelectReview={() => {}}
+      />
+    );
+
+    expect(screen.getByRole("button", { name: /Test subject/i })).toHaveAttribute(
+      "aria-current",
+      "true"
+    );
   });
 });

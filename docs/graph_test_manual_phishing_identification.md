@@ -64,7 +64,7 @@ Step-by-step manual checklist: [graph_test_manual_phishing_identification.md](gr
 
 | Area | What to verify |
 |------|----------------|
-| **Triage workspace** | Submit one review → Result panel reaches `completed` |
+| **Review dashboard** | Submit one review via **Submit email** modal → Review detail reaches `completed` |
 | **Recent reviews** | New row appears; pagination and date jump work |
 | **Analytics** (`/#analytics`) | Charts load (may be empty until events exist) |
 | **Search past reviews** | Keyword search returns indexed rows after analysis |
@@ -122,9 +122,9 @@ Both messages share the hostname **`secure-login.example-phish.test`**. That str
 
 ## Step 1 — Submit and wait for `completed`
 
-1. Open **Triage workspace** → fill **Queue analysis** → submit Message A.
-2. Submit Message B the same way.
-3. Watch the **Result** panel until **Status: completed** for each.
+1. Open **Review dashboard** → click **Submit email** → fill the form → **Queue analysis** for Message A.
+2. Submit Message B the same way (open **Submit email** again).
+3. Click each row in **Review queue**; watch **Review detail** until **Status: completed** for each.
 
 **Pass:** Both reach `completed` within a few minutes.
 

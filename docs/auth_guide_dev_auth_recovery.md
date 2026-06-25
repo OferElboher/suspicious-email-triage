@@ -422,7 +422,7 @@ PORT=3001 npm start --prefix frontend
 3. Password: `temp-admin-pswd` (or the password you set in `configure-dev-bootstrap-admin.sh`).
 4. Click **Sign in**.
 
-**Expected tabs:** Triage workspace, Analytics & graphs; **User administration** button for admin role. See [auth_guide_django_admin_users.md](auth_guide_django_admin_users.md).
+**Expected tabs:** Review dashboard, Analytics & graphs; **User administration** button for admin role. See [auth_guide_django_admin_users.md](auth_guide_django_admin_users.md).
 
 ### Step 4 — Final login verification (API)
 
