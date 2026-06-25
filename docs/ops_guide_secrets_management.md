@@ -78,7 +78,11 @@ sequenceDiagram
   API->>API: preload-secrets.js → server.js
 ```
 
-1. **`mock-secrets-manager`** reads `backend/dev.secrets` from a volume mount and exposes `GET /v1/secrets/triage/dev` (AWS `GetSecretValue`-compatible JSON).
+1. **`mock-secrets-manager`** reads `backend/dev.secrets` from a volume mount and exposes:
+   - `GET /v1/secrets/triage/dev` (LocalStack-style REST used by our Node/Python clients)
+   - `POST /` with `X-Amz-Target: secretsmanager.GetSecretValue` (AWS SDK wire protocol)
+
+   Both return **GetSecretValue-compatible JSON** (`SecretString`, `ARN`, `Name`, …).
 2. **`docker-entrypoint-with-secrets.sh`** runs before every app command. Node sets `SECRETS_PRELOAD=1` and `preload-secrets.js` loads via the abstraction. Python services (`celery`, `manage.py`) shell-export keys from `secrets_provider.py`.
 3. Application code reads **`process.env` / `os.environ`** as before — no hard-coded passwords in source files.
 

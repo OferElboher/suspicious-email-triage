@@ -70,4 +70,11 @@ describe("SimulationPanel", () => {
       });
     });
   });
+
+  it("does not render long numbered instruction list in the panel", async () => {
+    render(<SimulationPanel maxPerMin={30} />);
+    await screen.findByText(/Status: stopped/i);
+    expect(screen.queryByText(/Find synthetic rows/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("list")).not.toBeInTheDocument();
+  });
 });

@@ -67,16 +67,12 @@ Complete command reference: [stack_guide_full_feature_activation.md](stack_guide
 
 1. Sign in at `http://localhost:3001` as bootstrap admin.
 2. Open **Triage workspace** (default tab).
-3. Scroll to the dashed card **Dev simulation (synthetic emails)** — controls are **left-aligned**:
-   - **Status: running** (green) or **Status: stopped** (gray)
-   - Number field **Emails per minute** (1–30)
-   - **Start simulation** — begins synthetic ingests at the current rate
-   - **Stop simulation** — pauses ingests; **rate is remembered** for the next Start
-   - **Apply rate** — visible only while running; use after changing the number without stopping
+3. Scroll to the dashed card **Dev simulation (synthetic emails)** — controls are **left-aligned**.
+4. **Hover** over the title, status badge, rate field, or buttons for short help popups (the UI never shows file paths or documentation links).
+5. Set **Emails per minute**, then click **Start simulation**. Click **Stop simulation** to pause; your rate is remembered.
+6. While running, change the number and click **Apply rate** if you need a new speed without stopping.
 
-4. Read the status line under the buttons for confirmation (“Simulation is running at 3 email(s) per minute.”).
-
-**Pattern (UX):** One primary button toggles `enabled` true/false. You do **not** need to uncheck a separate checkbox or click “Update simulation” — that older flow was replaced to reduce confusion.
+Read the status line under the buttons for confirmation (“Simulation is running at 3 email(s) per minute.”).
 
 ---
 

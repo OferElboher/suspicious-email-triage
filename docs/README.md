@@ -56,6 +56,7 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 - [arch_guide_system_comprehensive.md](arch_guide_system_comprehensive.md) — end-to-end deep dive
 - [arch_assignment_historical.md](arch_assignment_historical.md) — original assignment brief
 - [data_guide_mock_llm.md](data_guide_mock_llm.md) — mock commercial LLM
+- [data_guide_dev_mock_services.md](data_guide_dev_mock_services.md) — all dev mocks vs real cloud APIs
 - [data_guide_kafka_events.md](data_guide_kafka_events.md) — Kafka topics & consumers
 - [data_guide_prefect_dbt_demo.md](data_guide_prefect_dbt_demo.md) — Prefect / dbt demo
 

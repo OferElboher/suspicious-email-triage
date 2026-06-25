@@ -2,9 +2,10 @@
  * Mock AWS Snowflake analytics layer — in-memory stand-in for Snowflake SQL API.
  *
  * Pattern: Node HTTP server stores analytical rows in memory (no disk/cloud persistence).
- * Technology: plain http module; REST shape inspired by Snowflake SQL API + JDBC REST.
+ * Technology: plain http module; REST contract consumed by backend/src/analytics/snowflakeClient.js.
  *
- * Production would use real Snowflake connectors; dev/tests point SNOWFLAKE_URL here.
+ * Note: this is NOT the full Snowflake SQL API — it implements the project's analytics export/reporting
+ * endpoints only. Production would point SNOWFLAKE_URL at a real warehouse proxy or ETL sink.
  */
 const http = require("http");
 const crypto = require("crypto");

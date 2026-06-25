@@ -535,6 +535,40 @@ button.danger {
 }
 
 /* Dev simulation panel — left-aligned controls and clear Start/Stop affordance */
+.simulation-panel__title {
+  display: inline-block;
+  margin: 0 0 0.75rem;
+  cursor: help;
+}
+
+.simulation-panel__steps {
+  display: none;
+}
+
+.simulation-panel__hint {
+  display: none;
+}
+
+/* Inline hover help — shared with simulation panel and other forms */
+.hover-help {
+  position: relative;
+  display: inline-block;
+}
+
+.hover-help__popup {
+  position: fixed;
+  z-index: 1000;
+  max-width: 280px;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  background: #1a1a1a;
+  color: #f5f5f5;
+  border-radius: var(--radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+}
+
 .simulation-panel__body {
   display: flex;
   justify-content: flex-start;
