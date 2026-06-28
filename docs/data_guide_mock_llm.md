@@ -27,13 +27,13 @@ This repo includes a **mock commercial LLM**: an HTTP server that speaks the **O
 
 ```mermaid
 flowchart LR
-  subgraph ingest [Async ingest]
+  subgraph ingest["Async ingest"]
     API[Node API] --> Kafka[Kafka topic]
-    Kafka --> Celery[Celery analyze_review]
+    Kafka --> Celery["Celery analyze_review"]
   end
   Celery --> Rules[rule_engine.py]
   Celery --> LLM[llm_client.py]
-  LLM --> Mock[mock-llm :8090]
+  LLM --> Mock["mock-llm port 8090"]
   Celery --> Mongo[(MongoDB review)]
   LLM --> PG[(PostgreSQL stats context)]
 ```
