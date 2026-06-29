@@ -108,6 +108,18 @@ services:
       - MOCK_SNOWFLAKE_PORT=4567
     restart: unless-stopped
 
+  # mock-s3: DEV ONLY — in-memory Amazon S3 API for database backup uploads (staging/prod use real S3).
+  mock-s3:
+    container_name: triage-mock-s3
+    build:
+      context: ../../
+      dockerfile: infra/mock-aws-s3/Dockerfile
+    ports:
+      - "4568:4568"
+    environment:
+      - MOCK_S3_PORT=4568
+    restart: unless-stopped
+
   # elasticsearch: optional full-text search (single-node, 256MB heap — laptop-friendly).
   elasticsearch:
     container_name: triage-elasticsearch
@@ -143,6 +155,7 @@ services:
     depends_on:
       - mock-secrets-manager
       - mock-snowflake
+      - mock-s3
       - mongo
       - postgres
       - redis
@@ -187,7 +200,7 @@ services:
       [
         "sh",
         "-c",
-        "mkdir -p /app/backend/data && python backend/manage.py migrate --noinput && python backend/manage.py runserver 0.0.0.0:8000",
+        "mkdir -p /app/backend/data && python backend/manage.py migrate --noinput && python backend/manage.py ensure_dev_bootstrap_admin && python backend/manage.py runserver 0.0.0.0:8000",
       ]
     ports:
       - "8000:8000"

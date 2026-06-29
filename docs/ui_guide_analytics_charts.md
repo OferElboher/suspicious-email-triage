@@ -38,8 +38,28 @@ The Node API writes these events when reviews are created and when Celery/Node w
 
 | Chart | Endpoint |
 |-------|----------|
-| Traffic & queue health (line) | `GET /metrics/timeseries?from=&to=&bucket=` |
+| Traffic & queue health (line) | `GET /metrics/timeseries?from=&to=&bucket=&measure=` |
 | Status mix (bars) | `GET /metrics/status-breakdown?from=&to=` |
+
+The **`measure`** query parameter on the line chart selects which PostgreSQL `event_type` is counted:
+
+| UI value | API `measure` | PostgreSQL `event_type` |
+|----------|---------------|-------------------------|
+| New review ingests | `ingests` (default) | `review_created` |
+| Status transitions | `status_events` | `status_changed` |
+
+---
+
+## Chart legends and axis labels
+
+Both Recharts charts include a **Legend** (color key at the top) and **axis labels** so you know exactly what is plotted:
+
+| Chart | X-axis label | Y-axis label | Legend entry |
+|-------|--------------|--------------|--------------|
+| Line | **Time (local)** — bucket start in your browser timezone | **Count of new reviews** or **Count of status events** (depends on measure) | Blue line name matches selected measure |
+| Bar | **Review pipeline status** — `pending`, `processing`, etc. | **Status event count** | Gray bar: “Status transition events” |
+
+The phishing **graph** tab (`GraphView`) is not a Recharts chart — it is an SVG network with **no X/Y axes**. A **color legend** below the canvas explains node types (Sender, Review, Url, Domain, Campaign). See [graph_guide_neo4j_phishing.md](graph_guide_neo4j_phishing.md).
 
 ---
 
@@ -48,7 +68,8 @@ The Node API writes these events when reviews are created and when Celery/Node w
 | Control | Effect |
 |---------|--------|
 | **From / To** | Time window (local datetime). Disabled while auto-refresh is on. |
-| **Bucket size** | Groups the line chart: `15m`, `1h`, or `1d`. |
+| **Line chart measure** | Switch line chart between **new ingests** (`review_created`) and **status transitions** (`status_changed`). |
+| **Time bucket (X-axis grouping)** | Groups the line chart: `15m`, `1h`, or `1d`. |
 | **Auto-refresh: on** | Shows rolling **last 24 hours**, polls every **30 seconds**. |
 | **Auto-refresh: off** + **Apply range** | Uses your custom From/To window. |
 

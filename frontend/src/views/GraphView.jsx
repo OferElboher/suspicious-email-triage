@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getJson } from "../api/client";
 import CampaignGraphCanvas from "../components/CampaignGraphCanvas";
+import GraphLegend from "../components/GraphLegend";
 import {
   clampZoom,
   findCampaignIndexForDate,
@@ -235,11 +236,14 @@ export default function GraphView() {
             </p>
           )}
           {!subgraphLoading && canShowGraph && (
-            <CampaignGraphCanvas
-              key={`${selectedCampaign?.indicator}-${viewEpoch}`}
-              graph={subgraph}
-              zoom={zoom}
-            />
+            <>
+              <CampaignGraphCanvas
+                key={`${selectedCampaign?.indicator}-${viewEpoch}`}
+                graph={subgraph}
+                zoom={zoom}
+              />
+              <GraphLegend />
+            </>
           )}
         </section>
       )}

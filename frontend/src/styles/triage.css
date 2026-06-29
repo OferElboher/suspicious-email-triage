@@ -648,6 +648,37 @@ button.danger {
   font-size: 0.82rem;
 }
 
+/* Neo4j graph node-type legend — spatial graph has no axes; colors explain node labels. */
+.graph-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1.25rem;
+  margin-top: 0.85rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.graph-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.85rem;
+}
+
+.graph-legend__swatch {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.graph-legend__label strong {
+  font-weight: 600;
+}
+
 .graph-label {
   font-size: 10px;
   fill: var(--muted);

@@ -23,4 +23,4 @@ ENV AI_SERVICE_ROOT=/app/ai_service
 EXPOSE 8000
 
 ENTRYPOINT ["/bin/bash", "/app/scripts/docker-entrypoint-with-secrets.sh"]
-CMD ["sh", "-c", "mkdir -p /app/backend/data && python backend/manage.py migrate --noinput && python backend/manage.py runserver 0.0.0.0:8000"]
+CMD ["sh", "-c", "mkdir -p /app/backend/data && python backend/manage.py migrate --noinput && python backend/manage.py ensure_dev_bootstrap_admin && python backend/manage.py runserver 0.0.0.0:8000"]

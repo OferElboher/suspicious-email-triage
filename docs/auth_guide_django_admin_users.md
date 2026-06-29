@@ -117,6 +117,16 @@ Open `http://localhost:8000/admin/` in the browser.
 
 Use the **same email and password** as the triage app. Django admin only accepts users who have the **`admin` role**.
 
+**Automatic dev fix (implemented):** On every `django-admin` container start, the management command `ensure_dev_bootstrap_admin` syncs `AUTH_BOOTSTRAP_ADMIN_EMAIL` / `AUTH_BOOTSTRAP_ADMIN_PASSWORD` from secrets into PostgreSQL and assigns the `admin` role. This fixes login failures after Docker rebuilds when `postgres-data` still holds an old password hash.
+
+If login still fails:
+
+1. Confirm bootstrap email is configured: `bash scripts/configure-dev-bootstrap-admin.sh YOUR_EMAIL@example.com`
+2. Reset password: `bash scripts/bootstrap-auth-admin.sh --reset-password`
+3. Or use the React sign-in button **Reset dev bootstrap password** (`POST /auth/dev/bootstrap-reset`)
+
+Use the **email address** (not username) in Django’s “Username” field.
+
 ---
 
 ## Step 4 — Return to the triage app
@@ -188,7 +198,7 @@ Permission codes (`reviews.read`, `metrics.read`, …) are defined in Node (`bac
 | Symptom | Fix |
 |---------|-----|
 | **User administration** button missing | Signed-in user must have **`admin` role** (not only analyst/developer). |
-| Django admin login fails | Same credentials as triage app; confirm `admin` role in DBeaver: `auth_user_roles`. |
+| Django admin login fails | Run `bash scripts/bootstrap-auth-admin.sh --reset-password`, or rebuild `django-admin` (runs `ensure_dev_bootstrap_admin` on start). Same credentials as triage app; confirm `admin` role. |
 | `Connection refused` / `ERR_CONNECTION_REFUSED` on port 8000 | **`django-admin` is not running.** Check `docker compose -f infra/docker/docker-compose.yml ps django-admin` — status must be **Up**, not **Restarting** or missing. Start or rebuild: `DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --build django-admin`. Then verify with `curl -sS -o /dev/null -w '%{http_code}\n' http://localhost:8000/admin/login/` → `200`. |
 | `django-admin` container **Restarting** | Read logs: `docker compose -f infra/docker/docker-compose.yml logs django-admin --tail 50`. Rebuild the image after pulling latest code: `up -d --build django-admin`. |
 | Login page error mentioning **`last_login`** | Pull latest code and rebuild `django-admin` — the app disables Django's last-login update because `auth_users` has no such column. |

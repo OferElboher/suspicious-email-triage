@@ -366,6 +366,9 @@ def test_staging_and_prod_use_real_aws_secrets_not_mock():
     assert "api.openai.com" in staging_env
     assert "api.openai.com" in prod_env
     assert "mock-snowflake" in dev_env
+    assert "mock-s3" in dev_env
+    assert "BACKUP_PROVIDER=mock-aws" in dev_env
+    assert "BACKUP_PROVIDER=aws" in staging_env
     assert "snowflakecomputing.com" in staging_env
     readme = (ROOT / "docs/README.md").read_text(encoding="utf-8")
     assert "stack_guide_staging_production_services.md" in readme
@@ -390,3 +393,6 @@ def test_app_icon_navigation_and_logs_view():
     assert "ui_guide_app_navigation.md" in readme
     themes = (ROOT / "backend/src/auth/themeConstants.js").read_text(encoding="utf-8")
     assert "spring-blossom" in themes
+    backups_doc = (ROOT / "docs/ops_guide_s3_backups.md").read_text(encoding="utf-8")
+    assert "mock-s3" in backups_doc
+    assert "ops.backups" in (ROOT / "backend/src/auth/constants.js").read_text(encoding="utf-8")

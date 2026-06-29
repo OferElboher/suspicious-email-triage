@@ -109,6 +109,7 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 - [ops_guide_health_uptime.md](ops_guide_health_uptime.md) — health probes
 - [ops_guide_central_logging.md](ops_guide_central_logging.md) — merged logs
 - [ops_guide_metrics_alerting.md](ops_guide_metrics_alerting.md) — Prometheus / alerts
+- [ops_guide_s3_backups.md](ops_guide_s3_backups.md) — Amazon S3 database backups (mock-s3 in dev)
 - [roadmap_tbd.md](roadmap_tbd.md) — backlog
 - [roadmap_implemented_beyond_requirements.md](roadmap_implemented_beyond_requirements.md) — extras delivered
 

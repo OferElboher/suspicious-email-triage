@@ -1,0 +1,7 @@
+{
+  "name": "mock-aws-s3",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dev-only in-memory S3-compatible API for backup upload tests",
+  "main": "server.js"
+}

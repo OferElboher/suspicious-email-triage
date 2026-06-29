@@ -15,6 +15,7 @@ This guide is for developers **new to AWS, OpenAI, or Snowflake** who run the lo
 | **AWS Secrets Manager** | Costs money; secrets must not live in git | `mock-secrets-manager` (:4566) |
 | **OpenAI Chat Completions** | Per-token billing | `mock-llm` (:8090) |
 | **Snowflake warehouse** | Cloud account required | `mock-snowflake` (:4567) |
+| **Amazon S3** | Cloud storage + IAM | `mock-s3` (:4568) |
 
 **Pattern:** the application reads a **URL from environment variables** (`SECRETS_MANAGER_URL`, `LLM_BASE_URL`, `SNOWFLAKE_URL`). In dev those URLs aim at Docker mocks; in production they aim at real services — **no code fork**, only configuration.
 
@@ -73,6 +74,22 @@ Deep dive: [data_guide_snowflake_analytics.md](data_guide_snowflake_analytics.md
 
 ---
 
+## Mock Amazon S3 (database backups)
+
+**Real-world protocol:** Amazon S3 stores objects in buckets. Clients use `@aws-sdk/client-s3` (`PutObject`, `ListObjectsV2`, `GetObject`) over HTTPS with IAM credentials.
+
+**Our mock** (`infra/mock-aws-s3/server.js`):
+
+- Listens on port **4568** (`mock-s3` service in Docker Compose).
+- Keeps objects in an in-memory `Map` — no disk, no AWS bill.
+- Supports path-style PUT/GET and ListObjectsV2 XML for the AWS SDK with `endpoint: http://mock-s3:4568` and `forcePathStyle: true`.
+
+**Application code:** `backend/src/backups/s3BackupProvider.js` + `POST /ops/backups/run` — see [ops_guide_s3_backups.md](ops_guide_s3_backups.md).
+
+**Novice tip:** `BACKUP_PROVIDER=mock-aws` in `.env.dev` tells the backend to use the mock endpoint; staging/prod set `BACKUP_PROVIDER=aws` and a real bucket name.
+
+---
+
 ## Services that are real (not mocks) in dev
 
 | Service | Container | Notes |
@@ -114,7 +131,7 @@ Documentation never copies values from gitignored `backend/dev.secrets`. Committ
 
 ```bash
 cd ~/suspicious-email-triage
-docker compose -f infra/docker/docker-compose.yml ps mock-secrets-manager mock-snowflake mock-llm
+docker compose -f infra/docker/docker-compose.yml ps mock-secrets-manager mock-snowflake mock-s3 mock-llm
 ```
 
 </div>

@@ -1,3 +1,33 @@
+jest.mock("../src/backups/s3BackupProvider", () => ({
+  backupProviderMode: jest.fn(() => "mock-aws"),
+  backupProviderStatus: jest.fn(() => ({
+    enabled: true,
+    provider: "mock-aws",
+    bucket: "triage-dev-backups",
+    endpoint: "http://mock-s3:4568",
+  })),
+  listBackupObjects: jest.fn(async () => ({
+    bucket: "triage-dev-backups",
+    prefix: "postgres/",
+    items: [{ key: "postgres/logical-2026.json", size: 120, lastModified: "2026-01-01T00:00:00.000Z" }],
+  })),
+  uploadBackupObject: jest.fn(async ({ key, body }) => ({
+    bucket: "triage-dev-backups",
+    key,
+    size: Buffer.byteLength(body),
+  })),
+}));
+
+jest.mock("../src/backups/backupService", () => ({
+  runPostgresBackupToS3: jest.fn(async () => ({
+    bucket: "triage-dev-backups",
+    key: "postgres/logical-test.json",
+    size: 99,
+    summary: { reviewStatsEventCount: 1, authUserCount: 1 },
+    createdAt: "2026-01-01T00:00:00.000Z",
+  })),
+}));
+
 jest.mock("../src/http/middleware/auth", () => ({
   authenticate: (req, res, next) => {
     if (!req.headers.authorization) {
@@ -5,7 +35,7 @@ jest.mock("../src/http/middleware/auth", () => ({
     }
     req.auth = req.auth || {
       email: "ops@test.local",
-      permissions: ["metrics.read", "logs.read"],
+      permissions: ["metrics.read", "logs.read", "ops.backups"],
     };
     return next();
   },
@@ -45,6 +75,8 @@ const request = require("supertest");
 const express = require("express");
 const opsRoutes = require("../src/api/ops");
 const { renderPrometheusText } = require("../src/lib/appMetrics");
+const { runPostgresBackupToS3 } = require("../src/backups/backupService");
+const { listBackupObjects } = require("../src/backups/s3BackupProvider");
 
 /** Build app with optional permission override on req.auth. */
 function buildApp({ permissions } = {}) {
@@ -89,5 +121,30 @@ describe("ops API routes", () => {
     const res = await request(app).get("/ops/logs/summary").set(bearer);
     expect(res.status).toBe(200);
     expect(res.body.topics).toBeDefined();
+  });
+
+  it("GET /ops/backups/status returns S3 provider metadata for ops.backups", async () => {
+    const app = buildApp({ permissions: ["ops.backups"] });
+    const res = await request(app).get("/ops/backups/status").set(bearer);
+    expect(res.status).toBe(200);
+    expect(res.body.provider).toBe("mock-aws");
+    expect(res.body.bucket).toBe("triage-dev-backups");
+  });
+
+  it("GET /ops/backups lists objects for ops.backups", async () => {
+    const app = buildApp({ permissions: ["ops.backups"] });
+    const res = await request(app).get("/ops/backups").set(bearer);
+    expect(res.status).toBe(200);
+    expect(listBackupObjects).toHaveBeenCalled();
+    expect(res.body.items.length).toBeGreaterThan(0);
+  });
+
+  it("POST /ops/backups/run triggers logical backup upload", async () => {
+    const app = buildApp({ permissions: ["ops.backups"] });
+    const res = await request(app).post("/ops/backups/run").set(bearer);
+    expect(res.status).toBe(200);
+    expect(runPostgresBackupToS3).toHaveBeenCalled();
+    expect(res.body.ok).toBe(true);
+    expect(res.body.key).toMatch(/^postgres\//);
   });
 });

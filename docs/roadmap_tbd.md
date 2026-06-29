@@ -180,7 +180,7 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 
 ---
 
-### 1.5 Backups and restore (P0) — **partial (dev Docker volumes)**
+### 1.5 Backups and restore (P0) — **partial (dev Docker volumes + S3 logical backup)**
 
 **User value:** Ransomware or bad deploy does not permanently lose reviews and graph intelligence.
 
@@ -189,16 +189,17 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 - Daily backup Mongo, Postgres, Neo4j volume; documented restore tested quarterly.
 - RPO/RTO written (e.g. RPO 24h, RTO 4h).
 
-**Tech pattern:** `mongodump`, `pg_dump`, Neo4j `neo4j-admin dump`, S3/GCS storage; Docker **named volumes** for dev persistence.
+**Tech pattern:** `mongodump`, `pg_dump`, Neo4j `neo4j-admin dump`, **Amazon S3** object storage; Docker **named volumes** for dev persistence.
 
 **Implemented (dev free path):**
 
 - `mongo-data`, `postgres-data`, and `neo4j-data` named volumes in `infra/docker/docker-compose.yml` so `docker compose up --build` does **not** wipe review/graph data
 - Auth password hashes live in Postgres — **persisted volumes mean rebuild alone does not reset passwords**; dev recovery is implemented via `POST /auth/dev/bootstrap-reset`, sign-in UI **Reset dev bootstrap password**, and `bash scripts/bootstrap-auth-admin.sh --reset-password` (`resetBootstrapAdminForDev` in `authPg.js`)
+- **Amazon S3 logical PostgreSQL backup** — `POST /ops/backups/run` uploads JSON snapshot via `@aws-sdk/client-s3`; dev uses **`mock-s3`** container (`BACKUP_PROVIDER=mock-aws`); staging/prod use real S3 bucket — [ops_guide_s3_backups.md](ops_guide_s3_backups.md)
 
-**Guides:** [stack_guide_build_and_run.md](stack_guide_build_and_run.md), [auth_guide_dev_admin_credentials.md](auth_guide_dev_admin_credentials.md), [auth_guide_dev_auth_recovery.md](auth_guide_dev_auth_recovery.md)
+**Guides:** [stack_guide_build_and_run.md](stack_guide_build_and_run.md), [auth_guide_dev_admin_credentials.md](auth_guide_dev_admin_credentials.md), [auth_guide_dev_auth_recovery.md](auth_guide_dev_auth_recovery.md), [ops_guide_s3_backups.md](ops_guide_s3_backups.md)
 
-**Remaining (paid / later):** Scheduled cloud backups, restore drills, off-site storage.
+**Remaining (paid / later):** Scheduled cron/Lambda uploads, `mongodump`/`neo4j-admin` to S3, restore drills, Glacier lifecycle.
 
 ---
 
@@ -632,7 +633,7 @@ This section lists **vendor services the architecture naturally maps to** but wh
 | **Neo4j Aura** | Managed graph DB | Neo4j Community Docker | Aura bolt URI | `NEO4J_URI` + password in secrets |
 | **Snowflake (on AWS)** | OLAP reporting | `mock-snowflake` REST | Snowflake account URL | ETL proxy or extend `snowflakeClient.js` for SQL API |
 | **AWS CloudWatch Logs** | Central log retention + search | `merged.log` + `GET /logs/search` | Log group per service | Ship stdout/merged.log via Fluent Bit / CloudWatch agent |
-| **Amazon S3** | Backup storage for Mongo/PG/Neo4j dumps | Docker named volumes | S3 bucket + lifecycle | Cron/Lambda upload from [roadmap §1.5 backups](#15-backups-p0--partial) |
+| **Amazon S3** | Backup storage for Mongo/PG/Neo4j dumps | **`mock-s3` + `POST /ops/backups/run`** | S3 bucket + lifecycle | **Implemented** for PostgreSQL logical JSON — [ops_guide_s3_backups.md](ops_guide_s3_backups.md); extend for mongodump/neo4j |
 | **AWS WAF + CloudFront** | Edge TLS, DDoS, rate limits | None locally | CloudFront distribution | Place in front of ALB — [roadmap §2.1 HTTPS](#21-https-and-rate-limiting-p0) |
 | **Amazon EventBridge + SNS** | Alert routing from `/ops/alerts` | Manual log review | SNS topics per severity | Lambda polls metrics or EventBridge rules on DLQ depth |
 | **Amazon Keyspaces** | Wide-column audit store (years of overrides) | Not implemented | Managed Cassandra-compatible | New writer on `POST /reviews/:id/override` — [§9 wide-column](#9-wide-column-audit-store-cassandra--scylladb-p2) |

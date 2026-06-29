@@ -69,19 +69,20 @@ function bucketExpression(bucket) {
   return "date_trunc('hour', occurred_at)";
 }
 
-/** getTimeseries returns review-created counts bucketed for chart rendering. */
-async function getTimeseries({ from, to, bucket }) {
+/** getTimeseries returns event counts bucketed for chart rendering. */
+async function getTimeseries({ from, to, bucket, eventType = "review_created" }) {
   await ensureStatsSchema();
   const bucketSql = bucketExpression(bucket);
+  const normalizedType = String(eventType || "review_created").trim();
   const { rows } = await pool.query(
     `SELECT ${bucketSql} AS bucket_start, count(*)::int AS count
      FROM review_stats_events
      WHERE occurred_at >= $1
        AND occurred_at <= $2
-       AND event_type = 'review_created'
+       AND event_type = $3
      GROUP BY bucket_start
      ORDER BY bucket_start ASC`,
-    [from, to]
+    [from, to, normalizedType]
   );
   return rows.map((row) => ({
     t: row.bucket_start ? new Date(row.bucket_start).toISOString() : null,

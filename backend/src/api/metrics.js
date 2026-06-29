@@ -26,12 +26,18 @@ router.get("/timeseries", requirePermission("metrics.read"), async (req, res) =>
     const to = new Date(req.query.to || now);
     /** bucketKey: requested chart bucket width (15m, 1h, or 1d). */
     const bucketKey = (req.query.bucket || "1h").toLowerCase();
+    /** measure: which PostgreSQL event_type to aggregate (ingests vs status_events). */
+    const measure = String(req.query.measure || "ingests").toLowerCase();
+    const eventType =
+      measure === "status_events" || measure === "status" ? "status_changed" : "review_created";
     /** series: compact PostgreSQL aggregate used directly by the frontend chart. */
-    const series = await getTimeseries({ from, to, bucket: bucketKey });
+    const series = await getTimeseries({ from, to, bucket: bucketKey, eventType });
     res.json({
       from: from.toISOString(),
       to: to.toISOString(),
       bucket: bucketKey,
+      measure,
+      eventType,
       series,
     });
   } catch (err) {

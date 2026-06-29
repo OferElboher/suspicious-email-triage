@@ -9,6 +9,7 @@ const PERMISSIONS = [
   { code: "dev.reset", description: "Reset local dev databases and queues" },
   { code: "admin.users", description: "Provision and manage user accounts" },
   { code: "logs.read", description: "Search merged application logs" },
+  { code: "ops.backups", description: "Trigger and list off-site database backups (S3)" },
 ];
 
 /** Default role → permission mapping seeded on first startup. */
