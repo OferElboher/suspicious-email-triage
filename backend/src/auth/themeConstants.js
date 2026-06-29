@@ -22,7 +22,7 @@ const UI_THEMES = [
   { id: "solarized-dark", label: "Solarized dark", category: "dark" },
   { id: "nord", label: "Nord", category: "dark" },
   { id: "dracula", label: "Dracula", category: "dark" },
-  { id: "spring-blossom", label: "Spring blossom", category: "colorful" },
+  { id: "spring-blossom", label: "Spring blossom (light blue & green)", category: "colorful" },
 ];
 
 const THEME_IDS = new Set(UI_THEMES.map((t) => t.id));

@@ -17,6 +17,7 @@ import {
   LOCAL_THEME_KEY,
   THEMES,
   applyThemeToDocument,
+  mergeThemeCatalogs,
   isValidTheme,
 } from "../themes/themes";
 
@@ -44,13 +45,13 @@ export function ThemeProvider({ children }) {
     }
   }, [user?.uiTheme]);
 
-  /** Load full theme catalog from API when authenticated (keeps SPA aligned with backend). */
+  /** Load theme catalog from API when authenticated; merge with bundled list so new SPA themes are never dropped. */
   useEffect(() => {
     if (!isAuthenticated) return;
     getJson("/auth/preferences")
       .then((data) => {
         if (Array.isArray(data.themes) && data.themes.length) {
-          setCatalog(data.themes);
+          setCatalog(mergeThemeCatalogs(data.themes, THEMES));
         }
         if (data.uiTheme && isValidTheme(data.uiTheme)) {
           setThemeIdState(data.uiTheme);

@@ -24,7 +24,7 @@ export const THEMES = [
   { id: "solarized-dark", label: "Solarized dark", category: "dark" },
   { id: "nord", label: "Nord", category: "dark" },
   { id: "dracula", label: "Dracula", category: "dark" },
-  { id: "spring-blossom", label: "Spring blossom", category: "colorful" },
+  { id: "spring-blossom", label: "Spring blossom (light blue & green)", category: "colorful" },
 ];
 
 const THEME_IDS = new Set(THEMES.map((t) => t.id));
@@ -39,4 +39,21 @@ export function applyThemeToDocument(themeId) {
   const id = isValidTheme(themeId) ? themeId : DEFAULT_THEME;
   document.documentElement.setAttribute("data-theme", id);
   return id;
+}
+
+/**
+ * Merge server theme list with bundled catalog so new SPA themes (e.g. spring-blossom)
+ * appear even when the API container has not been rebuilt yet.
+ * @param {Array<{id:string,label?:string,category?:string}>|undefined} serverThemes
+ * @param {Array<{id:string,label:string,category:string}>} [bundledThemes=THEMES]
+ * @returns {Array<{id:string,label:string,category:string}>}
+ */
+export function mergeThemeCatalogs(serverThemes, bundledThemes = THEMES) {
+  const byId = new Map(bundledThemes.map((entry) => [entry.id, { ...entry }]));
+  (serverThemes || []).forEach((entry) => {
+    if (entry?.id && byId.has(entry.id)) {
+      byId.set(entry.id, { ...byId.get(entry.id), ...entry });
+    }
+  });
+  return bundledThemes.map((entry) => byId.get(entry.id)).filter(Boolean);
 }

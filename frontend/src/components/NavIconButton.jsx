@@ -1,7 +1,7 @@
 /**
- * Uniform square navigation control — icon visible, label on HoverHelp tooltip.
+ * Uniform round navigation control — large icon visible, full tab name on HoverHelp above button.
  *
- * Pattern: aria-label for screen readers; HoverHelp for sighted users (same as simulation panel).
+ * Pattern: aria-label for screen readers; HoverHelp placement="above" + viewport clamp.
  */
 import HoverHelp from "./HoverHelp";
 
@@ -14,7 +14,7 @@ import HoverHelp from "./HoverHelp";
  */
 export default function NavIconButton({ label, active, onClick, children }) {
   return (
-    <HoverHelp text={label}>
+    <HoverHelp text={label} placement="above">
       <button
         type="button"
         className={`nav-icon${active ? " nav-icon--active" : ""}`}

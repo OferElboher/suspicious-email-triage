@@ -26,4 +26,16 @@ describe("HoverHelp", () => {
     fireEvent.mouseLeave(btn);
     expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
   });
+
+  it("uses nav styling and above placement when requested", () => {
+    render(
+      <HoverHelp text="Review dashboard" placement="above">
+        <button type="button">Nav</button>
+      </HoverHelp>
+    );
+    fireEvent.mouseEnter(screen.getByRole("button", { name: "Nav" }));
+    const tip = screen.getByRole("tooltip");
+    expect(tip).toHaveClass("hover-help__popup--nav");
+    expect(tip).toHaveTextContent("Review dashboard");
+  });
 });

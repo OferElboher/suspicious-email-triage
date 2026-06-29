@@ -42,6 +42,8 @@ describe("auth preferences API", () => {
     expect(res.body.uiTheme).toBe("ocean-dark");
     expect(Array.isArray(res.body.themes)).toBe(true);
     expect(res.body.themes.length).toBeGreaterThan(10);
+    const ids = res.body.themes.map((entry) => entry.id);
+    expect(ids).toContain("spring-blossom");
   });
 
   it("PUT /auth/preferences rejects invalid theme", async () => {

@@ -1,66 +1,74 @@
 # UI themes guide
 
-The React analyst UI supports **18 built-in color themes** per user, persisted in PostgreSQL and applied instantly via **CSS custom properties** (variables) and a `data-theme` attribute on the document root. No page reload is required when switching themes.
+The React analyst UI supports **18 built-in color themes** per user. A theme is not just a pretty palette — it is a named set of **CSS custom properties** (variables) such as `--bg`, `--text`, and `--accent` that every panel, button, and chart inherits. When you pick a theme, the browser applies new colors **instantly** without reloading the page.
 
-**Related:** [auth_guide_rbac.md](auth_guide_rbac.md), [ui_guide_app_navigation.md](ui_guide_app_navigation.md) (Settings tab), `frontend/src/styles/themes.css`, `backend/src/auth/themeConstants.js`.
+Themes are persisted per authenticated user in **PostgreSQL** (`auth_users.ui_theme`). Guests who have not signed in yet store their choice in **localStorage** until they log in.
+
+**Related guides:** [auth_guide_rbac.md](auth_guide_rbac.md) (who can sign in), [ui_guide_app_navigation.md](ui_guide_app_navigation.md) (where the theme picker lives — **Settings** tab, not the header).
 
 ---
 
-## How theming works (novice overview)
+## How theming works (for developers new to CSS variables)
 
-1. **CSS variables** — Each theme defines tokens like `--bg`, `--text`, `--accent` on `[data-theme="theme-id"]` selectors.
-2. **DOM attribute** — JavaScript sets `document.documentElement.setAttribute("data-theme", "ocean-dark")`.
-3. **Components** — Layout and components use `var(--bg)`, `var(--accent)`, etc., so one attribute swap recolors the whole app.
-4. **Persistence** — Logged-in users store choice in `auth_users.ui_theme`; guests use `localStorage` until login.
+Modern CSS lets you define reusable tokens on a selector. Our themes attach those tokens to the HTML root element using a **`data-theme`** attribute:
+
+```html
+<html data-theme="spring-blossom">
+```
+
+Each theme block in `frontend/src/styles/themes.css` looks like this:
+
+```css
+[data-theme="spring-blossom"] {
+  --bg: #e8f4fc;
+  --surface: #fffef5;
+  --text: #1b2838;
+  --accent: #e87830;
+  /* ... danger, warn, ok, radius, shadow ... */
+```
+
+Every component uses `var(--bg)`, `var(--accent)`, and so on. Changing **one attribute** on `<html>` recolors the entire single-page application (SPA). This pattern is sometimes called **design tokens via CSS variables** — it avoids duplicating hex codes in JavaScript and keeps theming purely declarative in CSS.
+
+**Technology stack involved:**
+
+| Layer | File / tool | Role |
+|-------|-------------|------|
+| Token definitions | `frontend/src/styles/themes.css` | One `[data-theme="…"]` block per theme id |
+| Catalog & helpers | `frontend/src/themes/themes.js` | Lists themes, validates ids, applies `data-theme` |
+| React state | `frontend/src/context/ThemeContext.jsx` | Loads/saves preference, merges API + bundled catalog |
+| Picker UI | `frontend/src/components/ThemeSelector.jsx` | Grouped `<select>` in Settings |
+| Server validation | `backend/src/auth/themeConstants.js` | Same ids as frontend; rejects unknown ids on PUT |
+| Persistence | `backend/src/auth/authPg.js` | Reads/writes `auth_users.ui_theme` |
 
 ```mermaid
 flowchart TD
-  Picker[ThemeSelector UI] --> TC[ThemeContext]
-  TC --> DOM[data-theme on html]
-  DOM --> CSS[themes.css variables]
+  Picker[ThemeSelector in Settings] --> TC[ThemeContext React provider]
+  TC --> DOM["document.documentElement data-theme"]
+  DOM --> CSS[themes.css variable blocks]
   TC --> API[PUT /auth/preferences]
-  API --> PG[(PostgreSQL ui_theme)]
+  API --> PG[(PostgreSQL auth_users.ui_theme)]
+  TC --> Merge[mergeThemeCatalogs bundled + API]
 ```
 
 ---
 
-## CSS variables and `data-theme`
+## The spring-blossom theme (and why it might have seemed missing)
 
-**File:** `frontend/src/styles/themes.css`
+The theme id is **`spring-blossom`** (not “sprint-blossom” — that is a common typo). Its label in the picker is **Spring blossom (light blue & green)** so it is easy to distinguish from **Forest light** (`forest-light`), which is a different green palette.
 
-Pattern (documented at top of file):
+**Visual character:** light-blue page background, warm yellow-tinted card surfaces, orange accent buttons, fresh green success states, burgundy errors, purple warnings.
 
-```css
-[data-theme="default-light"] {
-  --bg: #f6f7f9;
-  --surface: #ffffff;
-  --text: #1b1f24;
-  --accent: #1f5eff;
-  /* ... */
-}
-```
+When you are signed in, `ThemeContext` fetches the theme list from **`GET /auth/preferences`**. In older deployments the API container might return a catalog that **predates** `spring-blossom` (for example if the backend Docker image was not rebuilt after the theme was added). Previously the SPA **replaced** its bundled list entirely with the API response, which could hide new frontend themes.
 
-Shared semantic tokens across themes:
+**Fix (implemented):** `mergeThemeCatalogs()` in `themes.js` always starts from the **bundled** `THEMES` array shipped with the frontend build, then overlays any matching entries from the server. New SPA themes therefore appear in Settings even before the API image catches up. Server labels still win when both sides define the same id.
 
-| Variable | Typical use |
-|----------|-------------|
-| `--bg` | Page background |
-| `--surface` | Cards, panels |
-| `--border` | Dividers |
-| `--text` / `--muted` | Primary and secondary text |
-| `--accent` / `--accent-soft` | Buttons, links, highlights |
-| `--danger` / `--warn` / `--ok` | Status colors |
-| `--radius` / `--shadow` | Layout polish |
-
-`:root` and `default-light` share the same block so first paint has sensible defaults before React hydrates.
-
-**Helper:** `frontend/src/themes/themes.js` — `applyThemeToDocument(themeId)` sets `data-theme` on `<html>`.
+**Where to pick it:** open the **Settings** sub-window (`#settings` in the URL hash) → **Theme** dropdown → **colorful** group → **Spring blossom (light blue & green)**.
 
 ---
 
-## The 18 themes
+## All 18 themes
 
-Ids are identical in the backend catalog, frontend `THEMES` array, and CSS blocks. Invalid ids fall back to **`default-light`**.
+Ids must match across **three** places when adding a theme: `backend/src/auth/themeConstants.js`, `frontend/src/themes/themes.js`, and a new `[data-theme="…"]` block in `themes.css`. Invalid ids fall back to **`default-light`**.
 
 | id | Label | Category |
 |----|-------|----------|
@@ -81,49 +89,44 @@ Ids are identical in the backend catalog, frontend `THEMES` array, and CSS block
 | `solarized-dark` | Solarized dark | dark |
 | `nord` | Nord | dark |
 | `dracula` | Dracula | dark |
-| `spring-blossom` | Spring blossom | colorful |
-
-**Spring blossom** uses a light-blue page background, warm yellow-tinted surfaces, orange-orange accents, fresh green for success states, **burgundy** (`--danger`) and **purple** (`--warn`) for errors and warnings.
-
-Theme selection is in the **Settings** sub-window (`#settings`) when signed in — see [ui_guide_app_navigation.md](ui_guide_app_navigation.md).
-
-**Source of truth for API validation:** `backend/src/auth/themeConstants.js` (`UI_THEMES`, `isValidUiTheme()`).
-
-Adding a theme requires updating **three** places: `themeConstants.js`, `themes.css` (`[data-theme="new-id"]`), and `frontend/src/themes/themes.js` (`THEMES`).
+| `spring-blossom` | Spring blossom (light blue & green) | colorful |
 
 ---
 
-## PostgreSQL: `auth_users.ui_theme`
+## PostgreSQL column: `auth_users.ui_theme`
 
 **Module:** `backend/src/auth/authPg.js`
 
-On schema init/migrate:
+When the auth schema is created or migrated, each user row gets:
 
-- Column `ui_theme TEXT NOT NULL DEFAULT 'default-light'` on `auth_users`.
+```sql
+ui_theme TEXT NOT NULL DEFAULT 'default-light'
+```
 
-Functions:
+Helper functions:
 
-- `getUserUiTheme(userId)` — read current theme.
-- `setUserUiTheme(userId, themeId)` — update after validation.
+- `getUserUiTheme(userId)` — read stored preference.
+- `setUserUiTheme(userId, themeId)` — validate against `themeConstants.js`, then UPDATE.
 
-Theme is also returned on **`GET /auth/me`** as `user.uiTheme` for immediate SPA hydration after login.
+The current theme is also returned on **`GET /auth/me`** as `user.uiTheme` so the SPA can paint the correct colors immediately after login without waiting for a second request.
 
 ---
 
-## API: `GET` and `PUT /auth/preferences`
+## REST API: `GET` and `PUT /auth/preferences`
 
-**File:** `backend/src/api/auth.js`  
-**Auth:** JWT required (`authenticate` middleware).
+**Router:** `backend/src/api/auth.js`  
+**Middleware:** JWT bearer authentication (`authenticate`).
 
 ### `GET /auth/preferences`
 
-Returns catalog + current selection:
+Returns the full catalog plus the user’s current selection:
 
 ```json
 {
   "uiTheme": "ocean-dark",
   "themes": [
-    { "id": "default-light", "label": "Default light", "category": "light" }
+    { "id": "default-light", "label": "Default light", "category": "light" },
+    { "id": "spring-blossom", "label": "Spring blossom (light blue & green)", "category": "colorful" }
   ],
   "defaultTheme": "default-light"
 }
@@ -131,19 +134,19 @@ Returns catalog + current selection:
 
 ### `PUT /auth/preferences`
 
-Body:
+Request body:
 
 ```json
-{ "uiTheme": "dracula" }
+{ "uiTheme": "spring-blossom" }
 ```
 
-Success: `{ "ok": true, "uiTheme": "dracula" }`  
-Invalid id: `400` with `{ "error": "invalid_ui_theme", "allowed": [ "..."] }`
+Success: `{ "ok": true, "uiTheme": "spring-blossom" }`  
+Unknown id: HTTP `400` with `{ "error": "invalid_ui_theme", "allowed": [ "..."] }`
 
-Example (replace token with yours from login — use dev admin credentials from project docs, not real production passwords):
+Example curl (replace `<jwt>` with a token from login — see [auth_guide_obtain_jwt.md](auth_guide_obtain_jwt.md); never paste real production passwords into docs):
 
 ```bash
-TOKEN="<jwt>"
+TOKEN="<jwt-from-login>"
 
 curl -sS http://localhost:3000/auth/preferences \
   -H "Authorization: Bearer ${TOKEN}"
@@ -151,42 +154,47 @@ curl -sS http://localhost:3000/auth/preferences \
 curl -sS -X PUT http://localhost:3000/auth/preferences \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
-  -d '{"uiTheme":"nord"}'
+  -d '{"uiTheme":"spring-blossom"}'
 ```
 
 ---
 
-## Frontend: `ThemeContext`
+## Frontend: `ThemeContext` and `ThemeSelector`
 
 **Files:**
 
-- `frontend/src/context/ThemeContext.jsx` — state, API sync, persistence
-- `frontend/src/components/ThemeSelector.jsx` — picker UI (`useTheme()`)
-- `frontend/src/App.js` — wraps app with `<ThemeProvider>`
+- `frontend/src/context/ThemeContext.jsx` — React Context provider; syncs DOM, API, localStorage
+- `frontend/src/components/ThemeSelector.jsx` — grouped `<select>` using `useTheme()`
+- `frontend/src/App.js` — wraps the tree with `<ThemeProvider>`
 
-Behavior:
+**Behavior by user state:**
 
-| User state | Persistence |
-|------------|-------------|
-| Guest (not logged in) | `localStorage` key `triage_ui_theme_guest` |
-| Authenticated | `PUT /auth/preferences` after each change; loads catalog via `GET /auth/preferences` |
-| Login | Prefers `user.uiTheme` from `/auth/me` over guest localStorage |
+| User state | Where preference is stored |
+|------------|----------------------------|
+| Guest (login screen) | `localStorage` key `triage_ui_theme_guest` |
+| Authenticated | PostgreSQL via `PUT /auth/preferences` after each change |
+| Just logged in | Prefers `user.uiTheme` from `/auth/me` over guest localStorage |
 
-`useTheme()` exposes:
+**Optimistic UI:** `setThemeId()` updates `data-theme` on `<html>` **before** the PUT completes so the interface feels instant. If the network call fails, colors stay changed locally; the user can pick the theme again to retry.
 
-- `themeId` — current id
-- `themes` — catalog (from API when logged in, else bundled list)
-- `setThemeId(id)` — updates DOM immediately, then persists
+**Catalog merge:** after login, `mergeThemeCatalogs(apiThemes, THEMES)` ensures all bundled themes (including `spring-blossom`) appear in the Settings dropdown.
+
+`useTheme()` returns:
+
+- `themeId` — current theme id string
+- `themes` — array of `{ id, label, category }`
+- `setThemeId(id)` — change theme
 - `loading` — true while PUT is in flight
-
-Theme changes apply **before** the server responds so the UI stays snappy; failed PUT can be retried from the selector.
 
 ---
 
 ## Tests
 
-- `backend/__tests__/authPreferences.test.js` — GET catalog, PUT validation, persistence
-- `frontend/src/themes/themes.test.js` — `applyThemeToDocument` sets `data-theme`
+| Test file | What it verifies |
+|-----------|------------------|
+| `backend/__tests__/authPreferences.test.js` | GET catalog includes `spring-blossom`; PUT validation |
+| `frontend/src/themes/themes.test.js` | `isValidTheme`, `applyThemeToDocument`, `mergeThemeCatalogs` |
+| `integration_tests/test_repo_guardrails.py` | Repo guardrail: spring-blossom present in theme constants |
 
 <div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
 
@@ -212,8 +220,9 @@ npm test -- --watchAll=false --testPathPattern=themes.test
 
 ---
 
-## Design notes
+## Design and accessibility notes
 
-- Themes are **cosmetic** — they do not affect RBAC, verdicts, or API permissions.
-- High-contrast and monochrome themes support accessibility preferences; verify contrast in your deployment if compliance requires WCAG audit.
-- Keep theme ids **stable** once users have saved preferences; renaming an id requires a DB migration mapping old → new values.
+- Themes affect **appearance only** — they do not change RBAC, API permissions, or verdict logic.
+- High-contrast and monochrome themes exist for operators who prefer stronger contrast or grayscale UI; run your own WCAG audit if compliance requires it.
+- **Stable ids:** once users save a theme, renaming an id requires a database migration mapping old → new values.
+- **Documentation security:** this guide uses placeholders only. Real JWT secrets, database passwords, and OAuth client secrets live in gitignored `*.secrets` files — never copy them into markdown.

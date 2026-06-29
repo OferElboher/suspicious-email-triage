@@ -1,81 +1,90 @@
 /**
- * Inline SVG icons for the primary app navigation bar (uniform 20×20, currentColor).
- * Pattern: icon-only buttons + HoverHelp label on hover — saves header space.
+ * Inline SVG icons for the primary app navigation bar.
+ *
+ * Pattern: stroke-based 24×24 icons at 2px weight — readable at ~2rem inside round
+ * nav buttons. Technology: plain SVG + currentColor (no icon font/npm package).
  */
 
-/** Review dashboard — clipboard list. */
+const STROKE = 2;
+const COMMON = {
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: STROKE,
+  strokeLinecap: "round",
+  strokeLinejoin: "round",
+  "aria-hidden": true,
+  focusable: "false",
+};
+
+/** Review dashboard — clipboard with checklist lines (triage queue metaphor). */
 export function IconDashboard({ className = "nav-icon__svg" }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path
-        fill="currentColor"
-        d="M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm0 2v14h10V5H7zm2 3h6v2H9V8zm0 4h6v2H9v-2z"
-      />
+    <svg className={className} {...COMMON}>
+      <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+      <rect x="9" y="3" width="6" height="4" rx="1" />
+      <path d="M9 12h6M9 16h4" />
     </svg>
   );
 }
 
-/** Analytics charts — bar chart. */
+/** Analytics — bar chart with baseline (metrics / KPIs). */
 export function IconAnalytics({ className = "nav-icon__svg" }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path
-        fill="currentColor"
-        d="M5 19h2V9H5v10zm4 0h2V5H9v14zm4 0h2v-7h-2v7zm4 0h2V3h-2v16z"
-      />
+    <svg className={className} {...COMMON}>
+      <path d="M4 20V4" />
+      <path d="M4 20h16" />
+      <rect x="7" y="10" width="3" height="10" rx="0.5" fill="currentColor" stroke="none" />
+      <rect x="12" y="6" width="3" height="14" rx="0.5" fill="currentColor" stroke="none" />
+      <rect x="17" y="13" width="3" height="7" rx="0.5" fill="currentColor" stroke="none" />
     </svg>
   );
 }
 
-/** Phishing graph — three connected nodes. */
+/** Phishing graph — hub node linked to three leaf nodes (relationship view). */
 export function IconGraph({ className = "nav-icon__svg" }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <circle cx="12" cy="5" r="2.5" fill="currentColor" />
-      <circle cx="5" cy="19" r="2.5" fill="currentColor" />
-      <circle cx="19" cy="19" r="2.5" fill="currentColor" />
-      <path
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        d="M12 7.5L5.5 16.5M12 7.5l6.5 9M5.5 16.5h13"
-      />
+    <svg className={className} {...COMMON}>
+      <circle cx="12" cy="5" r="2.5" fill="currentColor" stroke="none" />
+      <circle cx="5" cy="19" r="2.5" fill="currentColor" stroke="none" />
+      <circle cx="19" cy="19" r="2.5" fill="currentColor" stroke="none" />
+      <path d="M12 7.5v3M10.2 10.8 6.8 16.5M13.8 10.8l3.4 5.7" />
     </svg>
   );
 }
 
-/** Unified logs — document lines. */
+/** Unified logs — magnifying glass over stacked log lines (search + records). */
 export function IconLogs({ className = "nav-icon__svg" }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path
-        fill="currentColor"
-        d="M6 2h9l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm8 1.5V8h4.5L14 3.5zM7 11h10v2H7v-2zm0 4h10v2H7v-2z"
-      />
+    <svg className={className} {...COMMON}>
+      <path d="M6 4h8l4 4v12H6z" />
+      <path d="M14 4v4h4" />
+      <path d="M8 12h8M8 16h5" />
+      <circle cx="16.5" cy="16.5" r="3.5" />
+      <path d="m19 19 2.5 2.5" />
     </svg>
   );
 }
 
-/** User administration — people. */
+/** User administration — person silhouette with shield (RBAC / admin gateway). */
 export function IconAdmin({ className = "nav-icon__svg" }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path
-        fill="currentColor"
-        d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm-8 9v-1.2a5 5 0 0 1 5-5h6a5 5 0 0 1 5 5V21H4zm14-9.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM20 21v-1a4 4 0 0 0-3-3.87"
-      />
+    <svg className={className} {...COMMON}>
+      <circle cx="10" cy="8" r="3" />
+      <path d="M4 20v-1a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v1" />
+      <path d="M17 4h3v5a3 3 0 0 1-6 0V4z" />
+      <path d="M18.5 4v1.5" />
     </svg>
   );
 }
 
-/** Settings — gear. */
+/** Settings — gear with visible teeth (preferences / theme). */
 export function IconSettings({ className = "nav-icon__svg" }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path
-        fill="currentColor"
-        d="M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8zm8.94 3a7.96 7.96 0 0 0-.12-1l2.03-1.58-1.92-3.32-2.39.96a8.05 8.05 0 0 0-1.73-1l-.36-2.54H9.75l-.36 2.54a8.05 8.05 0 0 0-1.73 1l-2.39-.96-1.92 3.32L3.18 11a7.96 7.96 0 0 0 0 2l-2.03 1.58 1.92 3.32 2.39-.96c.52.43 1.1.78 1.73 1l.36 2.54h4.5l.36-2.54c.63-.22 1.21-.57 1.73-1l2.39.96 1.92-3.32L20.82 13c.08-.33.12-.66.12-1z"
-      />
+    <svg className={className} {...COMMON}>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 2v2M12 20v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2 12h2M20 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4" />
+      <path d="M12 5.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13z" opacity="0.35" />
     </svg>
   );
 }

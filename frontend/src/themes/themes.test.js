@@ -1,4 +1,4 @@
-import { DEFAULT_THEME, THEMES, applyThemeToDocument, isValidTheme } from "./themes";
+import { DEFAULT_THEME, THEMES, applyThemeToDocument, isValidTheme, mergeThemeCatalogs } from "./themes";
 
 describe("theme catalog", () => {
   it("includes light, dark, bw, and colorful themes", () => {
@@ -22,5 +22,20 @@ describe("theme catalog", () => {
     expect(applied).toBe("dracula");
     expect(document.documentElement.getAttribute("data-theme")).toBe("dracula");
     applyThemeToDocument(DEFAULT_THEME);
+  });
+
+  it("mergeThemeCatalogs keeps bundled themes when API omits newer ids", () => {
+    const staleServer = THEMES.filter((entry) => entry.id !== "spring-blossom");
+    const merged = mergeThemeCatalogs(staleServer);
+    const blossom = merged.find((entry) => entry.id === "spring-blossom");
+    expect(blossom).toBeDefined();
+    expect(blossom.label).toMatch(/Spring blossom/i);
+    expect(merged.length).toBe(THEMES.length);
+  });
+
+  it("mergeThemeCatalogs overlays server labels onto bundled entries", () => {
+    const server = [{ id: "nord", label: "Nord (from API)", category: "dark" }];
+    const merged = mergeThemeCatalogs(server);
+    expect(merged.find((entry) => entry.id === "nord").label).toBe("Nord (from API)");
   });
 });
