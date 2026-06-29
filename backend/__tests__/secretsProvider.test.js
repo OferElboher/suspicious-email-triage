@@ -7,6 +7,11 @@ const {
   secretBundleId,
 } = require("../src/secrets/secretsProvider");
 
+jest.mock("@aws-sdk/client-secrets-manager", () => ({
+  SecretsManagerClient: jest.fn(),
+  GetSecretValueCommand: jest.fn(),
+}));
+
 describe("secretsProvider", () => {
   it("parseSecretsText ignores comments and blank lines", () => {
     const parsed = parseSecretsText(`
@@ -54,5 +59,24 @@ POSTGRES_PASSWORD=xyz
     expect(provider.providerName).toBe("file");
     const filePath = resolveSecretsFilePath("ci");
     expect(filePath).toMatch(/ci\.secrets$/);
+  });
+
+  it("createSecretsProvider aws mode uses AWS SDK loader (not mock HTTP)", async () => {
+    const awsModule = require("@aws-sdk/client-secrets-manager");
+    const send = jest.fn().mockResolvedValue({
+      SecretString: "JWT_SECRET=from-aws\nPOSTGRES_PASSWORD=secret\n",
+    });
+    awsModule.SecretsManagerClient.mockImplementation(() => ({ send }));
+    awsModule.GetSecretValueCommand.mockImplementation((input) => input);
+
+    process.env.SECRETS_PROVIDER = "aws";
+    process.env.SECRETS_BUNDLE_ID = "triage/staging";
+    process.env.AWS_REGION = "us-east-1";
+
+    const provider = createSecretsProvider({ deploymentEnv: "staging" });
+    expect(provider.providerName).toBe("aws");
+    const secrets = await provider.load();
+    expect(secrets.JWT_SECRET).toBe("from-aws");
+    expect(send).toHaveBeenCalled();
   });
 });

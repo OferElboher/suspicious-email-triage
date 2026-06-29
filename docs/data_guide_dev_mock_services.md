@@ -2,9 +2,9 @@
 
 This guide is for developers **new to AWS, OpenAI, or Snowflake** who run the local Docker stack and wonder why containers like `mock-llm` or `mock-secrets-manager` exist, and whether those mocks behave like the real cloud services.
 
-**Short answer:** each mock implements the **same HTTP shapes our application code expects**, aligned with the real vendor protocol where practical. They run **only in development/CI** — production would point environment variables at real endpoints.
+**Short answer:** each mock implements the **same HTTP shapes our application code expects**, aligned with the real vendor protocol where practical. Mocks run **only when `DEPLOYMENT_ENV=dev`** (local Docker Compose). **Staging and production** profiles in `backend/.env.staging` and `backend/.env.prod` point at **real paid services** — see [stack_guide_staging_production_services.md](stack_guide_staging_production_services.md).
 
-**Related:** [ops_guide_secrets_management.md](ops_guide_secrets_management.md), [data_guide_mock_llm.md](data_guide_mock_llm.md), [data_guide_snowflake_analytics.md](data_guide_snowflake_analytics.md), [stack_guide_full_feature_activation.md](stack_guide_full_feature_activation.md).
+**Related:** [ops_guide_secrets_management.md](ops_guide_secrets_management.md), [data_guide_mock_llm.md](data_guide_mock_llm.md), [data_guide_snowflake_analytics.md](data_guide_snowflake_analytics.md), [stack_guide_full_feature_activation.md](stack_guide_full_feature_activation.md), [stack_guide_staging_production_services.md](stack_guide_staging_production_services.md).
 
 ---
 

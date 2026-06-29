@@ -81,9 +81,37 @@ function deploymentEnv() {
   ).toLowerCase();
 }
 
-/** True when running the “dev” deployment slice (simulation UI, dev-only routes). */
+/**
+ * True when running the “dev” deployment slice (simulation UI, dev-only routes, Docker mocks).
+ * @returns {boolean}
+ */
 function isDevDeployment() {
   return deploymentEnv() === "dev";
+}
+
+/**
+ * True when DEPLOYMENT_ENV is staging — remote managed services, no Docker mocks in cloud deploys.
+ * @returns {boolean}
+ */
+function isStagingDeployment() {
+  return deploymentEnv() === "staging";
+}
+
+/**
+ * True when DEPLOYMENT_ENV is prod — real paid cloud services and strict security defaults.
+ * @returns {boolean}
+ */
+function isProdDeployment() {
+  return deploymentEnv() === "prod";
+}
+
+/**
+ * True when external-service URLs should target local Docker mocks (dev only).
+ * Staging and prod profiles point LLM/Snowflake/secrets env vars at real vendor endpoints.
+ * @returns {boolean}
+ */
+function usesMockExternalServices() {
+  return isDevDeployment();
 }
 
 /** Mongo connection string; MONGO_URI wins, else host/port/db parts are composed. */
@@ -150,6 +178,9 @@ module.exports = {
   env,
   deploymentEnv,
   isDevDeployment,
+  isStagingDeployment,
+  isProdDeployment,
+  usesMockExternalServices,
   mongoUri,
   statsPgUrl,
   redisOptions,

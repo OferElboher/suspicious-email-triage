@@ -39,14 +39,16 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 **Implemented (dev/staging free path):**
 
 - Committed profiles `backend/.env.dev`, `.env.staging`, `.env.prod` — **non-sensitive metadata only**
-- Gitignored `backend/dev.secrets`, `staging.secrets`, `prod.secrets` — real credentials
+- **Dev:** `SECRETS_PROVIDER=mock-aws` → Docker `mock-secrets-manager`
+- **Staging/prod:** `SECRETS_PROVIDER=aws` → **real AWS Secrets Manager** (SDK v3 / boto3) — [stack_guide_staging_production_services.md](stack_guide_staging_production_services.md)
+- Gitignored `backend/dev.secrets`, `staging.secrets`, `prod.secrets` — real credentials (dev file; staging/prod also in AWS bundle)
 - Committed `backend/ci.secrets` — **fake credentials for CI only**
-- Mock AWS Secrets Manager service (`mock-secrets-manager` in Docker Compose, port 4566)
+- Mock AWS Secrets Manager service (`mock-secrets-manager` in Docker Compose, port 4566) — **dev only**
 - Secrets-provider abstraction: `backend/src/secrets/secretsProvider.js`, `ai_service/app/secrets_provider.py`
 - Container entrypoint: `scripts/docker-entrypoint-with-secrets.sh` + `backend/scripts/preload-secrets.js`
 - Rotation runbook: [ops_guide_secrets_management.md](ops_guide_secrets_management.md)
 
-**Remaining (paid / later):** Real AWS Secrets Manager SDK (SigV4), External Secrets Operator in EKS, automatic rotation Lambdas.
+**Remaining (paid / later):** External Secrets Operator in EKS, automatic rotation Lambdas, multi-region secret replicas.
 
 ---
 
@@ -611,6 +613,33 @@ These items **cannot** be fully replicated in production **for free** (mock/loca
 | **Snowflake (hosted warehouse)** | Per-second compute + storage | Snowflake Enterprise | `mock-snowflake` in-memory Docker |
 
 When planning budget, treat **P0 security and backups** on managed databases as the first paid line item before feature expansion.
+
+---
+
+## 10. Suggested AWS and cloud services (not yet fully integrated)
+
+This section lists **vendor services the architecture naturally maps to** but which are **not fully wired in code today**. For each item: **dev uses a free mock or local container**; **staging/prod should use the real paid service**. See [stack_guide_staging_production_services.md](stack_guide_staging_production_services.md) for what is already configured in `.env.staging` / `.env.prod`.
+
+| AWS / cloud service | Would improve | Dev substitute today | Staging/prod target | Suggested integration |
+|---------------------|---------------|----------------------|---------------------|------------------------|
+| **Amazon SES** | Password-reset and alert email delivery | Mailpit (`EMAIL_DELIVERY=mailpit`) | `EMAIL_DELIVERY=external`, SES SMTP endpoint in profile | Already supported via nodemailer + SMTP env vars — configure in staging profile |
+| **Amazon MSK** | Durable Kafka ingest at scale | Redpanda Docker | `KAFKA_BROKERS=*.amazonaws.com:9092` | Point `KAFKA_BROKERS` in secrets; no code change |
+| **Amazon ElastiCache (Redis)** | Celery broker HA | Redis Docker | TLS `CELERY_BROKER_URL` in secrets | Point broker URL; enable TLS in Celery config |
+| **Amazon RDS (PostgreSQL)** | Auth + stats HA | Postgres Docker | RDS hostname in profile | `STATISTICS_PG_URL` in secrets bundle |
+| **MongoDB Atlas / DocumentDB** | Review document HA | Mongo Docker | Atlas SRV in secrets | `MONGO_URI` in secrets bundle |
+| **Amazon OpenSearch Service** | Review full-text search HA | Elasticsearch Docker | OpenSearch domain URL | `ELASTICSEARCH_URL` in profile |
+| **Neo4j Aura** | Managed graph DB | Neo4j Community Docker | Aura bolt URI | `NEO4J_URI` + password in secrets |
+| **Snowflake (on AWS)** | OLAP reporting | `mock-snowflake` REST | Snowflake account URL | ETL proxy or extend `snowflakeClient.js` for SQL API |
+| **AWS CloudWatch Logs** | Central log retention + search | `merged.log` + `GET /logs/search` | Log group per service | Ship stdout/merged.log via Fluent Bit / CloudWatch agent |
+| **Amazon S3** | Backup storage for Mongo/PG/Neo4j dumps | Docker named volumes | S3 bucket + lifecycle | Cron/Lambda upload from [roadmap §1.5 backups](#15-backups-p0--partial) |
+| **AWS WAF + CloudFront** | Edge TLS, DDoS, rate limits | None locally | CloudFront distribution | Place in front of ALB — [roadmap §2.1 HTTPS](#21-https-and-rate-limiting-p0) |
+| **Amazon EventBridge + SNS** | Alert routing from `/ops/alerts` | Manual log review | SNS topics per severity | Lambda polls metrics or EventBridge rules on DLQ depth |
+| **Amazon Keyspaces** | Wide-column audit store (years of overrides) | Not implemented | Managed Cassandra-compatible | New writer on `POST /reviews/:id/override` — [§9 wide-column](#9-wide-column-audit-store-cassandra--scylladb-p2) |
+| **AWS Lambda** | Secret rotation, scheduled graph prune | Manual scripts | Rotation Lambdas | Rotate JWT/DB passwords per [ops_guide_secrets_management.md](ops_guide_secrets_management.md) |
+| **Amazon Bedrock** | Alternative to OpenAI for LLM scoring | `mock-llm` | Bedrock runtime endpoint | Set `LLM_BASE_URL` to Bedrock OpenAI-compatible proxy when available |
+| **Amazon GuardDuty / Macie** | Threat detection on S3/email exports | N/A | Enable on AWS account | Operational — no app code required |
+
+**Pattern for new integrations:** add env vars + secrets keys + optional mock container in dev; document in `data_guide_dev_mock_services.md`; add row to this table until shipped.
 
 ---
 

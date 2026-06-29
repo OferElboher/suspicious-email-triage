@@ -103,7 +103,10 @@ def _parse_json_content(raw: str) -> dict[str, Any]:
 
 def analyze_with_mock_commercial(review: dict[str, Any]) -> dict[str, Any]:
     """
-    Call mock OpenAI-compatible API (Bearer LLM_API_KEY) — zero cost, production-shaped request.
+    Call OpenAI-compatible Chat Completions API (Bearer LLM_API_KEY).
+
+    Dev: LLM_BASE_URL=http://mock-llm:8090/v1 (free mock).
+    Staging/prod: LLM_BASE_URL=https://api.openai.com/v1 (real paid API — same code path).
     """
     base = os.environ.get("LLM_BASE_URL", "http://mock-llm:8090/v1").rstrip("/")
     url = f"{base}/chat/completions"

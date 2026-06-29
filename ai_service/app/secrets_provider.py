@@ -1,8 +1,8 @@
 """
 Python secrets-provider — mirrors Node secretsProvider.js for Celery/Kafka workers.
 
-Pattern: fetch triage/{env} from mock AWS Secrets Manager at process start, merge into os.environ.
-CI and unit tests set SECRETS_PROVIDER=file and read backend/ci.secrets (fake values only).
+Pattern: SECRETS_PROVIDER=mock-aws (dev Docker) or aws (staging/prod IAM) at process start.
+Technology: urllib mock HTTP for dev; boto3 GetSecretValue for real AWS Secrets Manager.
 """
 
 from __future__ import annotations
@@ -84,19 +84,47 @@ def load_secrets_from_mock_aws() -> Dict[str, str]:
     return parse_secrets_text(str(secret_string))
 
 
+def load_secrets_from_aws() -> Dict[str, str]:
+    """Fetch secret bundle from real AWS Secrets Manager (boto3 + IAM role or env keys)."""
+    import boto3
+    from botocore.exceptions import ClientError
+
+    region = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "us-east-1"
+    secret_id = secret_bundle_id()
+    client = boto3.client("secretsmanager", region_name=region)
+    try:
+        response = client.get_secret_value(SecretId=secret_id)
+    except ClientError as err:
+        raise RuntimeError(
+            "AWS Secrets Manager get_secret_value failed for "
+            f"secretId={secret_id} region={region}: {err}"
+        ) from err
+
+    secret_string = response.get("SecretString") or ""
+    if isinstance(secret_string, str) and secret_string.strip().startswith("{"):
+        try:
+            parsed = json.loads(secret_string)
+            return {str(k): str(v) for k, v in parsed.items()}
+        except json.JSONDecodeError:
+            pass
+    return parse_secrets_text(str(secret_string))
+
+
 def load_application_secrets() -> Dict[str, str]:
     """Load secrets using SECRETS_PROVIDER and merge into os.environ."""
     provider = (os.getenv("SECRETS_PROVIDER") or "mock-aws").lower()
 
     if provider == "file":
         secrets = load_secrets_from_file()
-    elif provider in ("mock-aws", "aws"):
+    elif provider == "mock-aws":
         try:
             secrets = load_secrets_from_mock_aws()
         except RuntimeError:
             secrets = load_secrets_from_file()
             if not secrets:
                 raise
+    elif provider == "aws":
+        secrets = load_secrets_from_aws()
     else:
         raise ValueError(f"Unsupported SECRETS_PROVIDER={provider}")
 

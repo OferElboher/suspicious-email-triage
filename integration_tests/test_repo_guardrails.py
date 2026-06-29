@@ -350,3 +350,26 @@ def test_secrets_management_layer_wired():
     tbd = (ROOT / "docs/roadmap_tbd.md").read_text(encoding="utf-8")
     assert "1.1 Secrets management" in tbd
     assert "implemented" in tbd.split("1.1 Secrets management")[1].split("---")[0]
+
+
+def test_staging_and_prod_use_real_aws_secrets_not_mock():
+    """Staging/prod profiles must target AWS Secrets Manager; dev uses mock-aws."""
+    dev_env = (ROOT / "backend/.env.dev").read_text(encoding="utf-8")
+    staging_env = (ROOT / "backend/.env.staging").read_text(encoding="utf-8")
+    prod_env = (ROOT / "backend/.env.prod").read_text(encoding="utf-8")
+    assert "SECRETS_PROVIDER=mock-aws" in dev_env
+    assert "SECRETS_PROVIDER=aws" in staging_env
+    assert "SECRETS_PROVIDER=aws" in prod_env
+    assert "mock-secrets-manager" in dev_env
+    assert "mock-secrets-manager" not in staging_env
+    assert "mock-llm" in dev_env
+    assert "api.openai.com" in staging_env
+    assert "api.openai.com" in prod_env
+    assert "mock-snowflake" in dev_env
+    assert "snowflakecomputing.com" in staging_env
+    readme = (ROOT / "docs/README.md").read_text(encoding="utf-8")
+    assert "stack_guide_staging_production_services.md" in readme
+    runtime = (ROOT / "backend/src/config/runtime.js").read_text(encoding="utf-8")
+    assert "usesMockExternalServices" in runtime
+    secrets_js = (ROOT / "backend/src/secrets/secretsProvider.js").read_text(encoding="utf-8")
+    assert "loadSecretsFromAws" in secrets_js

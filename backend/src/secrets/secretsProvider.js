@@ -109,6 +109,39 @@ async function loadSecretsFromMockAws(deploymentEnv) {
 }
 
 /**
+ * Fetch one secret bundle from real AWS Secrets Manager (SigV4 via AWS SDK v3).
+ * Uses IAM role credentials on EKS/EC2 or AWS_ACCESS_KEY_ID from the environment.
+ * @param {string} deploymentEnv
+ * @returns {Promise<Record<string, string>>}
+ */
+async function loadSecretsFromAws(deploymentEnv) {
+  const { SecretsManagerClient, GetSecretValueCommand } = require("@aws-sdk/client-secrets-manager");
+  const region =
+    process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || "us-east-1";
+  const secretId = secretBundleId(deploymentEnv);
+  const client = new SecretsManagerClient({ region });
+
+  let response;
+  try {
+    response = await client.send(new GetSecretValueCommand({ SecretId: secretId }));
+  } catch (err) {
+    throw new Error(
+      `AWS Secrets Manager GetSecretValue failed for secretId=${secretId} region=${region}: ${err.message}`
+    );
+  }
+
+  const secretString = response.SecretString || "";
+  if (typeof secretString === "string" && secretString.trim().startsWith("{")) {
+    try {
+      return JSON.parse(secretString);
+    } catch {
+      return parseSecretsText(secretString);
+    }
+  }
+  return parseSecretsText(String(secretString));
+}
+
+/**
  * Create the active secrets provider based on SECRETS_PROVIDER (mock-aws | file | aws).
  * @param {{ deploymentEnv?: string }} [options]
  * @returns {{ load: () => Promise<Record<string, string>>, providerName: string }}
@@ -130,14 +163,14 @@ function createSecretsProvider(options = {}) {
     };
   }
 
-  if (providerName === "mock-aws" || providerName === "aws") {
+  if (providerName === "mock-aws") {
     return {
-      providerName,
+      providerName: "mock-aws",
       load: async () => {
         try {
           return await loadSecretsFromMockAws(deploymentEnv);
         } catch (err) {
-          // Graceful fallback: read gitignored *.secrets when mock service is not running (local npm test).
+          // Dev-only fallback: read gitignored *.secrets when mock container is not running (local npm test).
           const filePath = resolveSecretsFilePath(deploymentEnv);
           const fromFile = loadSecretsFromFile(filePath);
           if (Object.keys(fromFile).length > 0) {
@@ -146,6 +179,13 @@ function createSecretsProvider(options = {}) {
           throw err;
         }
       },
+    };
+  }
+
+  if (providerName === "aws") {
+    return {
+      providerName: "aws",
+      load: async () => loadSecretsFromAws(deploymentEnv),
     };
   }
 
@@ -172,6 +212,7 @@ module.exports = {
   parseSecretsText,
   loadSecretsFromFile,
   loadSecretsFromMockAws,
+  loadSecretsFromAws,
   createSecretsProvider,
   applySecretsToProcessEnv,
   secretBundleId,

@@ -16,12 +16,15 @@ Committed profile files contain **hostnames, ports, and feature flags** — not 
 
 | File | Role |
 |------|------|
-| `backend/.env.dev` | Local Docker defaults; `SECRETS_BUNDLE_ID=triage/dev` |
-| `backend/.env.staging` | Staging metadata; credentials in `backend/staging.secrets` |
-| `backend/.env.prod` | Production metadata; credentials in `backend/prod.secrets` or real AWS |
+| `backend/.env.dev` | Local Docker defaults; `SECRETS_PROVIDER=mock-aws`; mock LLM/Snowflake URLs |
+| `backend/.env.staging` | Staging metadata; `SECRETS_PROVIDER=aws`; real LLM/Snowflake/SES URLs |
+| `backend/.env.prod` | Production metadata; `SECRETS_PROVIDER=aws`; credentials in AWS bundle |
 | `backend/dev.secrets` | **Gitignored** — JWT, DB passwords, OAuth secrets for dev |
+| `backend/staging.secrets` / `backend/prod.secrets` | **Gitignored** — pilot/on-prem; cloud uses AWS Secrets Manager bundle |
 | `backend/ci.secrets` | **Committed fake values** for Jest/pytest/CI only |
 | `ENV_FILE=/path/to/file` | Override which profile file dotenv loads |
+
+**Deployment slice helpers** in `backend/src/config/runtime.js`: `usesMockExternalServices()` returns `true` only for `dev`. Full matrix: [stack_guide_staging_production_services.md](stack_guide_staging_production_services.md).
 
 Real shell environment variables still win over values from profile files. Secrets injected after the profile override credential keys.
 

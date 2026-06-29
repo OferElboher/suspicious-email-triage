@@ -245,12 +245,13 @@ If you are new to a topic (Kafka, Neo4j, JWT, etc.), follow the linked guides in
 ## Secrets management
 
 - **Secrets provider abstraction**
-  - Loads credentials from file, mock AWS Secrets Manager, or future real AWS based on `SECRETS_PROVIDER`.
+  - **Dev:** `SECRETS_PROVIDER=mock-aws` → Docker mock HTTP API.
+  - **Staging/prod:** `SECRETS_PROVIDER=aws` → AWS SDK v3 / boto3 GetSecretValue.
   - Node `secretsProvider.js`, Python `secrets_provider.py`, dotenv-style bundles.
 
-- **Mock AWS Secrets Manager service**
-  - HTTP `GetSecretValue`-compatible API serving gitignored `*.secrets` files at container start.
-  - Node HTTP server, Docker Compose service on port 4566.
+- **Mock AWS Secrets Manager service (dev only)**
+  - HTTP `GetSecretValue`-compatible API serving gitignored `dev.secrets` at container start.
+  - Node HTTP server, Docker Compose service on port 4566 — not deployed in cloud staging/prod.
 
 - **Committed CI fake secrets**
   - `backend/ci.secrets` with `ci-fake-*` values only — Jest/pytest never touch real credentials.

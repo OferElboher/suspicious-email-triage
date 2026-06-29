@@ -198,17 +198,16 @@ To add staging integration tests later, use **ephemeral test credentials** creat
 
 ## Replacing mock AWS with real AWS Secrets Manager
 
-1. Create secret `triage/prod` in AWS with the same keys as `prod.secrets.example`.
-2. Set in `backend/.env.prod`:
-   ```bash
-   SECRETS_PROVIDER=aws
-   SECRETS_MANAGER_URL=https://secretsmanager.us-east-1.amazonaws.com
-   SECRETS_BUNDLE_ID=triage/prod
-   ```
-3. Extend `loadSecretsFromMockAws()` (or add `loadSecretsFromAws()`) to use AWS SDK SigV4 — the HTTP shape is already documented in the mock service.
-4. Remove volume mount of `backend/` into mock service in production; use IAM roles for tasks (ECS/EKS) instead.
+**Implemented:** `backend/src/secrets/secretsProvider.js` and `ai_service/app/secrets_provider.py` use **AWS SDK v3 / boto3** when `SECRETS_PROVIDER=aws`. Staging and prod profiles (`backend/.env.staging`, `.env.prod`) already set `SECRETS_PROVIDER=aws`.
 
-Helm deployments can continue using Kubernetes Secrets populated from External Secrets Operator — see [ops_guide_kubernetes_helm.md](ops_guide_kubernetes_helm.md).
+1. Create secrets `triage/staging` and `triage/prod` in AWS with the same keys as `staging.secrets.example` / `prod.secrets.example`.
+2. Grant the ECS task role or EKS service account `secretsmanager:GetSecretValue` on those ARNs.
+3. Set `AWS_REGION` on containers (default `us-east-1` if unset).
+4. **Do not** run `mock-secrets-manager` in cloud deploys — dev only.
+
+Full service matrix: [stack_guide_staging_production_services.md](stack_guide_staging_production_services.md).
+
+Helm deployments can sync AWS secrets via External Secrets Operator — see [ops_guide_kubernetes_helm.md](ops_guide_kubernetes_helm.md).
 
 ---
 

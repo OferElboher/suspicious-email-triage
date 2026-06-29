@@ -51,3 +51,18 @@ def test_secret_bundle_id_default():
     monkeypatch.setenv("DEPLOYMENT_ENV", "dev")
     assert secret_bundle_id() == "triage/dev"
     monkeypatch.undo()
+
+
+def test_load_application_secrets_aws_provider(monkeypatch):
+    """SECRETS_PROVIDER=aws routes to load_secrets_from_aws (staging/prod path)."""
+    import app.secrets_provider as sp
+
+    monkeypatch.setenv("SECRETS_PROVIDER", "aws")
+    monkeypatch.setattr(
+        sp,
+        "load_secrets_from_aws",
+        lambda: {"JWT_SECRET": "from-aws", "POSTGRES_PASSWORD": "p"},
+    )
+    monkeypatch.delenv("JWT_SECRET", raising=False)
+    loaded = load_application_secrets()
+    assert loaded["JWT_SECRET"] == "from-aws"

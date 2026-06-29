@@ -80,7 +80,7 @@ services:
       - "19092:9092"
     restart: unless-stopped
 
-  # mock-secrets-manager: local stand-in for AWS Secrets Manager — serves gitignored *.secrets at startup.
+  # mock-secrets-manager: DEV ONLY — local stand-in for AWS Secrets Manager (staging/prod use SECRETS_PROVIDER=aws).
   mock-secrets-manager:
     container_name: triage-mock-secrets-manager
     build:
@@ -96,7 +96,7 @@ services:
       - ../../backend:/app/backend:ro
     restart: unless-stopped
 
-  # mock-snowflake: in-memory Snowflake analytics API — no real AWS/cloud warehouse in dev.
+  # mock-snowflake: DEV ONLY — in-memory Snowflake analytics API (staging/prod use real Snowflake URL).
   mock-snowflake:
     container_name: triage-mock-snowflake
     build:
