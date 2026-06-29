@@ -1,7 +1,24 @@
-/** Primary SPA views mounted by TriageApp. */
-export const APP_SCREENS = ["workspace", "analytics", "graph"];
+/** Primary SPA views mounted by TriageApp (hash routes except workspace). */
+export const APP_SCREENS = [
+  "workspace",
+  "analytics",
+  "graph",
+  "logs",
+  "admin",
+  "settings",
+];
 
-/** Read the active view from the location hash (e.g. #analytics). */
+/** Preferred fallback order when the current screen is not permitted. */
+export const SCREEN_FALLBACK_ORDER = [
+  "workspace",
+  "analytics",
+  "graph",
+  "logs",
+  "settings",
+  "admin",
+];
+
+/** Read the active view from the location hash (e.g. #analytics, #logs). */
 export function readScreenFromLocation() {
   const hash = window.location.hash.replace(/^#/, "").toLowerCase();
   return APP_SCREENS.includes(hash) ? hash : "workspace";

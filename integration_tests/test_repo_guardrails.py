@@ -373,3 +373,20 @@ def test_staging_and_prod_use_real_aws_secrets_not_mock():
     assert "usesMockExternalServices" in runtime
     secrets_js = (ROOT / "backend/src/secrets/secretsProvider.js").read_text(encoding="utf-8")
     assert "loadSecretsFromAws" in secrets_js
+
+
+def test_app_icon_navigation_and_logs_view():
+    """Logs search is a dedicated sub-window; icon nav includes settings and admin."""
+    nav = (ROOT / "frontend/src/lib/appScreenNavigation.js").read_text(encoding="utf-8")
+    assert '"logs"' in nav
+    assert '"settings"' in nav
+    assert (ROOT / "frontend/src/views/LogsView.jsx").is_file()
+    assert (ROOT / "frontend/src/components/AppNavBar.jsx").is_file()
+    triage = (ROOT / "frontend/src/TriageApp.jsx").read_text(encoding="utf-8")
+    assert "LogSearchPanel" not in triage or "dashboard-tools" in triage
+    assert "LogsView" in triage
+    assert "SettingsView" in triage
+    readme = (ROOT / "docs/README.md").read_text(encoding="utf-8")
+    assert "ui_guide_app_navigation.md" in readme
+    themes = (ROOT / "backend/src/auth/themeConstants.js").read_text(encoding="utf-8")
+    assert "spring-blossom" in themes

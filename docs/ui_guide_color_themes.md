@@ -1,8 +1,8 @@
 # UI themes guide
 
-The React analyst UI supports **17 built-in color themes** per user, persisted in PostgreSQL and applied instantly via **CSS custom properties** (variables) and a `data-theme` attribute on the document root. No page reload is required when switching themes.
+The React analyst UI supports **18 built-in color themes** per user, persisted in PostgreSQL and applied instantly via **CSS custom properties** (variables) and a `data-theme` attribute on the document root. No page reload is required when switching themes.
 
-**Related:** [auth_guide_rbac.md](auth_guide_rbac.md), `frontend/src/styles/themes.css`, `backend/src/auth/themeConstants.js`.
+**Related:** [auth_guide_rbac.md](auth_guide_rbac.md), [ui_guide_app_navigation.md](ui_guide_app_navigation.md) (Settings tab), `frontend/src/styles/themes.css`, `backend/src/auth/themeConstants.js`.
 
 ---
 
@@ -58,7 +58,7 @@ Shared semantic tokens across themes:
 
 ---
 
-## The 17 themes
+## The 18 themes
 
 Ids are identical in the backend catalog, frontend `THEMES` array, and CSS blocks. Invalid ids fall back to **`default-light`**.
 
@@ -81,6 +81,11 @@ Ids are identical in the backend catalog, frontend `THEMES` array, and CSS block
 | `solarized-dark` | Solarized dark | dark |
 | `nord` | Nord | dark |
 | `dracula` | Dracula | dark |
+| `spring-blossom` | Spring blossom | colorful |
+
+**Spring blossom** uses a light-blue page background, warm yellow-tinted surfaces, orange-orange accents, fresh green for success states, **burgundy** (`--danger`) and **purple** (`--warn`) for errors and warnings.
+
+Theme selection is in the **Settings** sub-window (`#settings`) when signed in — see [ui_guide_app_navigation.md](ui_guide_app_navigation.md).
 
 **Source of truth for API validation:** `backend/src/auth/themeConstants.js` (`UI_THEMES`, `isValidUiTheme()`).
 

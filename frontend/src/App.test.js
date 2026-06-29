@@ -11,6 +11,7 @@ const mockUser = {
     "reviews.override",
     "metrics.read",
     "graph.read",
+    "logs.read",
     "admin.users",
   ],
 };
@@ -55,10 +56,10 @@ test("renders triage header when authenticated", async () => {
   });
 });
 
-test("shows django admin link for admin role", async () => {
+test("shows admin nav icon for admin role", async () => {
   render(<App />);
   await waitFor(() => {
-    expect(screen.getByRole("link", { name: /User administration/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /User administration/i })).toBeInTheDocument();
   });
 });
 
@@ -66,6 +67,9 @@ test("restores analytics view after refresh hash", async () => {
   window.location.hash = "#analytics";
   render(<App />);
   await waitFor(() => {
-    expect(screen.getByRole("button", { name: /Analytics & graphs/i })).toHaveClass("active");
+    expect(screen.getByRole("button", { name: /Analytics & graphs/i })).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
   });
 });

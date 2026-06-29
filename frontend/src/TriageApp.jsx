@@ -1,8 +1,8 @@
 /**
- * Primary analyst UI shell: review dashboard, analytics, and phishing graph tabs.
+ * Primary analyst UI shell — icon navigation bar and dedicated sub-windows.
  *
- * Pattern: review dashboard = queue (left) + detail (right); manual submit in modal only.
- * Capability flags from GET /dev/features gate dev simulation and search panels.
+ * Sub-windows: Review dashboard, Analytics, Phishing graph, Logs, Admin, Settings.
+ * Pattern: URL hash routing (appScreenNavigation.js) + RBAC-gated AppNavBar icons.
  */
 import { useCallback, useEffect, useState } from "react";
 import { postJson, getJson } from "./api/client";
@@ -11,16 +11,17 @@ import { useAppScreen } from "./hooks/useAppScreen";
 import { useReviewPoller } from "./hooks/useReviewPoller";
 import AnalyticsView from "./views/AnalyticsView";
 import GraphView from "./views/GraphView";
+import LogsView from "./views/LogsView";
+import SettingsView from "./views/SettingsView";
+import AdminView from "./views/AdminView";
 import SimulationPanel from "./views/SimulationPanel";
-import ThemeSelector from "./components/ThemeSelector";
+import AppNavBar from "./components/AppNavBar";
 import RecentReviewsList from "./components/RecentReviewsList";
 import ReviewDetailPanel, { OVERRIDE_ACTIONS } from "./components/ReviewDetailPanel";
 import ManualReviewSubmitModal from "./components/ManualReviewSubmitModal";
 import SearchIndexPanel from "./components/SearchIndexPanel";
 import ReviewSearchPanel from "./components/ReviewSearchPanel";
-import LogSearchPanel from "./components/LogSearchPanel";
 import HoverHelp from "./components/HoverHelp";
-import { djangoAdminUrl } from "./lib/appUrls";
 
 /** Page size for the dashboard list; kept aligned with backend pagination limits. */
 const PAGE_SIZE = 20;
@@ -41,6 +42,7 @@ export default function TriageApp() {
   const canDevReset = hasPermission("dev.reset");
   const canReadLogs = hasPermission("logs.read");
   const canReadGraph = hasPermission("graph.read");
+  const canAdminUsers = hasRole("admin") || hasPermission("admin.users");
 
   const canAccessScreen = useCallback(
     (view) => {
@@ -53,9 +55,25 @@ export default function TriageApp() {
       if (view === "graph") {
         return canReadGraph;
       }
+      if (view === "logs") {
+        return canReadLogs;
+      }
+      if (view === "admin") {
+        return canAdminUsers;
+      }
+      if (view === "settings") {
+        return true;
+      }
       return false;
     },
-    [canReadGraph, canReadReviews, features.analytics, hasPermission]
+    [
+      canAdminUsers,
+      canReadGraph,
+      canReadLogs,
+      canReadReviews,
+      features.analytics,
+      hasPermission,
+    ]
   );
 
   const [screen, setScreen] = useAppScreen(
@@ -217,57 +235,23 @@ export default function TriageApp() {
         </div>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
           <div className="toolbar">
-            <ThemeSelector />
             <span className="pill">Authenticated workspace</span>
-            {hasRole("admin") && (
-              <a
-                className="button-link"
-                href={djangoAdminUrl()}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                User administration
-              </a>
-            )}
             <button type="button" onClick={logout}>
               Sign out
             </button>
           </div>
-          <nav className="nav-tabs" aria-label="Primary views">
-            {canReadReviews && (
-              <HoverHelp text="Track review queue, pipeline status, search, and dev tools.">
-                <button
-                  type="button"
-                  className={screen === "workspace" ? "active" : ""}
-                  onClick={() => setScreen("workspace")}
-                >
-                  Review dashboard
-                </button>
-              </HoverHelp>
-            )}
-            {features.analytics && hasPermission("metrics.read") && (
-              <HoverHelp text="PostgreSQL-backed charts for review volume and pipeline status.">
-                <button
-                  type="button"
-                  className={screen === "analytics" ? "active" : ""}
-                  onClick={() => setScreen("analytics")}
-                >
-                  Analytics & graphs
-                </button>
-              </HoverHelp>
-            )}
-            {canReadGraph && (
-              <HoverHelp text="Neo4j campaign relationship graph for linked phishing messages.">
-                <button
-                  type="button"
-                  className={screen === "graph" ? "active" : ""}
-                  onClick={() => setScreen("graph")}
-                >
-                  Phishing graph
-                </button>
-              </HoverHelp>
-            )}
-          </nav>
+          <AppNavBar
+            screen={screen}
+            setScreen={setScreen}
+            access={{
+              workspace: canReadReviews,
+              analytics: features.analytics && hasPermission("metrics.read"),
+              graph: canReadGraph,
+              logs: canReadLogs,
+              admin: canAdminUsers,
+              settings: true,
+            }}
+          />
         </div>
       </header>
 
@@ -282,6 +266,12 @@ export default function TriageApp() {
           <GraphView />
         </main>
       )}
+
+      {screen === "logs" && canReadLogs && <LogsView />}
+
+      {screen === "admin" && canAdminUsers && <AdminView />}
+
+      {screen === "settings" && <SettingsView onSignOut={logout} />}
 
       {screen === "workspace" && canReadReviews && (
         <main className="layout layout--dashboard">
@@ -339,7 +329,6 @@ export default function TriageApp() {
             )}
             {canDevReset && <SearchIndexPanel />}
             {canReadReviews && <ReviewSearchPanel />}
-            {canReadLogs && <LogSearchPanel />}
           </div>
         </main>
       )}

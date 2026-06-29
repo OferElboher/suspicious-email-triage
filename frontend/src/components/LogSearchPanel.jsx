@@ -9,7 +9,7 @@ import { getJson } from "../api/client";
 import HoverHelp from "./HoverHelp";
 
 /** Admin/SOC log search panel (requires logs.read permission). */
-export default function LogSearchPanel() {
+export default function LogSearchPanel({ standalone = false }) {
   const [keyword, setKeyword] = useState("");
   const [topic, setTopic] = useState("");
   const [level, setLevel] = useState("");
@@ -51,7 +51,10 @@ export default function LogSearchPanel() {
   }, [keyword, topic, level, service, from, to, messagePattern, useRegex]);
 
   return (
-    <section className="card" style={{ gridColumn: "1 / -1" }}>
+    <section
+      className={`card${standalone ? " log-search-panel--standalone" : ""}`}
+      style={standalone ? undefined : { gridColumn: "1 / -1" }}
+    >
       <HoverHelp text="Search merged JSON-lines logs from the Node API, Celery workers, and Kafka dispatcher. Requires logs.read permission.">
         <h2>Search unified logs</h2>
       </HoverHelp>

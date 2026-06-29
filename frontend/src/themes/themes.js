@@ -24,6 +24,7 @@ export const THEMES = [
   { id: "solarized-dark", label: "Solarized dark", category: "dark" },
   { id: "nord", label: "Nord", category: "dark" },
   { id: "dracula", label: "Dracula", category: "dark" },
+  { id: "spring-blossom", label: "Spring blossom", category: "colorful" },
 ];
 
 const THEME_IDS = new Set(THEMES.map((t) => t.id));

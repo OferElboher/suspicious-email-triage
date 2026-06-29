@@ -2,11 +2,12 @@ import { useCallback, useEffect, useState } from "react";
 import {
   readScreenFromLocation,
   writeScreenToLocation,
+  SCREEN_FALLBACK_ORDER,
 } from "../lib/appScreenNavigation";
 
 /**
  * Keeps the primary TriageApp tab in sync with the URL hash so browser refresh
- * restores the same view (workspace, analytics, admin).
+ * restores the same view (workspace, analytics, graph, logs, settings, admin).
  */
 export function useAppScreen(canAccessScreen) {
   const [screen, setScreenState] = useState(() => readScreenFromLocation());
@@ -28,7 +29,8 @@ export function useAppScreen(canAccessScreen) {
     if (canAccessScreen(screen)) {
       return;
     }
-    const fallback = ["workspace", "analytics", "admin"].find(canAccessScreen) || "workspace";
+    const fallback =
+      SCREEN_FALLBACK_ORDER.find(canAccessScreen) || "workspace";
     if (fallback !== screen) {
       setScreen(fallback);
     }

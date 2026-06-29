@@ -1,20 +1,26 @@
-# `frontend/src/views/` — full-page sections
+# React views (`frontend/src/views/`)
 
-These components are mounted by `TriageApp.jsx` depending on the active navigation tab. Tab selection is stored in the URL hash (`#analytics`; workspace uses no hash) so browser refresh restores the same view.
+These components are mounted by `TriageApp.jsx` depending on the active navigation tab. Tab selection is stored in the URL hash (`#analytics`, `#logs`, `#settings`, …; workspace uses no hash) so browser refresh restores the same view.
 
-User administration is **not** a React view — admins use **Django admin** via the **User administration** header link. See [docs/auth_guide_django_admin_users.md](../../docs/auth_guide_django_admin_users.md).
+**Navigation guide:** [docs/ui_guide_app_navigation.md](../../docs/ui_guide_app_navigation.md)
 
-## Files
+---
 
-- `AnalyticsView.jsx` — charts, time range controls, and optional auto-refresh (rolling last 24 hours from PostgreSQL via `/metrics/*`). See [docs/ui_guide_analytics_charts.md](../../docs/ui_guide_analytics_charts.md).
-- `AuthViews.jsx` — sign-in, forgot password, reset password screens.
-- `SimulationPanel.jsx` — dev-only synthetic traffic: **Start simulation** / **Stop simulation** (see `docs/stack_guide_dev_simulation.md`).
+## Sub-windows
+
+| View file | Hash | Hover label |
+|-----------|------|-------------|
+| *(inline in TriageApp)* | *(none)* | Review dashboard |
+| `AnalyticsView.jsx` | `#analytics` | Analytics & graphs |
+| `GraphView.jsx` | `#graph` | Phishing graph |
+| `LogsView.jsx` | `#logs` | Search unified logs |
+| `AdminView.jsx` | `#admin` | User administration |
+| `SettingsView.jsx` | `#settings` | Settings |
+
+User administration opens **Django admin** from `AdminView.jsx` — see [docs/auth_guide_django_admin_users.md](../../docs/auth_guide_django_admin_users.md).
+
+---
 
 ## URL hash routes
-
-| Tab | Hash |
-|-----|------|
-| Review dashboard | *(none)* |
-| Analytics & graphs | `#analytics` |
 
 See `../lib/appScreenNavigation.js` and `../hooks/useAppScreen.js`.

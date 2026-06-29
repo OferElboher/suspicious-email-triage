@@ -388,6 +388,78 @@ button:disabled {
   font-weight: 600;
 }
 
+/* Icon-only primary navigation — uniform 40×40 targets with hover labels via HoverHelp. */
+.nav-tabs--icons {
+  gap: 0.4rem;
+}
+
+.nav-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.nav-icon--active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent-soft);
+}
+
+.nav-icon__svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.layout--single {
+  grid-template-columns: 1fr;
+  max-width: 960px;
+}
+
+.log-search-panel--standalone {
+  width: 100%;
+}
+
+.settings-panel__section {
+  margin-top: 1.25rem;
+}
+
+.settings-panel__subtitle {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.settings-panel__meta {
+  margin: 0.35rem 0;
+}
+
+.admin-gateway-panel__hint {
+  margin-top: 1rem;
+  font-size: 0.85rem;
+}
+
+.primary-link {
+  display: inline-flex;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.primary-link:hover {
+  filter: brightness(1.05);
+}
+
 .status-pending {
   color: var(--warn);
 }

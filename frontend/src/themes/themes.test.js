@@ -10,8 +10,9 @@ describe("theme catalog", () => {
     expect(THEMES.length).toBeGreaterThanOrEqual(16);
   });
 
-  it("validates theme ids", () => {
+  it("validates theme ids including spring-blossom", () => {
     expect(isValidTheme("nord")).toBe(true);
+    expect(isValidTheme("spring-blossom")).toBe(true);
     expect(isValidTheme("invalid")).toBe(false);
     expect(isValidTheme("")).toBe(false);
   });

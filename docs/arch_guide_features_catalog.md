@@ -39,8 +39,12 @@ If you are new to a topic (Kafka, Neo4j, JWT, etc.), follow the linked guides in
   - nodemailer, Gmail REST API, Mailpit, secrets bundle.
 
 - **User profile and theme preferences**
-  - `GET /auth/me` and `GET/PUT /auth/preferences` persist per-user UI theme (17 CSS themes).
-  - PostgreSQL, Express, shared theme constants (Node + React).
+  - `GET /auth/me` and `GET/PUT /auth/preferences` persist per-user UI theme (18 CSS themes including spring-blossom).
+  - PostgreSQL, Express, shared theme constants (Node + React); theme picker in Settings sub-window.
+
+- **Icon navigation bar**
+  - RBAC-filtered sub-windows: Review dashboard, Analytics, Graph, Logs, Admin, Settings — URL hash routing.
+  - React `AppNavBar`, `NavIconButton`, `HoverHelp` tooltips; see `ui_guide_app_navigation.md`.
 
 - **Django admin user CRUD**
   - Separate Django service on port 8000 for creating/editing users and role assignments (SQLite for Django sessions only).

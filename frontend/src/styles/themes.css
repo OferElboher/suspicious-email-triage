@@ -235,6 +235,22 @@
   --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
+/* Spring blossom — light blue, yellow wash, orange accent, blossom green; errors purple/burgundy. */
+[data-theme="spring-blossom"] {
+  --bg: #dceefb;
+  --surface: #fffef2;
+  --border: #a8cce8;
+  --text: #1a3a4a;
+  --muted: #4a7088;
+  --accent: #ff8c42;
+  --accent-soft: #fff3cd;
+  --danger: #722f37;
+  --warn: #6b21a8;
+  --ok: #52b788;
+  --radius: 10px;
+  --shadow: 0 8px 24px rgba(82, 183, 136, 0.12);
+}
+
 .theme-selector {
   display: inline-flex;
   align-items: center;

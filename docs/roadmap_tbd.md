@@ -94,7 +94,7 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 - Unified JSON-lines `merged.log` (see logger module)
 - `GET /logs/search` — keyword/topic/time/**level**/service/**regex** filters (`logs.read` permission)
 - `GET /ops/logs/summary` — topic/level counts for dashboards
-- React **Search unified logs** panel in Review dashboard (admin / `logs.read`)
+- React **Search unified logs** sub-window (`#logs`, `LogsView.jsx`) — requires `logs.read`; moved off Review dashboard — [ui_guide_app_navigation.md](ui_guide_app_navigation.md)
 
 **Guides:** [ops_guide_central_logging.md](ops_guide_central_logging.md), [tech_postgresql_dbeaver_auth_logs.md](tech_postgresql_dbeaver_auth_logs.md)
 
@@ -466,7 +466,9 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 - Dev route `POST /dev/prune-graph` **merges** duplicate Sender/Url/Domain Neo4j nodes then **DETACH DELETE**s zero-degree orphans (`graphMaintenance.js`)
 - Bootstrap **admin** or **developer** may call dev reset/prune/simulation routes (permission + role gate in `devRoutes.js`)
 - **Dev simulation UI (2026):** left-aligned **Start simulation** / **Stop simulation** single-button control; rate persisted in Redis across stop/start — [stack_guide_dev_simulation.md](stack_guide_dev_simulation.md)
-- **Review dashboard (2026):** two-column **Review queue** + **Review detail**; manual paste in **Submit email** modal (`ManualReviewSubmitModal.jsx`); project-wide **HoverHelp** tooltips — [ui_guide_review_dashboard.md](ui_guide_review_dashboard.md)
+- **Review dashboard (2026):** two-column **Review queue** + **Review detail**; manual paste in **Submit email** modal — [ui_guide_review_dashboard.md](ui_guide_review_dashboard.md)
+- **Icon navigation bar (2026):** uniform SVG icons with HoverHelp labels; sub-windows for Logs, Settings, Admin — [ui_guide_app_navigation.md](ui_guide_app_navigation.md)
+- **Spring blossom theme (2026):** 18th CSS theme — light blue / yellow / orange / blossom green; errors purple & burgundy — [ui_guide_color_themes.md](ui_guide_color_themes.md)
 - Automated manual test: `bash scripts/run-manual-phishing-campaign-test.sh EMAIL PASSWORD`
 - `GET /reviews/page-for-date` for Recent reviews date jump
 
@@ -622,7 +624,6 @@ This section lists **vendor services the architecture naturally maps to** but wh
 
 | AWS / cloud service | Would improve | Dev substitute today | Staging/prod target | Suggested integration |
 |---------------------|---------------|----------------------|---------------------|------------------------|
-| **Amazon SES** | Password-reset and alert email delivery | Mailpit (`EMAIL_DELIVERY=mailpit`) | `EMAIL_DELIVERY=external`, SES SMTP endpoint in profile | Already supported via nodemailer + SMTP env vars — configure in staging profile |
 | **Amazon MSK** | Durable Kafka ingest at scale | Redpanda Docker | `KAFKA_BROKERS=*.amazonaws.com:9092` | Point `KAFKA_BROKERS` in secrets; no code change |
 | **Amazon ElastiCache (Redis)** | Celery broker HA | Redis Docker | TLS `CELERY_BROKER_URL` in secrets | Point broker URL; enable TLS in Celery config |
 | **Amazon RDS (PostgreSQL)** | Auth + stats HA | Postgres Docker | RDS hostname in profile | `STATISTICS_PG_URL` in secrets bundle |
