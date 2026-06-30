@@ -83,7 +83,7 @@ Review full-text search used to live in the Review dashboard footer (`dashboard-
 
 **What you see on this tab:**
 
-1. **`ReviewSearchPanel.jsx`** — plain-language keyword search, optional verdict/status/sender/date filters, and Lucene regex fields for power users. Requires **`reviews.read`** (bootstrap admin has this).
+1. **`ReviewSearchPanel.jsx`** — plain-language keyword search, optional verdict/status/sender/date filters, and Lucene regex fields for power users. Results are **paginated** (20 per page) with **First / Prev / Next / Last / Refresh / Jump to date** — the same toolbar pattern as the review queue. Requires **`reviews.read`** (bootstrap admin has this).
 2. **`SearchIndexPanel.jsx`** (below the form) — Elasticsearch index status and **Clear search index** for users with **`dev.reset`** plus **`admin`** or **`developer`** role. The panel **always renders** for those users; if Elasticsearch is disabled or down, it shows setup steps instead of disappearing.
 
 **Why separate:** analysts often investigate historical emails without triaging the live queue. A dedicated tab mirrors the **Logs** pattern and keeps the dashboard focused on inbound review tracking.

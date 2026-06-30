@@ -188,7 +188,12 @@ If you are new to a topic (Kafka, Neo4j, JWT, etc.), follow the linked guides in
 
 - **Search API (`GET /search/reviews?q=`)**
   - `multi_match` query across indexed fields; empty query returns recent documents.
+  - Offset pagination via `limit` (default 20, max 100) and `offset`; response includes `total`, `hasMore`.
   - Elasticsearch, Express, JWT.
+
+- **Search date jump (`GET /search/page-for-date`)**
+  - Zero-based page index for first hit on a calendar day within active search filters.
+  - Elasticsearch count queries + shared `dateNav.pageIndexForDate` (updatedAt DESC sort).
 
 - **Search admin panel**
   - React panel for index status and dev-only clear-index action; always visible for `dev.reset` with setup guidance when ES is off.

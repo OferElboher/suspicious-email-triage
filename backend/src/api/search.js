@@ -4,6 +4,7 @@
 const express = require("express");
 const {
   searchReviews,
+  pageForDateSearch,
   clearReviewIndex,
   getSearchIndexStats,
 } = require("../search/reviewSearchIndex");
@@ -47,6 +48,41 @@ router.get("/reviews", authenticate, requirePermission("reviews.read"), async (r
   } catch (err) {
     logger.error("search", "query failed", { error: err.message });
     res.status(500).json({ error: "search_query_failed" });
+  }
+});
+
+/**
+ * GET /search/page-for-date — zero-based page for first hit on a calendar day (same filters as /search/reviews).
+ * Pattern: Elasticsearch count queries + dateNav.pageIndexForDate (updatedAt DESC sort).
+ */
+router.get("/page-for-date", authenticate, requirePermission("reviews.read"), async (req, res) => {
+  try {
+    const result = await pageForDateSearch({
+      date: req.query.date,
+      limit: req.query.limit,
+      query: req.query.q || req.query.query || "",
+      verdict: req.query.verdict,
+      status: req.query.status,
+      senderEmail: req.query.senderEmail,
+      updatedFrom: req.query.updatedFrom || req.query.from,
+      updatedTo: req.query.updatedTo || req.query.to,
+      subjectRegex: req.query.subjectRegex,
+      bodyRegex: req.query.bodyRegex,
+      linksRegex: req.query.linksRegex,
+    });
+    if (!result.enabled) {
+      return res.json({ enabled: false, hits: [], total: 0 });
+    }
+    if (result.error === "invalid_date") {
+      return res.status(400).json({ error: "invalid_date", hint: "Use YYYY-MM-DD" });
+    }
+    if (result.error === "no_reviews_on_date") {
+      return res.status(404).json({ error: "no_reviews_on_date", date: result.date });
+    }
+    return res.json(result);
+  } catch (err) {
+    logger.error("search", "page-for-date failed", { error: err.message });
+    res.status(500).json({ error: "search_page_for_date_failed" });
   }
 });
 

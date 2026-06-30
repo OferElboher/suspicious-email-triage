@@ -315,6 +315,19 @@ def test_reviews_page_for_date_wired():
     assert (ROOT / "backend/src/lib/dateNav.js").is_file()
 
 
+def test_search_page_for_date_and_pagination_wired():
+    """Elasticsearch search UI paginates via offset and supports date jump."""
+    search_api = (ROOT / "backend/src/api/search.js").read_text(encoding="utf-8")
+    assert '"/page-for-date"' in search_api or "/page-for-date" in search_api
+    panel = (ROOT / "frontend/src/components/ReviewSearchPanel.jsx").read_text(encoding="utf-8")
+    assert "offset" in panel
+    assert "jumpToSearchDate" in panel
+    assert "First" in panel
+    index_js = (ROOT / "backend/src/search/reviewSearchIndex.js").read_text(encoding="utf-8")
+    assert "pageForDateSearch" in index_js
+    assert "hasMore" in index_js
+
+
 def test_docs_avoid_hardcoded_private_env_values():
     """Guides must reference env var names, not copy gitignored backend/.env secrets."""
     forbidden_substrings = (

@@ -2,6 +2,7 @@
  * Review document indexing in Elasticsearch (full-text search, laptop-sized dev index).
  */
 const { getElasticsearchClient, resetElasticsearchClient, isElasticsearchEnabled } = require("./elasticClient");
+const { dayBoundsUtc, pageIndexForDate } = require("../lib/dateNav");
 const logger = require("../lib/logger");
 
 /** Index name — single index keeps dev footprint small (no per-tenant sprawl). */
@@ -89,11 +90,22 @@ async function indexReviewDocument(review) {
   }
 }
 
-/** Full-text and field-filter search across indexed review documents. */
-async function searchReviews({
+/** Default page size for search API (matches review queue pagination in the React UI). */
+const DEFAULT_SEARCH_PAGE_SIZE = 20;
+
+/** Clamp limit/offset for Elasticsearch `size` and `from` (max 100 rows per request). */
+function parseSearchPaging(limit, offset) {
+  const size = Math.min(Math.max(parseInt(limit, 10) || DEFAULT_SEARCH_PAGE_SIZE, 1), 100);
+  const from = Math.max(parseInt(offset, 10) || 0, 0);
+  return { size, from };
+}
+
+/**
+ * Build Elasticsearch bool query from analyst filters (shared by search + page-for-date).
+ * Pattern: must = full-text multi_match; filter = exact term/range/regexp clauses.
+ */
+function buildReviewSearchQuery({
   query = "",
-  limit = 20,
-  offset = 0,
   verdict = "",
   status = "",
   senderEmail = "",
@@ -103,15 +115,7 @@ async function searchReviews({
   bodyRegex = "",
   linksRegex = "",
 } = {}) {
-  const es = await getElasticsearchClient();
-  if (!es) {
-    return { enabled: false, hits: [], total: 0 };
-  }
-  await ensureReviewIndex();
-  const size = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
-  const from = Math.max(parseInt(offset, 10) || 0, 0);
   const q = String(query || "").trim();
-
   const must = [];
   const filter = [];
 
@@ -157,10 +161,68 @@ async function searchReviews({
   addRegexFilter("body", bodyRegex);
   addRegexFilter("links", linksRegex);
 
-  const esQuery =
-    must.length || filter.length
-      ? { bool: { ...(must.length ? { must } : {}), ...(filter.length ? { filter } : {}) } }
-      : { match_all: {} };
+  if (must.length || filter.length) {
+    return {
+      bool: {
+        ...(must.length ? { must } : {}),
+        ...(filter.length ? { filter } : {}),
+      },
+    };
+  }
+  return { match_all: {} };
+}
+
+/** Merge extra filter clauses into an existing ES query (used for date-jump counts). */
+function mergeQueryWithFilters(esQuery, extraFilters) {
+  if (!extraFilters.length) {
+    return esQuery;
+  }
+  if (esQuery.match_all) {
+    return { bool: { filter: extraFilters } };
+  }
+  if (esQuery.bool) {
+    return {
+      bool: {
+        ...esQuery.bool,
+        filter: [...(esQuery.bool.filter || []), ...extraFilters],
+      },
+    };
+  }
+  return { bool: { must: [esQuery], filter: extraFilters } };
+}
+
+/** Full-text and field-filter search across indexed review documents (offset pagination). */
+async function searchReviews({
+  query = "",
+  limit = DEFAULT_SEARCH_PAGE_SIZE,
+  offset = 0,
+  verdict = "",
+  status = "",
+  senderEmail = "",
+  updatedFrom = null,
+  updatedTo = null,
+  subjectRegex = "",
+  bodyRegex = "",
+  linksRegex = "",
+} = {}) {
+  const es = await getElasticsearchClient();
+  if (!es) {
+    return { enabled: false, hits: [], total: 0, limit: 0, offset: 0, hasMore: false };
+  }
+  await ensureReviewIndex();
+  const { size, from } = parseSearchPaging(limit, offset);
+  const q = String(query || "").trim();
+  const esQuery = buildReviewSearchQuery({
+    query: q,
+    verdict,
+    status,
+    senderEmail,
+    updatedFrom,
+    updatedTo,
+    subjectRegex,
+    bodyRegex,
+    linksRegex,
+  });
 
   const result = await es.search({
     index: INDEX_NAME,
@@ -170,12 +232,80 @@ async function searchReviews({
     query: esQuery,
   });
 
+  const total = result.hits.total?.value ?? result.hits.hits.length;
+  const hits = result.hits.hits.map((h) => ({ id: h._id, ...h._source }));
+
   return {
     enabled: true,
     query: q || null,
-    hits: result.hits.hits.map((h) => ({ id: h._id, ...h._source })),
-    total: result.hits.total?.value ?? result.hits.hits.length,
+    hits,
+    total,
+    limit: size,
     offset: from,
+    hasMore: from + hits.length < total,
+  };
+}
+
+/**
+ * Page index for jumping to a calendar day within current search filters.
+ * Sort is updatedAt DESC — same algorithm as GET /reviews/page-for-date (dateNav.js).
+ */
+async function pageForDateSearch({
+  date = "",
+  limit = DEFAULT_SEARCH_PAGE_SIZE,
+  query = "",
+  verdict = "",
+  status = "",
+  senderEmail = "",
+  updatedFrom = null,
+  updatedTo = null,
+  subjectRegex = "",
+  bodyRegex = "",
+  linksRegex = "",
+} = {}) {
+  const es = await getElasticsearchClient();
+  if (!es) {
+    return { enabled: false };
+  }
+  const bounds = dayBoundsUtc(date);
+  if (!bounds) {
+    return { enabled: true, error: "invalid_date" };
+  }
+  await ensureReviewIndex();
+  const { size } = parseSearchPaging(limit, 0);
+  const baseQuery = buildReviewSearchQuery({
+    query,
+    verdict,
+    status,
+    senderEmail,
+    updatedFrom,
+    updatedTo,
+    subjectRegex,
+    bodyRegex,
+    linksRegex,
+  });
+
+  const onDayQuery = mergeQueryWithFilters(baseQuery, [
+    { range: { updatedAt: { gte: bounds.start, lte: bounds.end } } },
+  ]);
+  const onDayCount = (await es.count({ index: INDEX_NAME, query: onDayQuery })).count;
+  if (onDayCount === 0) {
+    return { enabled: true, error: "no_reviews_on_date", date: bounds.date };
+  }
+
+  const newerQuery = mergeQueryWithFilters(baseQuery, [
+    { range: { updatedAt: { gt: bounds.end } } },
+  ]);
+  const newerCount = (await es.count({ index: INDEX_NAME, query: newerQuery })).count;
+  const page = pageIndexForDate(newerCount, size);
+
+  return {
+    enabled: true,
+    date: bounds.date,
+    page,
+    limit: size,
+    onDayCount,
+    totalNewer: newerCount,
   };
 }
 
@@ -224,10 +354,13 @@ async function getSearchIndexStats() {
 
 module.exports = {
   INDEX_NAME,
+  DEFAULT_SEARCH_PAGE_SIZE,
   reviewToSearchDocument,
+  buildReviewSearchQuery,
   ensureReviewIndex,
   indexReviewDocument,
   searchReviews,
+  pageForDateSearch,
   clearReviewIndex,
   getSearchIndexStats,
 };

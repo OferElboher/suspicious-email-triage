@@ -72,6 +72,49 @@ Click an **example chip** under the intro paragraph to fill Keywords, then **Sea
 
 ---
 
+## Paginating search results
+
+Search results use the **same pagination pattern** as the **Review queue** on the dashboard. After you click **Search reviews**, a toolbar appears above the hit list:
+
+| Button | What it does |
+|--------|----------------|
+| **Refresh** | Re-runs the current page with the same filters (useful after new reviews finish indexing) |
+| **First** | Jump to page 1 of results |
+| **Prev** | Previous page |
+| **Next** | Next page (enabled when `hasMore` is true) |
+| **Last** | Jump to the final page |
+| **Jump to date** + **Go** | Open the page that contains the **first search hit** on the chosen UTC calendar day |
+
+**Page size:** 20 rows per page (matches the review queue and backend `DEFAULT_SEARCH_PAGE_SIZE`).
+
+**How pagination works technically:**
+
+1. The React panel (`ReviewSearchPanel.jsx`) sends `limit=20` and `offset=page×20` to **`GET /search/reviews`**.
+2. Elasticsearch returns a **total hit count** plus one page of documents sorted by **`updatedAt` descending** (newest first).
+3. **Jump to date** calls **`GET /search/page-for-date`** with the **same filter parameters** as your active search plus a `date=YYYY-MM-DD` field. The backend runs two **count** queries (matches on that day; matches newer than that day) and computes a zero-based page index using **`dateNav.pageIndexForDate`** — the same helper used by **`GET /reviews/page-for-date`** for MongoDB.
+
+Example API pagination (page 2, offset 20):
+
+```bash
+curl -sG -H "Authorization: Bearer YOUR_JWT" \
+  --data-urlencode "q=verify account" \
+  --data-urlencode "limit=20" \
+  --data-urlencode "offset=20" \
+  http://localhost:3000/search/reviews | python3 -m json.tool
+```
+
+Example jump to date within a filtered search:
+
+```bash
+curl -sG -H "Authorization: Bearer YOUR_JWT" \
+  --data-urlencode "q=phish" \
+  --data-urlencode "date=2026-06-10" \
+  --data-urlencode "limit=20" \
+  http://localhost:3000/search/page-for-date | python3 -m json.tool
+```
+
+---
+
 ## Start Elasticsearch (dev laptop)
 
 Single-node ES 8 with **256 MB heap** — see `infra/docker/docker-compose.yml` service `elasticsearch`.
@@ -124,7 +167,8 @@ JWT required — see [auth_guide_obtain_jwt.md](auth_guide_obtain_jwt.md).
 | Method | Path | Permission |
 |--------|------|------------|
 | GET | `/search/status` | `reviews.read` |
-| GET | `/search/reviews?q=` | `reviews.read` |
+| GET | `/search/reviews?q=&limit=&offset=` | `reviews.read` |
+| GET | `/search/page-for-date?date=&q=` | `reviews.read` |
 | DELETE | `/search/index` | `dev.reset` + admin/developer |
 
 Use **`http://localhost:3000`** (Node API), not port 3001 (React dev server).
@@ -149,6 +193,7 @@ curl -sG -H "Authorization: Bearer YOUR_JWT" \
 | Index admin missing | Looking on dashboard footer (old layout) | Use **#search** tab — index panel is below the form |
 | Clear index 403 | Not admin/developer role | Bootstrap admin has both `dev.reset` and `admin` role |
 | Zero results | Index empty or typo | Submit reviews; wait for `completed`; try example chips |
+| Only first 20 results visible | Pagination not used | Click **Next** / **Last** or use **Jump to date** in the search toolbar |
 | Document count 0 after reviews | Indexing lag or ES down | Check `merged.log` topic `elasticsearch` |
 
 ---

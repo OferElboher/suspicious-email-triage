@@ -10,6 +10,7 @@ const {
   indexReviewDocument,
   clearReviewIndex,
   searchReviews,
+  pageForDateSearch,
 } = require("../src/search/reviewSearchIndex");
 
 describe("review search index", () => {
@@ -85,5 +86,27 @@ describe("review search index", () => {
     expect(body.query.bool.must[0].multi_match.query).toBe("phish");
     expect(body.query.bool.filter.some((f) => f.term?.verdict === "likely_phishing")).toBe(true);
     expect(body.query.bool.filter.some((f) => f.regexp?.subject)).toBe(true);
+  });
+
+  it("pageForDateSearch counts on-day and newer docs for page index", async () => {
+    const count = jest
+      .fn()
+      .mockResolvedValueOnce({ count: 2 })
+      .mockResolvedValueOnce({ count: 40 });
+    const exists = jest.fn().mockResolvedValue(true);
+    getElasticsearchClient.mockResolvedValue({
+      indices: { exists },
+      count,
+    });
+
+    const result = await pageForDateSearch({
+      date: "2026-06-10",
+      limit: 20,
+      query: "phish",
+    });
+
+    expect(result.page).toBe(2);
+    expect(result.onDayCount).toBe(2);
+    expect(count).toHaveBeenCalledTimes(2);
   });
 });
