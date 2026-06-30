@@ -144,8 +144,9 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 - Env: `ELASTICSEARCH_ENABLED`, `ELASTICSEARCH_URL`, `ELASTICSEARCH_REVIEWS_INDEX`
 - `GET /search/status`, `GET /search/reviews?q=`, `DELETE /search/index`
 - Background indexing via `scheduleSearchIndex` (create, override, Celery internal graph sync)
-- UI **Search past reviews** panel (keyword + verdict/status/sender/date/regex filters)
-- UI **Search index** panel with **Clear search index** for `dev.reset` + admin/developer (`SearchIndexPanel.jsx`)
+- Dedicated **`#search`** sub-window (`SearchReviewsView.jsx`) — nav icon **Search past reviews** (`IconSearchReviews`)
+- UI **Search past reviews** form (`ReviewSearchPanel.jsx`) — plain-language keywords + verdict/status/sender/date/regex filters
+- UI **Search index** admin card below the form for `dev.reset` + admin/developer (`SearchIndexPanel.jsx` — always visible with setup steps when ES is off)
 
 **Guide:** [search_guide_elasticsearch_reviews.md](search_guide_elasticsearch_reviews.md)
 

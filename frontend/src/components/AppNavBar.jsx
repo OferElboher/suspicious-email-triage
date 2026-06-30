@@ -11,6 +11,7 @@ import {
   IconDashboard,
   IconGraph,
   IconLogs,
+  IconSearchReviews,
   IconSettings,
 } from "./NavIcons";
 
@@ -25,6 +26,7 @@ export default function AppNavBar({ screen, setScreen, access }) {
     workspace,
     analytics,
     graph,
+    search,
     logs,
     admin,
     settings,
@@ -57,6 +59,15 @@ export default function AppNavBar({ screen, setScreen, access }) {
           onClick={() => setScreen("graph")}
         >
           <IconGraph />
+        </NavIconButton>
+      )}
+      {search && (
+        <NavIconButton
+          label="Search past reviews"
+          active={screen === "search"}
+          onClick={() => setScreen("search")}
+        >
+          <IconSearchReviews />
         </NavIconButton>
       )}
       {logs && (

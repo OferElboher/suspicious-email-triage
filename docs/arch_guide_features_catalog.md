@@ -191,8 +191,12 @@ If you are new to a topic (Kafka, Neo4j, JWT, etc.), follow the linked guides in
   - Elasticsearch, Express, JWT.
 
 - **Search admin panel**
-  - React panel for index status and dev-only clear-index action.
+  - React panel for index status and dev-only clear-index action; always visible for `dev.reset` with setup guidance when ES is off.
   - React, REST, RBAC `dev.reset`.
+
+- **Dedicated search sub-window (`#search`)**
+  - `SearchReviewsView.jsx` mounts `ReviewSearchPanel` + optional `SearchIndexPanel`; hash routing via `appScreenNavigation.js`.
+  - React hash SPA, RBAC `reviews.read` / `dev.reset`.
 
 ---
 

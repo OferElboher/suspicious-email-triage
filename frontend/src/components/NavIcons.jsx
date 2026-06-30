@@ -66,6 +66,18 @@ export function IconLogs({ className = "nav-icon__svg" }) {
   );
 }
 
+/** Search past reviews — envelope with magnifying glass (Elasticsearch index). */
+export function IconSearchReviews({ className = "nav-icon__svg" }) {
+  return (
+    <svg className={className} {...COMMON}>
+      <rect x="3" y="6" width="14" height="11" rx="1.5" />
+      <path d="M3 8l7 5 7-5" />
+      <circle cx="17.5" cy="16.5" r="3.5" />
+      <path d="m20 19 2.5 2.5" />
+    </svg>
+  );
+}
+
 /** User administration — person silhouette with shield (RBAC / admin gateway). */
 export function IconAdmin({ className = "nav-icon__svg" }) {
   return (

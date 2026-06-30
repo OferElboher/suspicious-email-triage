@@ -67,8 +67,8 @@ Step-by-step manual checklist: [graph_test_manual_phishing_identification.md](gr
 | **Review dashboard** | Submit one review via **Submit email** modal → Review detail reaches `completed` |
 | **Recent reviews** | New row appears; pagination and date jump work |
 | **Analytics** (`/#analytics`) | Charts load (may be empty until events exist) |
-| **Search past reviews** | Keyword search returns indexed rows after analysis |
-| **Search unified logs** | `GET /logs/search` panel returns JSON hits |
+| **Search past reviews** (`/#search`) | Plain-language keyword search returns indexed rows after analysis |
+| **Search unified logs** (`/#logs`) | Log search panel returns JSON hits from `GET /logs/search` |
 | **Override verdict** | Dropdown saves; Recent reviews shows `(override)` |
 
 ---

@@ -107,14 +107,14 @@ Synthetic rows use subject lines like `Simulated ingest 2026-…` and sender `si
 
 ### Search past reviews (Elasticsearch)
 
-- Open the **Search past reviews** panel in the Review dashboard.
-- Search for keywords such as `Simulated ingest` or `Simulator`.
+- Click **Search past reviews** in the header nav (or open `http://localhost:3001/#search`).
+- Search for plain-language keywords such as `Simulated ingest` or `Simulator`.
 - **Technology:** Elasticsearch index `triage-reviews`; indexing runs after analysis completes (`scheduleSearchIndex` in the backend).
 - Requires `elasticsearch` container running — see [search_guide_elasticsearch_reviews.md](search_guide_elasticsearch_reviews.md).
 
 ### Search unified logs (merged.log)
 
-- Open **Search unified logs** in the Review dashboard (requires `logs.read` — admin has it).
+- Click **Search unified logs** in the header nav (`#logs`; requires `logs.read` — admin has it).
 - Useful keyword filters:
   - `simulation` — timer start/stop and synthetic review creation
   - `synthetic review` — each tick log line from `simulationLoop.js`

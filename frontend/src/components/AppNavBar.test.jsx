@@ -11,6 +11,7 @@ describe("AppNavBar", () => {
           workspace: true,
           analytics: false,
           graph: true,
+          search: true,
           logs: false,
           admin: false,
           settings: true,
@@ -19,6 +20,7 @@ describe("AppNavBar", () => {
     );
     expect(screen.getByRole("button", { name: /Review dashboard/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Phishing graph/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Search past reviews/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Settings/i })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Analytics/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Search unified logs/i })).not.toBeInTheDocument();

@@ -42,7 +42,7 @@ Other tabs (**Analytics & graphs**, graph views) keep their existing hash routes
 │  - simulation filter     │  - analyst override form         │
 │  - row click → select    │  - polling while pending         │
 ├──────────────────────────┴──────────────────────────────────┤
-│  dashboard-tools (full width): simulation, review search     │
+│  dashboard-tools (full width): dev simulation only             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -80,9 +80,9 @@ Other tabs (**Analytics & graphs**, graph views) keep their existing hash routes
 
 - Review dashboard (queue toolbar, detail headings, submit modal)
 - Dev simulation panel (`SimulationPanel.jsx`)
-- Search panels (`ReviewSearchPanel`, `SearchIndexPanel`)
+- Search panels on the dedicated **Search past reviews** tab (`ReviewSearchPanel`, `SearchIndexPanel`)
 
-Unified log search lives in the separate **Logs** sub-window — [ui_guide_app_navigation.md](ui_guide_app_navigation.md).
+**Search past reviews** and **Search unified logs** live in separate sub-windows — [ui_guide_app_navigation.md](ui_guide_app_navigation.md) (`#search` and `#logs`).
 
 **Accessibility note:** Tooltips supplement visible labels; they are not a substitute for full WCAG compliance on the graph tab (see [roadmap_tbd.md §6.1](roadmap_tbd.md#61-accessible-graph-visualization-p1--partial)).
 
@@ -95,7 +95,7 @@ Unified log search lives in the separate **Logs** sub-window — [ui_guide_app_n
 | View queue & detail | `reviews.read` |
 | **Submit email** button | `reviews.write` |
 | Override verdict form | `reviews.override` |
-| Search past reviews | `reviews.read` + Elasticsearch enabled |
+| Search past reviews | `reviews.read` — dedicated **Search past reviews** tab (`#search`); Elasticsearch optional but required for hits |
 | Search unified logs | `logs.read` — dedicated **Logs** tab (`#logs`) |
 | Dev simulation / reset | `developer` role or admin + dev routes |
 

@@ -1,7 +1,7 @@
 /**
  * Primary analyst UI shell — icon navigation bar and dedicated sub-windows.
  *
- * Sub-windows: Review dashboard, Analytics, Phishing graph, Logs, Admin, Settings.
+ * Sub-windows: Review dashboard, Analytics, Phishing graph, Search reviews, Logs, Admin, Settings.
  * Pattern: URL hash routing (appScreenNavigation.js) + RBAC-gated AppNavBar icons.
  */
 import { useCallback, useEffect, useState } from "react";
@@ -12,6 +12,7 @@ import { useReviewPoller } from "./hooks/useReviewPoller";
 import AnalyticsView from "./views/AnalyticsView";
 import GraphView from "./views/GraphView";
 import LogsView from "./views/LogsView";
+import SearchReviewsView from "./views/SearchReviewsView";
 import SettingsView from "./views/SettingsView";
 import AdminView from "./views/AdminView";
 import SimulationPanel from "./views/SimulationPanel";
@@ -19,8 +20,6 @@ import AppNavBar from "./components/AppNavBar";
 import RecentReviewsList from "./components/RecentReviewsList";
 import ReviewDetailPanel, { OVERRIDE_ACTIONS } from "./components/ReviewDetailPanel";
 import ManualReviewSubmitModal from "./components/ManualReviewSubmitModal";
-import SearchIndexPanel from "./components/SearchIndexPanel";
-import ReviewSearchPanel from "./components/ReviewSearchPanel";
 import HoverHelp from "./components/HoverHelp";
 
 /** Page size for the dashboard list; kept aligned with backend pagination limits. */
@@ -39,7 +38,6 @@ export default function TriageApp() {
   const canReadReviews = hasPermission("reviews.read");
   const canWrite = hasPermission("reviews.write");
   const canOverride = hasPermission("reviews.override");
-  const canDevReset = hasPermission("dev.reset");
   const canReadLogs = hasPermission("logs.read");
   const canReadGraph = hasPermission("graph.read");
   const canAdminUsers = hasRole("admin") || hasPermission("admin.users");
@@ -54,6 +52,9 @@ export default function TriageApp() {
       }
       if (view === "graph") {
         return canReadGraph;
+      }
+      if (view === "search") {
+        return canReadReviews;
       }
       if (view === "logs") {
         return canReadLogs;
@@ -247,6 +248,7 @@ export default function TriageApp() {
               workspace: canReadReviews,
               analytics: features.analytics && hasPermission("metrics.read"),
               graph: canReadGraph,
+              search: canReadReviews,
               logs: canReadLogs,
               admin: canAdminUsers,
               settings: true,
@@ -266,6 +268,8 @@ export default function TriageApp() {
           <GraphView />
         </main>
       )}
+
+      {screen === "search" && canReadReviews && <SearchReviewsView />}
 
       {screen === "logs" && canReadLogs && <LogsView />}
 
@@ -327,8 +331,6 @@ export default function TriageApp() {
             {features.simulation && (
               <SimulationPanel maxPerMin={features.simulationMaxEventsPerMin} />
             )}
-            {canDevReset && <SearchIndexPanel />}
-            {canReadReviews && <ReviewSearchPanel />}
           </div>
         </main>
       )}

@@ -17,6 +17,7 @@ Each sub-window is a full-page view rendered inside `TriageApp.jsx`. The mapping
 | *(empty)* | Review dashboard | Users with `reviews.read` |
 | `#analytics` | Analytics & graphs | `metrics.read` **and** analytics feature flag |
 | `#graph` | Phishing graph | `graph.read` |
+| `#search` | Search past reviews | `reviews.read` |
 | `#logs` | Search unified logs | `logs.read` |
 | `#admin` | User administration | `admin` role or `admin.users` permission |
 | `#settings` | Settings | Any authenticated user |
@@ -44,6 +45,7 @@ Icons use **stroke-based SVG** at 2px weight (`NavIcons.jsx`) so metaphors stay 
 | `IconDashboard` | Clipboard with checklist — triage queue |
 | `IconAnalytics` | Bar chart with axis — KPIs |
 | `IconGraph` | Hub node with three links — relationship graph |
+| `IconSearchReviews` | Envelope + magnifying glass — Elasticsearch review search |
 | `IconLogs` | Document + magnifying glass — log search |
 | `IconAdmin` | Person + shield — admin / RBAC gateway |
 | `IconSettings` | Gear — preferences and theme |
@@ -72,6 +74,23 @@ Nav buttons now use **`placement="above"`**:
 CSS class **`.hover-help__popup--nav`** adds centered text and slightly larger font for long names like “Analytics & graphs”.
 
 **Accessibility:** every button still has `aria-label` with the full tab name for screen readers, independent of the hover tooltip.
+
+---
+
+## Search past reviews (dedicated `#search` tab)
+
+Review full-text search used to live in the Review dashboard footer (`dashboard-tools`), where it was easy to miss without scrolling past simulation controls. It now has its own sub-window: **`SearchReviewsView.jsx`**.
+
+**What you see on this tab:**
+
+1. **`ReviewSearchPanel.jsx`** — plain-language keyword search, optional verdict/status/sender/date filters, and Lucene regex fields for power users. Requires **`reviews.read`** (bootstrap admin has this).
+2. **`SearchIndexPanel.jsx`** (below the form) — Elasticsearch index status and **Clear search index** for users with **`dev.reset`** plus **`admin`** or **`developer`** role. The panel **always renders** for those users; if Elasticsearch is disabled or down, it shows setup steps instead of disappearing.
+
+**Why separate:** analysts often investigate historical emails without triaging the live queue. A dedicated tab mirrors the **Logs** pattern and keeps the dashboard focused on inbound review tracking.
+
+**Backend:** `GET /search/reviews`, `GET /search/status`, `DELETE /search/index` — see [search_guide_elasticsearch_reviews.md](search_guide_elasticsearch_reviews.md).
+
+**Direct URL:** `http://localhost:3001/#search`
 
 ---
 
@@ -113,9 +132,11 @@ This guide and all sibling docs use **placeholders only**. Never paste values fr
 
 | Test file | Coverage |
 |-----------|----------|
-| `AppNavBar.test.jsx` | RBAC-filtered tabs; click calls `setScreen` |
+| `AppNavBar.test.jsx` | RBAC-filtered tabs; **Search past reviews** button; click calls `setScreen` |
+| `SearchReviewsView.test.jsx` | Dedicated `#search` tab mounts search + index admin panels |
+| `SearchIndexPanel.test.jsx` | Index admin visible with setup text when ES disabled |
 | `HoverHelp.test.jsx` | Tooltip show/hide; `placement="above"` nav styling |
-| `appScreenNavigation` tests | Hash read/write helpers |
+| `appScreenNavigation` tests | Hash read/write helpers including `#search` |
 
 <div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
 

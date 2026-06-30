@@ -382,13 +382,24 @@ def test_app_icon_navigation_and_logs_view():
     """Logs search is a dedicated sub-window; icon nav includes settings and admin."""
     nav = (ROOT / "frontend/src/lib/appScreenNavigation.js").read_text(encoding="utf-8")
     assert '"logs"' in nav
+    assert '"search"' in nav
     assert '"settings"' in nav
     assert (ROOT / "frontend/src/views/LogsView.jsx").is_file()
+    assert (ROOT / "frontend/src/views/SearchReviewsView.jsx").is_file()
     assert (ROOT / "frontend/src/components/AppNavBar.jsx").is_file()
+    navbar = (ROOT / "frontend/src/components/AppNavBar.jsx").read_text(encoding="utf-8")
+    assert "IconSearchReviews" in navbar
+    assert "Search past reviews" in navbar
     triage = (ROOT / "frontend/src/TriageApp.jsx").read_text(encoding="utf-8")
     assert "LogSearchPanel" not in triage or "dashboard-tools" in triage
+    assert "ReviewSearchPanel" not in triage
+    assert "SearchReviewsView" in triage
     assert "LogsView" in triage
     assert "SettingsView" in triage
+    search_panel = (ROOT / "frontend/src/components/SearchIndexPanel.jsx").read_text(
+        encoding="utf-8"
+    )
+    assert "Elasticsearch is disabled" in search_panel
     readme = (ROOT / "docs/README.md").read_text(encoding="utf-8")
     assert "ui_guide_app_navigation.md" in readme
     themes = (ROOT / "backend/src/auth/themeConstants.js").read_text(encoding="utf-8")

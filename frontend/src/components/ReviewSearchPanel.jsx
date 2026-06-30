@@ -2,14 +2,25 @@
  * Analyst full-text search over past reviews (Elasticsearch index).
  *
  * Pattern: React controlled form → GET /search/reviews with query + filter params.
- * Technology: Elasticsearch multi_match + bool filters (verdict, date range, regexp).
+ * Technology: Elasticsearch multi_match (plain-language keywords) + bool filters.
+ *
+ * @param {object} [props]
+ * @param {boolean} [props.standalone] — full-width layout on dedicated #search tab
  */
 import { useCallback, useState } from "react";
 import { getJson } from "../api/client";
 import HoverHelp from "./HoverHelp";
 
+/** Example plain-language questions analysts can paste into the Keywords field. */
+const EXAMPLE_QUERIES = [
+  "verify your account password",
+  "urgent wire transfer",
+  "example-phish suspicious link",
+  "microsoft login reset",
+];
+
 /** Search form + results table for indexed review documents. */
-export default function ReviewSearchPanel() {
+export default function ReviewSearchPanel({ standalone = false }) {
   const [query, setQuery] = useState("");
   const [verdict, setVerdict] = useState("");
   const [status, setStatus] = useState("");
@@ -24,6 +35,7 @@ export default function ReviewSearchPanel() {
   const [error, setError] = useState("");
   const [searched, setSearched] = useState(false);
 
+  /** Build query string and call GET /search/reviews. */
   const runSearch = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -41,7 +53,9 @@ export default function ReviewSearchPanel() {
 
       const data = await getJson(`/search/reviews?${params.toString()}`);
       if (!data.enabled) {
-        setError("Elasticsearch is disabled or unreachable. Start the elasticsearch Docker service.");
+        setError(
+          "Elasticsearch is disabled or unreachable. Open the Search past reviews tab after starting the elasticsearch Docker service (see docs/search_guide_elasticsearch_reviews.md)."
+        );
         setHits([]);
         setTotal(0);
       } else {
@@ -58,20 +72,56 @@ export default function ReviewSearchPanel() {
     }
   }, [query, verdict, status, senderEmail, updatedFrom, updatedTo, subjectRegex, bodyRegex]);
 
+  /** Fill Keywords from a suggested plain-language example. */
+  const applyExample = (text) => {
+    setQuery(text);
+  };
+
   return (
-    <section className="card" style={{ gridColumn: "1 / -1" }}>
-      <HoverHelp text="Full-text search over the Elasticsearch triage-reviews index. Combine keywords with verdict, status, sender, dates, and Lucene regex filters.">
+    <section
+      className={`card${standalone ? " review-search-panel--standalone" : ""}`}
+      style={{ gridColumn: "1 / -1" }}
+    >
+      <HoverHelp text="Full-text search over the Elasticsearch triage-reviews index. Type everyday language in Keywords — Elasticsearch matches important words across subject, body, sender, and links.">
         <h2>Search past reviews</h2>
       </HoverHelp>
 
+      <p className="muted" style={{ fontSize: "0.9rem" }}>
+        <strong>Plain-language search:</strong> type a question or phrase in{" "}
+        <strong>Keywords</strong> — for example &quot;emails asking to reset my password&quot; or
+        &quot;suspicious link verify account&quot;. Elasticsearch splits your text into words and
+        finds reviews where those words appear in the subject, body, sender fields, or extracted
+        URLs. You do not need Lucene syntax for basic searches; add verdict/status/date filters to
+        narrow results.
+      </p>
+
+      <div className="search-example-chips" role="list" aria-label="Example search phrases">
+        {EXAMPLE_QUERIES.map((example) => (
+          <button
+            key={example}
+            type="button"
+            className="search-example-chip"
+            role="listitem"
+            onClick={() => applyExample(example)}
+          >
+            {example}
+          </button>
+        ))}
+      </div>
+
       <div className="search-form-grid">
-        <HoverHelp text="Free-text match across subject, body, sender, and extracted links.">
+        <HoverHelp text="Free-text match across subject, body, sender name/email, and extracted links — use natural language.">
           <label className="field">
-            Keywords
+            Keywords (plain language)
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="phishing, verify account, example-phish"
+              placeholder="e.g. urgent verify account suspicious link"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  runSearch().catch(() => {});
+                }
+              }}
             />
           </label>
         </HoverHelp>
@@ -111,7 +161,7 @@ export default function ReviewSearchPanel() {
           <input type="date" value={updatedTo} onChange={(e) => setUpdatedTo(e.target.value)} />
         </label>
         <label className="field">
-          Subject regex (Lucene)
+          Subject regex (advanced Lucene)
           <input
             value={subjectRegex}
             onChange={(e) => setSubjectRegex(e.target.value)}
@@ -119,7 +169,7 @@ export default function ReviewSearchPanel() {
           />
         </label>
         <label className="field">
-          Body regex (Lucene)
+          Body regex (advanced Lucene)
           <input
             value={bodyRegex}
             onChange={(e) => setBodyRegex(e.target.value)}
@@ -130,7 +180,7 @@ export default function ReviewSearchPanel() {
 
       <div className="actions">
         <HoverHelp text="Run GET /search/reviews with the filters above. Requires elasticsearch container.">
-          <button type="button" disabled={loading} onClick={() => runSearch().catch(() => {})}>
+          <button type="button" className="primary" disabled={loading} onClick={() => runSearch().catch(() => {})}>
             {loading ? "Searching…" : "Search reviews"}
           </button>
         </HoverHelp>

@@ -21,7 +21,7 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 | Non-technical product overview | [biz_guide_user.md](biz_guide_user.md) |
 | **Dev mocks vs staging/prod real cloud services** | [stack_guide_staging_production_services.md](stack_guide_staging_production_services.md) |
 | **Review dashboard UI** (queue, detail, modal submit, HoverHelp) | [ui_guide_review_dashboard.md](ui_guide_review_dashboard.md) |
-| **App navigation** (icon tabs, Logs, Settings, Admin) | [ui_guide_app_navigation.md](ui_guide_app_navigation.md) |
+| **App navigation** (icon tabs, Search, Logs, Settings, Admin) | [ui_guide_app_navigation.md](ui_guide_app_navigation.md) |
 | **Complete list of implemented features** | [arch_guide_features_catalog.md](arch_guide_features_catalog.md) |
 | Full technical handbook | [arch_guide_system_comprehensive.md](arch_guide_system_comprehensive.md) |
 | **Build → bootstrap → sign in** (after clone or rebuild) | [stack_guide_build_and_run.md](stack_guide_build_and_run.md) |
