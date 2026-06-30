@@ -40,20 +40,27 @@ async function ensureReviewIndex() {
   return true;
 }
 
+/** Normalize verdict for keyword term filters (case-sensitive in Elasticsearch). */
+function normalizeVerdictForIndex(verdict) {
+  const value = String(verdict || "").trim().toLowerCase();
+  return value || null;
+}
+
 /** Map Mongo review document to Elasticsearch source row. */
 function reviewToSearchDocument(review) {
   const id = String(review._id || review.id || "");
+  const rawVerdict =
+    review.override?.verdict ||
+    review.analysisResult?.verdict ||
+    null;
   return {
     reviewId: id,
     senderEmail: String(review.senderEmail || "").toLowerCase(),
     senderName: String(review.senderName || ""),
     subject: String(review.subject || ""),
     body: String(review.body || ""),
-    status: String(review.status || "pending"),
-    verdict:
-      review.override?.verdict ||
-      review.analysisResult?.verdict ||
-      null,
+    status: String(review.status || "pending").toLowerCase(),
+    verdict: normalizeVerdictForIndex(rawVerdict),
     links: Array.isArray(review.links) ? review.links : [],
     updatedAt: review.updatedAt || review.createdAt || new Date(),
   };
@@ -98,6 +105,46 @@ function parseSearchPaging(limit, offset) {
   const size = Math.min(Math.max(parseInt(limit, 10) || DEFAULT_SEARCH_PAGE_SIZE, 1), 100);
   const from = Math.max(parseInt(offset, 10) || 0, 0);
   return { size, from };
+}
+
+/**
+ * Parse Elasticsearch total hit metadata (object, legacy number, or fallback).
+ * ES defaults to track_total_hits=10000 — relation "gte" means "at least N" (not exact).
+ */
+function parseEsTotalHits(esTotal, hitsLength) {
+  if (typeof esTotal === "number") {
+    return { total: esTotal, relation: "eq" };
+  }
+  if (esTotal && typeof esTotal.value === "number") {
+    return { total: esTotal.value, relation: esTotal.relation || "eq" };
+  }
+  return { total: hitsLength, relation: "eq" };
+}
+
+/**
+ * Whether another page likely exists after this one.
+ * Pattern: full page returned + (exact total not exhausted OR ES reported gte cap).
+ */
+function computeSearchHasMore({ hitsLength, size, offset, total, relation }) {
+  if (hitsLength >= size) {
+    if (relation === "gte") {
+      return true;
+    }
+    return offset + hitsLength < total;
+  }
+  return false;
+}
+
+/** ISO bounds for updatedAt range filters (ES date field expects consistent UTC strings). */
+function utcDayRangeClause(bounds) {
+  return {
+    range: {
+      updatedAt: {
+        gte: bounds.start.toISOString(),
+        lte: bounds.end.toISOString(),
+      },
+    },
+  };
 }
 
 /**
@@ -228,21 +275,29 @@ async function searchReviews({
     index: INDEX_NAME,
     from,
     size,
+    track_total_hits: true,
     sort: [{ updatedAt: "desc" }],
     query: esQuery,
   });
 
-  const total = result.hits.total?.value ?? result.hits.hits.length;
   const hits = result.hits.hits.map((h) => ({ id: h._id, ...h._source }));
+  const { total, relation } = parseEsTotalHits(result.hits.total, hits.length);
 
   return {
     enabled: true,
     query: q || null,
     hits,
     total,
+    totalRelation: relation,
     limit: size,
     offset: from,
-    hasMore: from + hits.length < total,
+    hasMore: computeSearchHasMore({
+      hitsLength: hits.length,
+      size,
+      offset: from,
+      total,
+      relation,
+    }),
   };
 }
 
@@ -285,16 +340,14 @@ async function pageForDateSearch({
     linksRegex,
   });
 
-  const onDayQuery = mergeQueryWithFilters(baseQuery, [
-    { range: { updatedAt: { gte: bounds.start, lte: bounds.end } } },
-  ]);
+  const onDayQuery = mergeQueryWithFilters(baseQuery, [utcDayRangeClause(bounds)]);
   const onDayCount = (await es.count({ index: INDEX_NAME, query: onDayQuery })).count;
   if (onDayCount === 0) {
     return { enabled: true, error: "no_reviews_on_date", date: bounds.date };
   }
 
   const newerQuery = mergeQueryWithFilters(baseQuery, [
-    { range: { updatedAt: { gt: bounds.end } } },
+    { range: { updatedAt: { gt: bounds.end.toISOString() } } },
   ]);
   const newerCount = (await es.count({ index: INDEX_NAME, query: newerQuery })).count;
   const page = pageIndexForDate(newerCount, size);
@@ -356,6 +409,9 @@ module.exports = {
   INDEX_NAME,
   DEFAULT_SEARCH_PAGE_SIZE,
   reviewToSearchDocument,
+  normalizeVerdictForIndex,
+  parseEsTotalHits,
+  computeSearchHasMore,
   buildReviewSearchQuery,
   ensureReviewIndex,
   indexReviewDocument,

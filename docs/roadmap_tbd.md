@@ -142,7 +142,7 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 
 - Docker service `elasticsearch` in `infra/docker/docker-compose.yml` (`ES_JAVA_OPTS=-Xms256m -Xmx256m`)
 - Env: `ELASTICSEARCH_ENABLED`, `ELASTICSEARCH_URL`, `ELASTICSEARCH_REVIEWS_INDEX`
-- `GET /search/status`, `GET /search/reviews?q=`, `GET /search/page-for-date`, `DELETE /search/index`
+- `GET /search/status`, `GET /search/reviews?q=`, `GET /search/page-for-date`, `DELETE /search/index` — search uses `track_total_hits: true` for exact totals; index maps lowercase `verdict`/`status` for term filters
 - Background indexing via `scheduleSearchIndex` (create, override, Celery internal graph sync)
 - Dedicated **`#search`** sub-window (`SearchReviewsView.jsx`) — nav icon **Search past reviews** (`IconSearchReviews`)
 - UI **Search past reviews** form (`ReviewSearchPanel.jsx`) — plain-language keywords + verdict/status/sender/date/regex filters; **offset pagination** (First, Prev, Next, Last, Refresh, Jump to date — same pattern as review queue)

@@ -326,6 +326,7 @@ def test_search_page_for_date_and_pagination_wired():
     index_js = (ROOT / "backend/src/search/reviewSearchIndex.js").read_text(encoding="utf-8")
     assert "pageForDateSearch" in index_js
     assert "hasMore" in index_js
+    assert "track_total_hits" in index_js
 
 
 def test_docs_avoid_hardcoded_private_env_values():

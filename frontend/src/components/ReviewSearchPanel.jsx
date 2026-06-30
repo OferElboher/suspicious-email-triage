@@ -35,6 +35,7 @@ export default function ReviewSearchPanel({ standalone = false }) {
   const [bodyRegex, setBodyRegex] = useState("");
   const [hits, setHits] = useState([]);
   const [total, setTotal] = useState(0);
+  const [totalRelation, setTotalRelation] = useState("eq");
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -44,6 +45,36 @@ export default function ReviewSearchPanel({ standalone = false }) {
   const [jumpMessage, setJumpMessage] = useState("");
 
   const lastPage = Math.max(0, Math.ceil(total / PAGE_SIZE) - 1);
+
+  /**
+   * Human-readable total for the summary line.
+   * When ES returns relation "gte", the count is a cap (often 10,000) — show "10,000+".
+   */
+  const totalLabel =
+    totalRelation === "gte" && total >= 10000 ? `${total.toLocaleString()}+` : String(total);
+
+  /**
+   * Derive hasMore from API flag or page shape (full page + not at exact end).
+   * Cavities: ES may omit hasMore; relation "gte" means total is a lower bound only.
+   */
+  const deriveHasMore = (data) => {
+    const hits = data.hits || [];
+    const limit = data.limit || PAGE_SIZE;
+    const offset = data.offset || 0;
+    if (data.hasMore === true) {
+      return true;
+    }
+    if (data.hasMore === false && data.totalRelation !== "gte") {
+      return false;
+    }
+    if (hits.length >= limit) {
+      if (data.totalRelation === "gte") {
+        return true;
+      }
+      return offset + hits.length < (data.total || 0);
+    }
+    return false;
+  };
 
   /** Serialize current filter state into URLSearchParams (shared by search + page-for-date). */
   const buildFilterParams = useCallback(() => {
@@ -84,7 +115,8 @@ export default function ReviewSearchPanel({ standalone = false }) {
         } else {
           setHits(data.hits || []);
           setTotal(data.total || 0);
-          setHasMore(Boolean(data.hasMore));
+          setTotalRelation(data.totalRelation || "eq");
+          setHasMore(deriveHasMore(data));
           setPage(targetPage);
         }
         setSearched(true);
@@ -129,7 +161,14 @@ export default function ReviewSearchPanel({ standalone = false }) {
       setJumpMessage(`Page ${data.page + 1} — ${data.onDayCount} match(es) on ${data.date}.`);
     } catch (err) {
       if (err.body?.error === "no_reviews_on_date") {
-        throw new Error(`No matching reviews on ${dateStr}.`);
+        throw new Error(
+          `No reviews on ${dateStr} matching your current filters (Verdict, Status, Keywords, Updated from/to). Try clearing date filters or pick another day.`
+        );
+      }
+      if (err.status === 404 || err.message === "Not Found" || err.message === "no_reviews_on_date") {
+        throw new Error(
+          `No reviews on ${dateStr} with the active search filters. Confirm the date in result rows (UTC) and that Updated from/to does not exclude that day.`
+        );
       }
       throw err;
     }
@@ -254,8 +293,10 @@ export default function ReviewSearchPanel({ standalone = false }) {
       {searched && !error && (
         <>
           <p className="muted">
-            {total} match(es) total — showing rows {page * PAGE_SIZE + 1}–
-            {Math.min((page + 1) * PAGE_SIZE, total)}.
+            {totalLabel} match(es) total
+            {totalRelation === "gte" ? " (Elasticsearch lower-bound estimate — use Next to browse)" : ""}{" "}
+            — showing rows {total === 0 ? 0 : page * PAGE_SIZE + 1}–
+            {Math.min((page + 1) * PAGE_SIZE, total || hits.length)}.
           </p>
 
           <div className="toolbar review-search-panel__toolbar">
@@ -287,10 +328,10 @@ export default function ReviewSearchPanel({ standalone = false }) {
                 Next
               </button>
             </HoverHelp>
-            <HoverHelp text="Jump to the last page of results.">
+            <HoverHelp text="Jump to the last page of results (disabled when total is an ES estimate).">
               <button
                 type="button"
-                disabled={loading || page >= lastPage}
+                disabled={loading || page >= lastPage || totalRelation === "gte"}
                 onClick={() => onPageChange(lastPage)}
               >
                 Last

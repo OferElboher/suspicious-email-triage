@@ -188,7 +188,9 @@ If you are new to a topic (Kafka, Neo4j, JWT, etc.), follow the linked guides in
 
 - **Search API (`GET /search/reviews?q=`)**
   - `multi_match` query across indexed fields; empty query returns recent documents.
-  - Offset pagination via `limit` (default 20, max 100) and `offset`; response includes `total`, `hasMore`.
+  - Offset pagination via `limit` (default 20, max 100) and `offset`; response includes `total`, `totalRelation`, `hasMore`.
+  - Elasticsearch `track_total_hits: true` for exact match counts (avoids default 10,000 lower bound).
+  - Verdict/status normalized to lowercase at index time for keyword `term` filters.
   - Elasticsearch, Express, JWT.
 
 - **Search date jump (`GET /search/page-for-date`)**

@@ -26,6 +26,7 @@ function mockSearchPage({ total = 45, offset = 0, limit = 20 } = {}) {
     limit,
     offset,
     hasMore: offset + hits.length < total,
+    totalRelation: "eq",
   };
 }
 
@@ -59,6 +60,62 @@ describe("ReviewSearchPanel pagination", () => {
       expect(getJson).toHaveBeenCalledWith(expect.stringContaining("offset=20"));
     });
     expect(await screen.findByText(/Page 2 of 3/i)).toBeInTheDocument();
+  });
+
+  it("enables Next when ES reports gte total cap (10,000+) and full first page", async () => {
+    getJson.mockImplementation(async (path) => {
+      if (path.startsWith("/search/reviews")) {
+        return {
+          enabled: true,
+          hits: Array.from({ length: 20 }, (_, i) => ({
+            reviewId: `id-${i}`,
+            subject: `Row ${i}`,
+            updatedAt: "2026-06-26T12:00:00Z",
+          })),
+          total: 10000,
+          totalRelation: "gte",
+          limit: 20,
+          offset: 0,
+          hasMore: true,
+        };
+      }
+      throw new Error(`unexpected ${path}`);
+    });
+
+    render(<ReviewSearchPanel standalone />);
+    fireEvent.click(screen.getByRole("button", { name: /Search reviews/i }));
+
+    expect(await screen.findByText(/10,000\+ match/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Next/i })).toBeEnabled();
+    expect(screen.getByRole("button", { name: /Last/i })).toBeDisabled();
+  });
+
+  it("shows helpful message when jump to date returns 404", async () => {
+    getJson.mockImplementation(async (path) => {
+      if (path.startsWith("/search/reviews")) {
+        return mockSearchPage({ total: 5, offset: 0 });
+      }
+      if (path.startsWith("/search/page-for-date")) {
+        const err = new Error("Not Found");
+        err.status = 404;
+        err.body = { error: "no_reviews_on_date", date: "2026-06-26" };
+        throw err;
+      }
+      throw new Error(`unexpected ${path}`);
+    });
+
+    render(<ReviewSearchPanel standalone />);
+    fireEvent.click(screen.getByRole("button", { name: /Search reviews/i }));
+    await screen.findByText(/5 match/i);
+
+    fireEvent.change(screen.getByLabelText(/Jump to date/i), {
+      target: { value: "2026-06-26" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /^Go$/i }));
+
+    expect(
+      await screen.findByText(/No reviews on 2026-06-26 matching your current filters/i)
+    ).toBeInTheDocument();
   });
 
   it("jump to date calls page-for-date then loads that page", async () => {

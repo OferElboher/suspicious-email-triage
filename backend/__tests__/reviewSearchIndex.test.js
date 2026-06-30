@@ -11,6 +11,8 @@ const {
   clearReviewIndex,
   searchReviews,
   pageForDateSearch,
+  parseEsTotalHits,
+  computeSearchHasMore,
 } = require("../src/search/reviewSearchIndex");
 
 describe("review search index", () => {
@@ -27,6 +29,38 @@ describe("review search index", () => {
     expect(doc.reviewId).toBe("abc");
     expect(doc.senderEmail).toBe("a@b.com");
     expect(doc.verdict).toBe("suspicious");
+    expect(doc.status).toBe("completed");
+  });
+
+  it("parseEsTotalHits reads object, number, and fallback shapes", () => {
+    expect(parseEsTotalHits({ value: 10000, relation: "gte" }, 20)).toEqual({
+      total: 10000,
+      relation: "gte",
+    });
+    expect(parseEsTotalHits(45, 20)).toEqual({ total: 45, relation: "eq" });
+    expect(parseEsTotalHits(undefined, 7)).toEqual({ total: 7, relation: "eq" });
+  });
+
+  it("computeSearchHasMore is true for full page when ES total is gte capped", () => {
+    expect(
+      computeSearchHasMore({
+        hitsLength: 20,
+        size: 20,
+        offset: 0,
+        total: 10000,
+        relation: "gte",
+      })
+    ).toBe(true);
+  });
+
+  it("normalizes verdict to lowercase for keyword term filters", () => {
+    const doc = reviewToSearchDocument({
+      _id: "x",
+      status: "Completed",
+      analysisResult: { verdict: "Benign" },
+    });
+    expect(doc.verdict).toBe("benign");
+    expect(doc.status).toBe("completed");
   });
 
   it("indexes document when client is available", async () => {
@@ -66,7 +100,13 @@ describe("review search index", () => {
 
   it("searchReviews builds bool query with verdict and date filters", async () => {
     const search = jest.fn().mockResolvedValue({
-      hits: { hits: [], total: { value: 0 } },
+      hits: {
+        hits: Array.from({ length: 20 }, (_, i) => ({
+          _id: String(i),
+          _source: { subject: "s" },
+        })),
+        total: { value: 10000, relation: "gte" },
+      },
     });
     const exists = jest.fn().mockResolvedValue(true);
     getElasticsearchClient.mockResolvedValue({
@@ -74,7 +114,7 @@ describe("review search index", () => {
       search,
     });
 
-    await searchReviews({
+    const result = await searchReviews({
       query: "phish",
       verdict: "likely_phishing",
       updatedFrom: "2026-06-01T00:00:00Z",
@@ -83,9 +123,12 @@ describe("review search index", () => {
 
     expect(search).toHaveBeenCalled();
     const body = search.mock.calls[0][0];
+    expect(body.track_total_hits).toBe(true);
     expect(body.query.bool.must[0].multi_match.query).toBe("phish");
     expect(body.query.bool.filter.some((f) => f.term?.verdict === "likely_phishing")).toBe(true);
     expect(body.query.bool.filter.some((f) => f.regexp?.subject)).toBe(true);
+    expect(result.hasMore).toBe(true);
+    expect(result.totalRelation).toBe("gte");
   });
 
   it("pageForDateSearch counts on-day and newer docs for page index", async () => {
@@ -108,5 +151,9 @@ describe("review search index", () => {
     expect(result.page).toBe(2);
     expect(result.onDayCount).toBe(2);
     expect(count).toHaveBeenCalledTimes(2);
+    const onDayQuery = count.mock.calls[0][0].query;
+    const dayRange = onDayQuery.bool.filter.find((f) => f.range?.updatedAt);
+    expect(dayRange.range.updatedAt.gte).toMatch(/2026-06-10T00:00:00.000Z/);
+    expect(dayRange.range.updatedAt.lte).toMatch(/2026-06-10T23:59:59.999Z/);
   });
 });

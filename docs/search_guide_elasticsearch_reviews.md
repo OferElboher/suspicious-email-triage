@@ -87,10 +87,35 @@ Search results use the **same pagination pattern** as the **Review queue** on th
 
 **Page size:** 20 rows per page (matches the review queue and backend `DEFAULT_SEARCH_PAGE_SIZE`).
 
+### Why you might have seen “10,000 matches” (and only **Last** enabled)
+
+Elasticsearch’s default behavior is to **stop counting precisely at 10,000 hits** and return `totalRelation: "gte"` (“at least 10,000”). That is **not necessarily your real row count** — it is a performance cap inside Elasticsearch.
+
+This project now sends **`track_total_hits: true`** on every search so the API returns the **exact** match count for dev-sized indexes. The UI shows:
+
+- **Exact count** when Elasticsearch reports `totalRelation: "eq"` (normal after the fix).
+- **`10,000+`** when Elasticsearch still reports a lower-bound estimate (`totalRelation: "gte"`). In that case **Next** stays enabled (full page returned) but **Last** is disabled because the true last page is unknown.
+
+If pagination still looks wrong after upgrading, **clear and rebuild the index** (Search index admin card → **Clear search index**), then submit or simulate a few reviews so documents re-index with normalized lowercase `verdict` / `status` fields.
+
+### Jump to date — UTC days and active filters
+
+**Jump to date** uses **UTC calendar days** on the indexed `updatedAt` field — the same field shown in result rows (ISO timestamp). It also applies **every filter** currently set in the form:
+
+| Filter | Effect on jump |
+|--------|------------------|
+| **Verdict** / **Status** | Only counts hits matching those values on that day |
+| **Updated from** / **Updated to** | If the chosen day falls **outside** that range, jump returns **no matches** even if unfiltered rows exist on that date |
+| **Keywords** / regex | Jump respects text filters too |
+
+**Example:** You filter **Verdict = benign** and **Status = completed**, then jump to **2026-06-26**. Elasticsearch counts only **benign + completed** documents whose `updatedAt` falls on that UTC day. Reviews visible on the Review dashboard for that calendar day but with a different verdict in the index will not count.
+
+If jump shows “No reviews on … matching your current filters”, try clearing **Updated from/to**, verify the date in the **updatedAt** column of search hits (UTC), or temporarily remove Verdict/Status to confirm data exists.
+
 **How pagination works technically:**
 
 1. The React panel (`ReviewSearchPanel.jsx`) sends `limit=20` and `offset=page×20` to **`GET /search/reviews`**.
-2. Elasticsearch returns a **total hit count** plus one page of documents sorted by **`updatedAt` descending** (newest first).
+2. Elasticsearch returns a **total hit count** (`track_total_hits: true` for exact counts) plus one page of documents sorted by **`updatedAt` descending** (newest first). Response fields: `total`, `totalRelation` (`eq` or `gte`), `hasMore`, `offset`, `limit`.
 3. **Jump to date** calls **`GET /search/page-for-date`** with the **same filter parameters** as your active search plus a `date=YYYY-MM-DD` field. The backend runs two **count** queries (matches on that day; matches newer than that day) and computes a zero-based page index using **`dateNav.pageIndexForDate`** — the same helper used by **`GET /reviews/page-for-date`** for MongoDB.
 
 Example API pagination (page 2, offset 20):
@@ -193,7 +218,10 @@ curl -sG -H "Authorization: Bearer YOUR_JWT" \
 | Index admin missing | Looking on dashboard footer (old layout) | Use **#search** tab — index panel is below the form |
 | Clear index 403 | Not admin/developer role | Bootstrap admin has both `dev.reset` and `admin` role |
 | Zero results | Index empty or typo | Submit reviews; wait for `completed`; try example chips |
-| Only first 20 results visible | Pagination not used | Click **Next** / **Last** or use **Jump to date** in the search toolbar |
+| Only first page / **Next** disabled incorrectly | Old ES `10,000` cap confused pagination | Upgrade backend; look for exact `total` or `10,000+` label; use **Next** |
+| **Last** enabled but **Next** disabled on page 1 | Stale total estimate | Same as above; clear index if counts look wrong |
+| Jump to date “Not found” / no matches | UTC day vs filters | See [Jump to date](#paginating-search-results) — check Verdict/Status/Updated from/to |
+| Jump to date fails after index upgrade | Verdict not lowercase in old index | **Clear search index** and re-index (new docs normalize verdict/status) |
 | Document count 0 after reviews | Indexing lag or ES down | Check `merged.log` topic `elasticsearch` |
 
 ---
