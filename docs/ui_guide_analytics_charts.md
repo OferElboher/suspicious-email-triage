@@ -61,6 +61,17 @@ Both Recharts charts include a **Legend** (color key at the top) and **axis labe
 
 The phishing **graph** tab (`GraphView`) is not a Recharts chart — it is an SVG network with **no X/Y axes**. A **color legend** below the canvas explains node types (Sender, Review, Url, Domain, Campaign). See [graph_guide_neo4j_phishing.md](graph_guide_neo4j_phishing.md).
 
+### Data pipeline panel (Prefect & dbt)
+
+Below the main charts, **Data pipeline (Prefect & dbt)** shows orchestration tooling integrated into the product:
+
+| Widget | Source API | What it displays |
+|--------|------------|------------------|
+| Prefect health card | `GET /pipeline/prefect-health` | Event count in last 24h, flow name, execution source |
+| dbt daily bar chart | `GET /pipeline/dbt-daily` | Last 14 days from model `review_stats_daily` |
+
+Deep dive for newcomers to Prefect/dbt: [data_guide_prefect_dbt_demo.md](data_guide_prefect_dbt_demo.md).
+
 ---
 
 ## Controls

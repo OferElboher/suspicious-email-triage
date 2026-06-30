@@ -306,12 +306,18 @@ If you are new to a topic (Kafka, Neo4j, JWT, etc.), follow the linked guides in
 ## Orchestration demo (Prefect / dbt)
 
 - **Prefect stats health flow**
-  - Optional flow counting recent PostgreSQL stats events; degrades gracefully without Prefect installed.
-  - Python Prefect decorators (optional), PostgreSQL.
+  - Flow `review-stats-health-check` counts recent PostgreSQL stats events; exposed via `GET /pipeline/prefect-health` and **Analytics → Data pipeline** panel.
+  - Python Prefect `@flow` / `@task` (optional), Node bridge (`prefectRunner.js`), PostgreSQL.
 
 - **dbt daily stats model**
-  - SQL view aggregating `review_stats_events` by day for analytics demos.
-  - dbt, PostgreSQL, Jinja SQL.
+  - Model `review_stats_daily` aggregates events by day; VIEW ensured by API; charted in **PipelineOrchestrationPanel**.
+  - dbt project `orchestration/dbt_demo`, PostgreSQL VIEW, `dbtDaily.js` reader.
+
+- **React pipeline panel**
+  - `PipelineOrchestrationPanel.jsx` on `#analytics` — depends on both orchestration APIs.
+  - Recharts bar chart (dbt), status cards (Prefect).
+
+**Guide:** [data_guide_prefect_dbt_demo.md](data_guide_prefect_dbt_demo.md)
 
 ---
 

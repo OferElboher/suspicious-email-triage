@@ -61,7 +61,7 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 - [data_guide_mock_llm.md](data_guide_mock_llm.md) — mock commercial LLM
 - [data_guide_dev_mock_services.md](data_guide_dev_mock_services.md) — all dev mocks vs real cloud APIs
 - [data_guide_kafka_events.md](data_guide_kafka_events.md) — Kafka topics & consumers
-- [data_guide_prefect_dbt_demo.md](data_guide_prefect_dbt_demo.md) — Prefect / dbt demo
+- [data_guide_prefect_dbt_demo.md](data_guide_prefect_dbt_demo.md) — Prefect / dbt integrated in Analytics pipeline panel
 
 ### Graph (Neo4j phishing)
 

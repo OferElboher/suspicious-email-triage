@@ -176,7 +176,7 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 
 **Guide:** [data_guide_snowflake_analytics.md](data_guide_snowflake_analytics.md)
 
-**Remaining (paid / later):** Real Snowflake account, Snowpipe streaming ingest, dbt models in cloud, BI tool connectors (Looker, Tableau).
+**Remaining (paid / later):** Real Snowflake account, Snowpipe streaming ingest, **dbt Cloud** scheduled jobs in AWS, Prefect Cloud agents, BI tool connectors (Looker, Tableau). In-app Prefect/dbt panel and `/pipeline/*` APIs are **implemented** — see [data_guide_prefect_dbt_demo.md](data_guide_prefect_dbt_demo.md).
 
 ---
 

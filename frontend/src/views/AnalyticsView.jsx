@@ -19,6 +19,7 @@ import {
   Label,
 } from "recharts";
 import { getJson } from "../api/client";
+import PipelineOrchestrationPanel from "../components/PipelineOrchestrationPanel";
 
 /** Default reporting window when the user has not customized dates yet (7 days). */
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -152,6 +153,7 @@ export default function AnalyticsView() {
   };
 
   return (
+    <>
     <section className="card" style={{ gridColumn: "1 / -1" }}>
       <h2>Traffic &amp; queue health</h2>
       <p className="muted">
@@ -287,5 +289,7 @@ export default function AnalyticsView() {
         </ResponsiveContainer>
       </div>
     </section>
+    <PipelineOrchestrationPanel />
+    </>
   );
 }

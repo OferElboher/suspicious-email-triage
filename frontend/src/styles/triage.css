@@ -419,6 +419,55 @@ button:disabled {
   height: 2rem;
 }
 
+/* Prefect + dbt panel on Analytics tab — two-column layout on wide screens. */
+.pipeline-panel__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+@media (min-width: 900px) {
+  .pipeline-panel__grid {
+    grid-template-columns: 1fr 1.4fr;
+  }
+}
+
+.pipeline-panel__card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.85rem 1rem;
+  background: var(--surface);
+}
+
+.pipeline-panel__title {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.pipeline-panel__metrics {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 0;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.pipeline-panel__metrics li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.9rem;
+}
+
+.status-ok {
+  color: var(--ok, #2ecc71);
+}
+
+.status-warn {
+  color: var(--warn, #e6a700);
+}
+
 .layout--single {
   grid-template-columns: 1fr;
   max-width: 960px;

@@ -396,3 +396,19 @@ def test_app_icon_navigation_and_logs_view():
     backups_doc = (ROOT / "docs/ops_guide_s3_backups.md").read_text(encoding="utf-8")
     assert "mock-s3" in backups_doc
     assert "ops.backups" in (ROOT / "backend/src/auth/constants.js").read_text(encoding="utf-8")
+
+
+def test_pipeline_prefect_dbt_wired_to_analytics_ui():
+    """Analytics tab exposes Prefect health + dbt daily rollup via /pipeline API."""
+    pipeline_api = (ROOT / "backend/src/api/pipeline.js").read_text(encoding="utf-8")
+    assert "/prefect-health" in pipeline_api
+    assert "/dbt-daily" in pipeline_api
+    panel = (ROOT / "frontend/src/components/PipelineOrchestrationPanel.jsx").read_text(encoding="utf-8")
+    assert "prefect-health" in panel
+    assert "dbt-daily" in panel
+    assert "PipelineOrchestrationPanel" in (
+        ROOT / "frontend/src/views/AnalyticsView.jsx"
+    ).read_text(encoding="utf-8")
+    guide = (ROOT / "docs/data_guide_prefect_dbt_demo.md").read_text(encoding="utf-8")
+    assert "PipelineOrchestrationPanel" in guide
+    assert "does not depend on them" not in guide.lower()
