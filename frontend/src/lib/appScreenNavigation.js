@@ -1,6 +1,7 @@
 /** Primary SPA views mounted by TriageApp (hash routes except workspace). */
 export const APP_SCREENS = [
   "workspace",
+  "flow",
   "analytics",
   "graph",
   "search",
@@ -12,6 +13,7 @@ export const APP_SCREENS = [
 /** Preferred fallback order when the current screen is not permitted. */
 export const SCREEN_FALLBACK_ORDER = [
   "workspace",
+  "flow",
   "analytics",
   "graph",
   "search",

@@ -10,6 +10,7 @@ describe("AppNavBar", () => {
         access={{
           workspace: true,
           analytics: false,
+          flow: false,
           graph: true,
           search: true,
           logs: false,
@@ -35,7 +36,9 @@ describe("AppNavBar", () => {
         access={{
           workspace: true,
           analytics: true,
+          flow: false,
           graph: false,
+          search: false,
           logs: false,
           admin: false,
           settings: true,

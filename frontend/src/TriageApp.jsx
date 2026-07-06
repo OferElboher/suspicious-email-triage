@@ -13,6 +13,7 @@ import AnalyticsView from "./views/AnalyticsView";
 import GraphView from "./views/GraphView";
 import LogsView from "./views/LogsView";
 import SearchReviewsView from "./views/SearchReviewsView";
+import FlowDashboardView from "./views/FlowDashboardView";
 import SettingsView from "./views/SettingsView";
 import AdminView from "./views/AdminView";
 import SimulationPanel from "./views/SimulationPanel";
@@ -46,6 +47,9 @@ export default function TriageApp() {
     (view) => {
       if (view === "workspace") {
         return canReadReviews;
+      }
+      if (view === "flow") {
+        return hasPermission("metrics.read");
       }
       if (view === "analytics") {
         return features.analytics && hasPermission("metrics.read");
@@ -248,6 +252,7 @@ export default function TriageApp() {
               workspace: canReadReviews,
               analytics: features.analytics && hasPermission("metrics.read"),
               graph: canReadGraph,
+              flow: hasPermission("metrics.read"),
               search: canReadReviews,
               logs: canReadLogs,
               admin: canAdminUsers,
@@ -256,6 +261,8 @@ export default function TriageApp() {
           />
         </div>
       </header>
+
+      {screen === "flow" && hasPermission("metrics.read") && <FlowDashboardView />}
 
       {screen === "analytics" && features.analytics && hasPermission("metrics.read") && (
         <main className="layout">

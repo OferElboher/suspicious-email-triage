@@ -957,3 +957,207 @@ button.danger {
   border-radius: var(--radius);
   border-left: 3px solid var(--border);
 }
+
+/* Live flow dashboard — SVG gauges, clocks, polling layout (#flow tab) */
+.flow-dashboard__header {
+  grid-column: 1 / -1;
+}
+
+.flow-dashboard__toolbar {
+  margin-top: 0.75rem;
+}
+
+.flow-dashboard__clocks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: flex-start;
+  grid-column: 1 / -1;
+  margin-bottom: 1rem;
+}
+
+.flow-dashboard__gauges {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1.25rem;
+  grid-column: 1 / -1;
+}
+
+.flow-dashboard__sim-pill {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  min-width: 140px;
+}
+
+.flow-dashboard__stats {
+  grid-column: 1 / -1;
+}
+
+.flow-dashboard__stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.75rem 1.25rem;
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 0;
+}
+
+.flow-dashboard__stat-grid li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.flow-gauge {
+  text-align: center;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface, #fff);
+}
+
+.flow-gauge__svg {
+  width: 100%;
+  max-width: 160px;
+  margin: 0 auto;
+  display: block;
+}
+
+.flow-gauge__arc {
+  stroke-width: 8;
+  stroke-linecap: round;
+}
+
+.flow-gauge__arc--bg {
+  stroke: var(--border, #ddd);
+}
+
+.flow-gauge__arc--fill {
+  stroke: var(--accent, #2563eb);
+  transition: stroke-dasharray 0.6s ease;
+}
+
+.flow-gauge--warn .flow-gauge__arc--fill {
+  stroke: #d97706;
+}
+
+.flow-gauge--ok .flow-gauge__arc--fill {
+  stroke: #059669;
+}
+
+.flow-gauge--danger .flow-gauge__arc--fill {
+  stroke: #dc2626;
+}
+
+.flow-gauge__needle line {
+  stroke: var(--text, #111);
+  stroke-width: 2;
+}
+
+.flow-gauge__hub {
+  fill: var(--text, #111);
+}
+
+.flow-gauge__needle {
+  transition: transform 0.6s ease;
+}
+
+.flow-gauge__value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-top: -0.25rem;
+}
+
+.flow-gauge__label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.flow-gauge__detail {
+  font-size: 0.8rem;
+  margin-top: 0.15rem;
+}
+
+.flow-clock,
+.flow-uptime {
+  text-align: center;
+  min-width: 120px;
+}
+
+.flow-clock__svg,
+.flow-uptime__svg {
+  width: 120px;
+  height: 120px;
+  display: block;
+  margin: 0 auto;
+}
+
+.flow-clock__face {
+  fill: var(--surface, #fff);
+  stroke: var(--border, #ccc);
+  stroke-width: 2;
+}
+
+.flow-clock__tick {
+  stroke: var(--muted, #888);
+  stroke-width: 1.5;
+}
+
+.flow-clock__hand {
+  stroke: var(--text, #111);
+  stroke-linecap: round;
+}
+
+.flow-clock__hand--hour {
+  stroke-width: 3;
+}
+
+.flow-clock__hand--minute {
+  stroke-width: 2;
+}
+
+.flow-clock__hand--second {
+  stroke: var(--accent, #2563eb);
+  stroke-width: 1;
+  transition: transform 0.2s linear;
+}
+
+.flow-clock__hub {
+  fill: var(--accent, #2563eb);
+}
+
+.flow-clock__digital {
+  font-family: ui-monospace, monospace;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.flow-clock__label,
+.flow-uptime__label {
+  font-size: 0.85rem;
+  color: var(--muted, #666);
+  margin-top: 0.25rem;
+}
+
+.flow-uptime__track {
+  stroke: var(--border, #ddd);
+  stroke-width: 6;
+}
+
+.flow-uptime__progress {
+  stroke: var(--accent, #2563eb);
+  stroke-width: 6;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: 50px 50px;
+  transition: stroke-dashoffset 0.6s ease;
+}
+
+.flow-uptime__value {
+  font-family: ui-monospace, monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-top: -4.5rem;
+  position: relative;
+}

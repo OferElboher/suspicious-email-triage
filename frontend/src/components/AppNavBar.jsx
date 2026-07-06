@@ -9,6 +9,7 @@ import {
   IconAdmin,
   IconAnalytics,
   IconDashboard,
+  IconFlow,
   IconGraph,
   IconLogs,
   IconSearchReviews,
@@ -25,6 +26,7 @@ export default function AppNavBar({ screen, setScreen, access }) {
   const {
     workspace,
     analytics,
+    flow,
     graph,
     search,
     logs,
@@ -41,6 +43,15 @@ export default function AppNavBar({ screen, setScreen, access }) {
           onClick={() => setScreen("workspace")}
         >
           <IconDashboard />
+        </NavIconButton>
+      )}
+      {flow && (
+        <NavIconButton
+          label="Live flow dashboard"
+          active={screen === "flow"}
+          onClick={() => setScreen("flow")}
+        >
+          <IconFlow />
         </NavIconButton>
       )}
       {analytics && (

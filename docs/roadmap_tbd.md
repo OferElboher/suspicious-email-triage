@@ -118,9 +118,11 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 - In-process counters (`backend/src/lib/appMetrics.js`) — HTTP requests, 5xx, reviews created, graph sync failures
 - `GET /ops/prometheus` — Prometheus text scrape (no auth, standard pattern)
 - `GET /ops/alerts` — JSON alert evaluation from readiness + thresholds (`metrics.read`)
+- **`GET /metrics/flow-dashboard`** — live Mongo queue depths + ingest rates for gauge UI (`metrics.read`)
+- **`#flow` Live flow dashboard** — SVG gauges + analog/uptime clocks; polls every 3s; needles move during dev simulation (`FlowDashboardView.jsx`, `flowMetrics.js`)
 - Env tuning: `ALERT_MAX_GRAPH_SYNC_FAILURES`, `ALERT_MAX_HTTP_ERRORS`
 
-**Guide:** [ops_guide_metrics_alerting.md](ops_guide_metrics_alerting.md)
+**Guides:** [ops_guide_metrics_alerting.md](ops_guide_metrics_alerting.md), [ui_guide_flow_dashboard.md](ui_guide_flow_dashboard.md)
 
 **Remaining (paid / later):** Grafana dashboards, DLQ Kafka alert rules, p95 latency histograms, PagerDuty routing.
 

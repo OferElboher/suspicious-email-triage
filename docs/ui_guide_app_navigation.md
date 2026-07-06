@@ -17,6 +17,7 @@ Each sub-window is a full-page view rendered inside `TriageApp.jsx`. The mapping
 | *(empty)* | Review dashboard | Users with `reviews.read` |
 | `#analytics` | Analytics & graphs | `metrics.read` **and** analytics feature flag |
 | `#graph` | Phishing graph | `graph.read` |
+| `#flow` | Live flow dashboard | `metrics.read` |
 | `#search` | Search past reviews | `reviews.read` |
 | `#logs` | Search unified logs | `logs.read` |
 | `#admin` | User administration | `admin` role or `admin.users` permission |
@@ -45,6 +46,7 @@ Icons use **stroke-based SVG** at 2px weight (`NavIcons.jsx`) so metaphors stay 
 | `IconDashboard` | Clipboard with checklist — triage queue |
 | `IconAnalytics` | Bar chart with axis — KPIs |
 | `IconGraph` | Hub node with three links — relationship graph |
+| `IconFlow` | Speedometer — live pipeline gauges |
 | `IconSearchReviews` | Envelope + magnifying glass — Elasticsearch review search |
 | `IconLogs` | Document + magnifying glass — log search |
 | `IconAdmin` | Person + shield — admin / RBAC gateway |
@@ -74,6 +76,14 @@ Nav buttons now use **`placement="above"`**:
 CSS class **`.hover-help__popup--nav`** adds centered text and slightly larger font for long names like “Analytics & graphs”.
 
 **Accessibility:** every button still has `aria-label` with the full tab name for screen readers, independent of the hover tooltip.
+
+---
+
+## Live flow dashboard (dedicated `#flow` tab)
+
+The **Live flow dashboard** shows **moving gauges and clocks** for the email review pipeline — queue depth, ingest rate, backlog pressure, server UTC time, and API uptime. It polls `GET /metrics/flow-dashboard` every **3 seconds** so needles animate smoothly during **dev simulation**.
+
+See [ui_guide_flow_dashboard.md](ui_guide_flow_dashboard.md) for gauge meanings, simulation demo steps, and how SVG + CSS implement the graphics without a heavy chart library.
 
 ---
 

@@ -5,9 +5,9 @@ describe("appScreenNavigation", () => {
     window.history.replaceState(null, "", "/");
   });
 
-  test("APP_SCREENS includes search, logs, settings, and admin", () => {
+  test("APP_SCREENS includes flow, search, logs, settings, and admin", () => {
     expect(APP_SCREENS).toEqual(
-      expect.arrayContaining(["search", "logs", "settings", "admin"])
+      expect.arrayContaining(["flow", "search", "logs", "settings", "admin"])
     );
   });
 
@@ -20,6 +20,8 @@ describe("appScreenNavigation", () => {
     expect(readScreenFromLocation()).toBe("analytics");
     window.location.hash = "#graph";
     expect(readScreenFromLocation()).toBe("graph");
+    window.location.hash = "#flow";
+    expect(readScreenFromLocation()).toBe("flow");
     window.location.hash = "#search";
     expect(readScreenFromLocation()).toBe("search");
     window.location.hash = "#logs";

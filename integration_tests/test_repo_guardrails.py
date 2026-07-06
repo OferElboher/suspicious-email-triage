@@ -329,6 +329,23 @@ def test_search_page_for_date_and_pagination_wired():
     assert "track_total_hits" in index_js
 
 
+def test_flow_dashboard_wired():
+    """Live flow tab polls GET /metrics/flow-dashboard with gauge components."""
+    metrics_api = (ROOT / "backend/src/api/metrics.js").read_text(encoding="utf-8")
+    assert "/flow-dashboard" in metrics_api
+    assert (ROOT / "backend/src/metrics/flowMetrics.js").is_file()
+    assert (ROOT / "frontend/src/views/FlowDashboardView.jsx").is_file()
+    assert "FlowGauge" in (ROOT / "frontend/src/views/FlowDashboardView.jsx").read_text(
+        encoding="utf-8"
+    )
+    nav = (ROOT / "frontend/src/lib/appScreenNavigation.js").read_text(encoding="utf-8")
+    assert '"flow"' in nav
+    guide = (ROOT / "docs/ui_guide_flow_dashboard.md").read_text(encoding="utf-8")
+    assert "FlowGauge" in guide
+    readme = (ROOT / "docs/README.md").read_text(encoding="utf-8")
+    assert "ui_guide_flow_dashboard.md" in readme
+
+
 def test_docs_avoid_hardcoded_private_env_values():
     """Guides must reference env var names, not copy gitignored backend/.env secrets."""
     forbidden_substrings = (

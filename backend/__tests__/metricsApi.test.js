@@ -5,6 +5,14 @@ jest.mock("../src/stats/statsPg", () => ({
   getStatusBreakdown: jest.fn(async () => [{ status: "completed", count: 2 }]),
 }));
 
+jest.mock("../src/metrics/flowMetrics", () => ({
+  getFlowDashboardSnapshot: jest.fn(async () => ({
+    generatedAt: "2026-06-01T12:00:00.000Z",
+    queue: { pending: 1, total: 5 },
+    gauges: { ingestRatePercent: 20 },
+  })),
+}));
+
 jest.mock("../src/http/middleware/auth", () => ({
   requirePermission: () => (_req, _res, next) => next(),
 }));
@@ -13,6 +21,7 @@ const request = require("supertest");
 const express = require("express");
 const metricsRoutes = require("../src/api/metrics");
 const { getTimeseries } = require("../src/stats/statsPg");
+const { getFlowDashboardSnapshot } = require("../src/metrics/flowMetrics");
 
 function buildApp() {
   const app = express();
@@ -40,5 +49,13 @@ describe("metrics API", () => {
     expect(getTimeseries).toHaveBeenCalledWith(
       expect.objectContaining({ eventType: "status_changed" })
     );
+  });
+
+  it("GET /metrics/flow-dashboard returns live snapshot", async () => {
+    const app = buildApp();
+    const res = await request(app).get("/metrics/flow-dashboard");
+    expect(res.status).toBe(200);
+    expect(getFlowDashboardSnapshot).toHaveBeenCalled();
+    expect(res.body.queue.pending).toBe(1);
   });
 });

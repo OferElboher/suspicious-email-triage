@@ -43,7 +43,7 @@ If you are new to a topic (Kafka, Neo4j, JWT, etc.), follow the linked guides in
   - PostgreSQL, Express, shared theme constants (Node + React); theme picker in Settings sub-window.
 
 - **Icon navigation bar**
-  - RBAC-filtered sub-windows: Review dashboard, Analytics, Graph, Logs, Admin, Settings — URL hash routing.
+  - RBAC-filtered sub-windows: Review dashboard, Live flow, Analytics, Graph, Search, Logs, Admin, Settings — URL hash routing.
   - React `AppNavBar`, `NavIconButton`, `HoverHelp` tooltips; see `ui_guide_app_navigation.md`.
 
 - **Django admin user CRUD**
@@ -246,6 +246,11 @@ If you are new to a topic (Kafka, Neo4j, JWT, etc.), follow the linked guides in
 - **Analytics charts API**
   - Timeseries and status breakdown from PostgreSQL stats events.
   - PostgreSQL `date_trunc`, Express, React Recharts UI.
+
+- **Live flow dashboard (`#flow`)**
+  - Real-time gauges (SVG + CSS needle transitions) and analog/uptime clocks polled from `GET /metrics/flow-dashboard`.
+  - MongoDB queue counts, ingest rates, `appMetrics` counters, dev simulation state from Redis.
+  - React `useFlowDashboardPoll` (3s interval); moves visibly during dev simulation.
 
 - **Central merged logging**
   - JSON-lines `merged.log` shared across containers via Docker volume.

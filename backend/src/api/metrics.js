@@ -5,6 +5,7 @@
 const express = require("express");
 const logger = require("../lib/logger");
 const { getTimeseries, getStatusBreakdown } = require("../stats/statsPg");
+const { getFlowDashboardSnapshot } = require("../metrics/flowMetrics");
 const { requirePermission } = require("../http/middleware/auth");
 
 /** router: Express metrics route collection mounted at /metrics. */
@@ -70,6 +71,20 @@ router.get("/status-breakdown", requirePermission("metrics.read"), async (req, r
   } catch (err) {
     logger.error("metrics", "breakdown failed", { error: err.message });
     res.status(500).json({ error: "metrics_failed" });
+  }
+});
+
+/**
+ * GET /metrics/flow-dashboard — live queue depths, rates, and pipeline counters for gauge UI.
+ * Pattern: polled every few seconds by FlowDashboardView (Mongo counts + appMetrics + Redis sim).
+ */
+router.get("/flow-dashboard", requirePermission("metrics.read"), async (_req, res) => {
+  try {
+    const snapshot = await getFlowDashboardSnapshot();
+    res.json(snapshot);
+  } catch (err) {
+    logger.error("metrics", "flow-dashboard failed", { error: err.message });
+    res.status(500).json({ error: "flow_dashboard_failed" });
   }
 });
 

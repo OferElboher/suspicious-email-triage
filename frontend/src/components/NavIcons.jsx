@@ -28,6 +28,19 @@ export function IconDashboard({ className = "nav-icon__svg" }) {
   );
 }
 
+/** Live flow dashboard — speedometer arc with needle (real-time pipeline gauges). */
+export function IconFlow({ className = "nav-icon__svg" }) {
+  return (
+    <svg className={className} {...COMMON}>
+      <path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12z" opacity="0.25" />
+      <path d="M6 18h12" />
+      <path d="M8 18a4 4 0 0 1 8 0" />
+      <path d="M12 14V8" />
+      <circle cx="12" cy="14" r="1.5" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 /** Analytics — bar chart with baseline (metrics / KPIs). */
 export function IconAnalytics({ className = "nav-icon__svg" }) {
   return (

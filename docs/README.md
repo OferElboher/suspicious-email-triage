@@ -21,7 +21,8 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 | Non-technical product overview | [biz_guide_user.md](biz_guide_user.md) |
 | **Dev mocks vs staging/prod real cloud services** | [stack_guide_staging_production_services.md](stack_guide_staging_production_services.md) |
 | **Review dashboard UI** (queue, detail, modal submit, HoverHelp) | [ui_guide_review_dashboard.md](ui_guide_review_dashboard.md) |
-| **App navigation** (icon tabs, Search, Logs, Settings, Admin) | [ui_guide_app_navigation.md](ui_guide_app_navigation.md) |
+| **App navigation** (icon tabs, Live flow, Search, Logs, Settings, Admin) | [ui_guide_app_navigation.md](ui_guide_app_navigation.md) |
+| **Live flow dashboard** (gauges + clocks, simulation-friendly) | [ui_guide_flow_dashboard.md](ui_guide_flow_dashboard.md) |
 | **Complete list of implemented features** | [arch_guide_features_catalog.md](arch_guide_features_catalog.md) |
 | Full technical handbook | [arch_guide_system_comprehensive.md](arch_guide_system_comprehensive.md) |
 | **Build → bootstrap → sign in** (after clone or rebuild) | [stack_guide_build_and_run.md](stack_guide_build_and_run.md) |
@@ -96,7 +97,8 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 
 ### UI & business
 
-- [ui_guide_app_navigation.md](ui_guide_app_navigation.md) — icon nav bar, Logs/Settings/Admin tabs
+- [ui_guide_app_navigation.md](ui_guide_app_navigation.md) — icon nav bar, Live flow, Logs/Settings/Admin tabs
+- [ui_guide_flow_dashboard.md](ui_guide_flow_dashboard.md) — real-time gauges, clocks, dev simulation visualization
 - [ui_guide_review_dashboard.md](ui_guide_review_dashboard.md) — review queue, detail panel, manual submit modal, HoverHelp
 - [ui_guide_analytics_charts.md](ui_guide_analytics_charts.md) — analytics charts
 - [ui_guide_color_themes.md](ui_guide_color_themes.md) — CSS themes

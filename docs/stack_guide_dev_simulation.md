@@ -127,6 +127,12 @@ curl -sS "http://localhost:3000/logs/search?keyword=simulation&limit=20" \
   -H "Authorization: Bearer ${TOKEN}" | python3 -m json.tool
 ```
 
+### Live flow dashboard (gauges + clocks)
+
+- Open **Live flow dashboard** tab (`/#flow`) — requires `metrics.read` (admin has it).
+- **Technology:** `GET /metrics/flow-dashboard` polled every 3s; SVG gauges with CSS needle animation (`FlowDashboardView.jsx`).
+- Start simulation on the Review dashboard, then watch **Ingest rate**, **Pending share**, and **Backlog pressure** needles move — see [ui_guide_flow_dashboard.md](ui_guide_flow_dashboard.md).
+
 ### Analytics & graphs
 
 - Open **Analytics & graphs** tab (`/#analytics`).
