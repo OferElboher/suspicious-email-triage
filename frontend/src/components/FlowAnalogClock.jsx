@@ -71,13 +71,14 @@ export default function FlowAnalogClock({ serverUtc, label = "Server time (UTC)"
           const y2 = 50 + Math.sin(rad) * 44;
           return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} className="flow-clock__tick" />;
         })}
-        <g style={{ transform: `rotate(${hour}deg)`, transformOrigin: "50px 50px" }}>
+        {/* SVG transform attribute (not CSS) — correct pivot when viewBox is scaled in the layout grid. */}
+        <g className="flow-clock__hand-group" transform={`rotate(${hour} 50 50)`}>
           <line x1="50" y1="50" x2="50" y2="28" className="flow-clock__hand flow-clock__hand--hour" />
         </g>
-        <g style={{ transform: `rotate(${minute}deg)`, transformOrigin: "50px 50px" }}>
+        <g className="flow-clock__hand-group" transform={`rotate(${minute} 50 50)`}>
           <line x1="50" y1="50" x2="50" y2="22" className="flow-clock__hand flow-clock__hand--minute" />
         </g>
-        <g style={{ transform: `rotate(${second}deg)`, transformOrigin: "50px 50px" }}>
+        <g className="flow-clock__hand-group" transform={`rotate(${second} 50 50)`}>
           <line x1="50" y1="50" x2="50" y2="18" className="flow-clock__hand flow-clock__hand--second" />
         </g>
         <circle cx="50" cy="50" r="2.5" className="flow-clock__hub" />

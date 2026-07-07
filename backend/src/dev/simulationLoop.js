@@ -7,6 +7,7 @@
  */
 const Review = require("../models/Review");
 const logger = require("../lib/logger");
+const { incrementReviewsCreated } = require("../lib/appMetrics");
 const { isDevDeployment } = require("../config/runtime");
 const { enqueueAfterCreate } = require("../services/reviewPipeline");
 const { readSimulation } = require("./simulationStore");
@@ -59,6 +60,7 @@ async function tick() {
     status: "pending",
   });
   await enqueueAfterCreate(review._id);
+  incrementReviewsCreated();
   logger.info("simulation", "synthetic review", { id: String(review._id) });
 }
 

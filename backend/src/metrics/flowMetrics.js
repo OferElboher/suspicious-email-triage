@@ -3,6 +3,10 @@
  *
  * Pattern: read-mostly aggregates for SOC-style gauges (Mongo counts + in-process counters).
  * Technology: Mongoose countDocuments, Redis simulationStore, appMetrics state.
+ *
+ * Gauge scaling trick: “share of total queue” needles often sit at 0% during fast simulation
+ * (thousands completed, few pending). Activity gauges scale against simulation target rate so
+ * needles move while synthetic traffic is running.
  */
 const Review = require("../models/Review");
 const { _state: appMetricsState } = require("../lib/appMetrics");
@@ -44,6 +48,17 @@ async function countCompletedSince(windowMs) {
 }
 
 /**
+ * Map a raw count to 0–100 for a gauge needle using a dynamic ceiling.
+ * @param {number} count
+ * @param {number} scaleMax
+ * @returns {number}
+ */
+function activityPercent(count, scaleMax) {
+  const ceiling = Math.max(Number(scaleMax) || 1, 1);
+  return Math.min(100, Math.round((Number(count) / ceiling) * 100));
+}
+
+/**
  * Build one live snapshot for GET /metrics/flow-dashboard (polled by React gauges/clocks).
  * @returns {Promise<object>}
  */
@@ -71,6 +86,7 @@ async function getFlowDashboardSnapshot() {
 
   const queueTotal = pending + processing + completed + failed;
   const backlog = pending + processing;
+  const createdPerMinuteAvg5m = Math.round((createdLastFiveMinutes / 5) * 10) / 10;
 
   let simulation = { available: false, enabled: false, eventsPerMinute: 0 };
   if (isDevDeployment()) {
@@ -98,11 +114,18 @@ async function getFlowDashboardSnapshot() {
     /* optional ES — dashboard still useful without search stats */
   }
 
-  /** Target rate for ingest gauge scale (simulation ceiling or default dev max). */
+  /** Ingest needle scale: configured sim rate, observed 1m/5m traffic, or laptop-friendly floor. */
   const ingestGaugeMax = Math.max(
-    simulation.enabled ? simulation.eventsPerMinute : 1,
+    simulation.enabled ? simulation.eventsPerMinute : 0,
+    createdLastMinute,
+    createdPerMinuteAvg5m,
     10
   );
+
+  /** Activity scales — keep needles responsive when completed ≫ pending (fast Celery). */
+  const pendingScaleMax = Math.max(10, simulation.eventsPerMinute * 2, pending, 1);
+  const processingScaleMax = Math.max(10, simulation.eventsPerMinute, processing, 1);
+  const completionScaleMax = Math.max(10, simulation.eventsPerMinute, completedLastMinute, 1);
 
   return {
     generatedAt: generatedAt.toISOString(),
@@ -124,7 +147,7 @@ async function getFlowDashboardSnapshot() {
       createdLastFiveMinutes,
       completedLastMinute,
       /** Average ingests per minute over the last five minutes (smoothed gauge input). */
-      createdPerMinuteAvg5m: Math.round((createdLastFiveMinutes / 5) * 10) / 10,
+      createdPerMinuteAvg5m,
     },
     pipeline: {
       reviewsCreatedTotal: appMetricsState.reviewsCreatedTotal,
@@ -136,19 +159,20 @@ async function getFlowDashboardSnapshot() {
     simulation,
     searchIndex,
     gauges: {
-      /** 0–100 share of queue in pending state (for semicircle gauge). */
+      /** Share-based (queue composition) — useful when backlog is large vs history. */
       pendingPercent: queueTotal ? Math.round((pending / queueTotal) * 100) : 0,
-      /** 0–100 share actively processing. */
       processingPercent: queueTotal ? Math.round((processing / queueTotal) * 100) : 0,
-      /** Ingest rate as percent of ingestGaugeMax (caps needle for laptop-friendly scale). */
-      ingestRatePercent: Math.min(
-        100,
-        Math.round((createdLastMinute / ingestGaugeMax) * 100)
-      ),
-      ingestGaugeMax,
-      /** Backlog pressure: backlog vs completed+backlog (how much work is in-flight). */
       backlogPressurePercent:
         backlog + completed > 0 ? Math.round((backlog / (backlog + completed)) * 100) : 0,
+      /** Activity-based (throughput) — needles track live simulation / ingest. */
+      ingestRatePercent: activityPercent(createdLastMinute, ingestGaugeMax),
+      ingestGaugeMax,
+      pendingActivityPercent: activityPercent(pending, pendingScaleMax),
+      pendingScaleMax,
+      processingActivityPercent: activityPercent(processing, processingScaleMax),
+      processingScaleMax,
+      completionThroughputPercent: activityPercent(completedLastMinute, completionScaleMax),
+      completionScaleMax,
     },
   };
 }
@@ -159,4 +183,5 @@ module.exports = {
   /** Exported for unit tests without hitting Mongo. */
   countByStatus,
   countCreatedSince,
+  activityPercent,
 };

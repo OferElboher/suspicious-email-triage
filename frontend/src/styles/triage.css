@@ -1020,8 +1020,11 @@ button.danger {
 .flow-gauge__svg {
   width: 100%;
   max-width: 160px;
+  height: auto;
+  aspect-ratio: 120 / 70;
   margin: 0 auto;
   display: block;
+  overflow: visible;
 }
 
 .flow-gauge__arc {
@@ -1030,7 +1033,8 @@ button.danger {
 }
 
 .flow-gauge__arc--bg {
-  stroke: var(--border, #ddd);
+  stroke: var(--muted, #9ca3af);
+  opacity: 0.45;
 }
 
 .flow-gauge__arc--fill {
@@ -1060,7 +1064,12 @@ button.danger {
 }
 
 .flow-gauge__needle {
-  transition: transform 0.6s ease;
+  /* Rotation applied via SVG transform attribute in FlowGauge.jsx (not CSS). */
+}
+
+.flow-gauge__percent {
+  font-size: 0.75rem;
+  margin-top: -0.1rem;
 }
 
 .flow-gauge__value {
@@ -1120,6 +1129,9 @@ button.danger {
 .flow-clock__hand--second {
   stroke: var(--accent, #2563eb);
   stroke-width: 1;
+}
+
+.flow-clock__hand-group .flow-clock__hand--second {
   transition: transform 0.2s linear;
 }
 
