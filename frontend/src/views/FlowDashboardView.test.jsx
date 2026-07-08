@@ -7,7 +7,12 @@ jest.mock("../hooks/useFlowDashboardPoll", () => ({
       generatedAt: "2026-06-01T12:00:00.000Z",
       clocks: { serverUtc: "2026-06-01T12:00:00.000Z", uptimeSeconds: 3600 },
       queue: { pending: 5, processing: 2, completed: 20, failed: 0, total: 27, backlog: 7 },
-      rates: { createdLastMinute: 28, createdPerMinuteAvg5m: 24, completedLastMinute: 22 },
+      rates: {
+        createdLastMinute: 28,
+        createdPerMinuteAvg5m: 24,
+        completedLastMinute: 22,
+        arrivalVolatility: { stdDevMs: 842, gapCount: 12, volatilityPercent: 42 },
+      },
       gauges: {
         pendingPercent: 19,
         processingPercent: 7,
@@ -20,6 +25,7 @@ jest.mock("../hooks/useFlowDashboardPoll", () => ({
         processingScaleMax: 3,
         completionThroughputPercent: 73,
         completionScaleMax: 30,
+        arrivalVolatilityPercent: 42,
       },
       pipeline: {
         reviewsCreatedTotal: 100,
@@ -38,13 +44,15 @@ jest.mock("../hooks/useFlowDashboardPoll", () => ({
 }));
 
 describe("FlowDashboardView", () => {
-  it("renders activity gauges with primary counts and simulation pill", () => {
+  it("renders refresh controls, showcase gauges, and simulation pill", () => {
     render(<FlowDashboardView />);
     expect(screen.getByRole("heading", { name: /Live flow dashboard/i })).toBeInTheDocument();
-    expect(screen.getByText(/Ingest rate \(last 1 min\)/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Auto-refresh/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Gauge patterns/i })).toBeInTheDocument();
+    expect(screen.getByText(/Vertical — pending level/i)).toBeInTheDocument();
+    expect(screen.getByText(/Range — backlog pressure/i)).toBeInTheDocument();
+    expect(screen.getByText(/Arrival volatility/i)).toBeInTheDocument();
     expect(screen.getByText("28/min")).toBeInTheDocument();
     expect(screen.getByText(/Running · 30\/min/i)).toBeInTheDocument();
-    expect(screen.getByText(/Server time \(UTC\)/i)).toBeInTheDocument();
-    expect(screen.getByText("Healthy")).toBeInTheDocument();
   });
 });

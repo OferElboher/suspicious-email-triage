@@ -75,8 +75,8 @@ router.get("/status-breakdown", requirePermission("metrics.read"), async (req, r
 });
 
 /**
- * GET /metrics/flow-dashboard — live queue depths, rates, and pipeline counters for gauge UI.
- * Pattern: polled every few seconds by FlowDashboardView (Mongo counts + appMetrics + Redis sim).
+ * GET /metrics/flow-dashboard — live queue depths, rates, arrival volatility σ, pipeline counters for gauge UI.
+ * Pattern: polled on configurable interval by FlowDashboardView (Mongo counts + appMetrics + Redis sim).
  */
 router.get("/flow-dashboard", requirePermission("metrics.read"), async (_req, res) => {
   try {

@@ -118,8 +118,8 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 - In-process counters (`backend/src/lib/appMetrics.js`) — HTTP requests, 5xx, reviews created, graph sync failures
 - `GET /ops/prometheus` — Prometheus text scrape (no auth, standard pattern)
 - `GET /ops/alerts` — JSON alert evaluation from readiness + thresholds (`metrics.read`)
-- **`GET /metrics/flow-dashboard`** — live Mongo queue depths + ingest rates for gauge UI (`metrics.read`); **activity-based** needle scales (`pendingActivityPercent`, `ingestGaugeMax`, etc.) so simulation traffic is visible even when completed ≫ pending
-- **`#flow` Live flow dashboard** — SVG gauges (native `transform` needles) + analog/uptime clocks; polls every 3s; primary captions show raw counts (`N/min`); moves during dev simulation (`FlowDashboardView.jsx`, `flowMetrics.js`, `FlowGauge.jsx`)
+- **`GET /metrics/flow-dashboard`** — live Mongo queue depths + ingest rates + **arrival gap std dev** (`arrivalVolatility.js`) for gauge UI (`metrics.read`)
+- **`#flow` Live flow dashboard** — configurable auto-refresh (0.5 s–30 s, localStorage); semicircle + **vertical tank** + **traffic-light range** (⚠ warnings) + **volatility jitter** gauge (`FlowVerticalGauge`, `FlowRangeGauge`, `FlowVolatilityGauge`, `useVolatilityNeedle`)
 - Env tuning: `ALERT_MAX_GRAPH_SYNC_FAILURES`, `ALERT_MAX_HTTP_ERRORS`
 
 **Guides:** [ops_guide_metrics_alerting.md](ops_guide_metrics_alerting.md), [ui_guide_flow_dashboard.md](ui_guide_flow_dashboard.md)

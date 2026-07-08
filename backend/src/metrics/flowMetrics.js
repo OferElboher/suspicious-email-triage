@@ -13,6 +13,7 @@ const { _state: appMetricsState } = require("../lib/appMetrics");
 const { readSimulation } = require("../dev/simulationStore");
 const { isDevDeployment } = require("../config/runtime");
 const { getSearchIndexStats } = require("../search/reviewSearchIndex");
+const { computeArrivalVolatility } = require("./arrivalVolatility");
 const logger = require("../lib/logger");
 
 /** Pipeline statuses shown on flow gauges (matches Review schema enum). */
@@ -74,6 +75,7 @@ async function getFlowDashboardSnapshot() {
     createdLastMinute,
     createdLastFiveMinutes,
     completedLastMinute,
+    arrivalVolatility,
   ] = await Promise.all([
     countByStatus("pending"),
     countByStatus("processing"),
@@ -82,6 +84,7 @@ async function getFlowDashboardSnapshot() {
     countCreatedSince(60_000),
     countCreatedSince(5 * 60_000),
     countCompletedSince(60_000),
+    computeArrivalVolatility(),
   ]);
 
   const queueTotal = pending + processing + completed + failed;
@@ -148,6 +151,8 @@ async function getFlowDashboardSnapshot() {
       completedLastMinute,
       /** Average ingests per minute over the last five minutes (smoothed gauge input). */
       createdPerMinuteAvg5m,
+      /** Inter-arrival gap statistics for the volatility demo gauge. */
+      arrivalVolatility,
     },
     pipeline: {
       reviewsCreatedTotal: appMetricsState.reviewsCreatedTotal,
@@ -173,6 +178,8 @@ async function getFlowDashboardSnapshot() {
       processingScaleMax,
       completionThroughputPercent: activityPercent(completedLastMinute, completionScaleMax),
       completionScaleMax,
+      /** Burstiness needle — std dev of gaps between recent review createdAt timestamps. */
+      arrivalVolatilityPercent: arrivalVolatility.volatilityPercent,
     },
   };
 }

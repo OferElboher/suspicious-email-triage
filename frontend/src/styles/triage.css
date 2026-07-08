@@ -965,6 +965,42 @@ button.danger {
 
 .flow-dashboard__toolbar {
   margin-top: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+
+.flow-dashboard__refresh-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.flow-dashboard__refresh-interval {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.flow-dashboard__refresh-interval select,
+.flow-dashboard__refresh-interval input[type="number"] {
+  width: auto;
+  min-width: 4rem;
+  padding: 0.25rem 0.4rem;
+}
+
+.flow-dashboard__showcase {
+  grid-column: 1 / -1;
+}
+
+.flow-dashboard__showcase h3 {
+  margin: 0 0 0.75rem;
+}
+
+.flow-dashboard__gauges--showcase {
+  margin-bottom: 0;
 }
 
 .flow-dashboard__clocks {
@@ -1172,4 +1208,177 @@ button.danger {
   font-weight: 700;
   margin-top: -4.5rem;
   position: relative;
+}
+
+/* Vertical tank gauge — fill rises from bottom (FlowVerticalGauge.jsx) */
+.flow-vertical-gauge {
+  text-align: center;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface, #fff);
+}
+
+.flow-vertical-gauge__svg {
+  width: 56px;
+  height: 100px;
+  margin: 0 auto;
+  display: block;
+}
+
+.flow-vertical-gauge__track {
+  fill: var(--surface, #fff);
+  stroke: var(--muted, #9ca3af);
+  stroke-width: 2;
+  opacity: 0.5;
+}
+
+.flow-vertical-gauge__fill {
+  fill: var(--accent, #2563eb);
+  transition: y 0.4s ease, height 0.4s ease;
+}
+
+.flow-vertical-gauge--ok .flow-vertical-gauge__fill {
+  fill: #059669;
+}
+
+.flow-vertical-gauge--warn .flow-vertical-gauge__fill {
+  fill: #d97706;
+}
+
+.flow-vertical-gauge--danger .flow-vertical-gauge__fill {
+  fill: #dc2626;
+}
+
+.flow-vertical-gauge__tick {
+  stroke: var(--muted, #888);
+  stroke-width: 1;
+  opacity: 0.6;
+}
+
+.flow-vertical-gauge__value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-top: 0.35rem;
+}
+
+.flow-vertical-gauge__label {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.flow-vertical-gauge__detail {
+  font-size: 0.75rem;
+  margin-top: 0.15rem;
+}
+
+/* Range gauge — green / amber / red arc bands (FlowRangeGauge.jsx) */
+.flow-range-gauge {
+  position: relative;
+  text-align: center;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface, #fff);
+}
+
+.flow-range-gauge__svg {
+  width: 100%;
+  max-width: 160px;
+  height: auto;
+  aspect-ratio: 120 / 70;
+  margin: 0 auto;
+  display: block;
+}
+
+.flow-range-gauge__zone--ok {
+  stroke: #059669;
+}
+
+.flow-range-gauge__zone--warn {
+  stroke: #d97706;
+}
+
+.flow-range-gauge__zone--danger {
+  stroke: #dc2626;
+}
+
+.flow-range-gauge__needle line {
+  stroke: var(--text, #111);
+}
+
+.flow-range-gauge__hub {
+  fill: var(--text, #111);
+}
+
+.flow-range-gauge__warning {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.5rem;
+  font-size: 1.25rem;
+  line-height: 1;
+  animation: flow-range-pulse 1.2s ease-in-out infinite;
+}
+
+.flow-range-gauge__warning--warn {
+  color: #d97706;
+}
+
+.flow-range-gauge__warning--danger {
+  color: #dc2626;
+}
+
+@keyframes flow-range-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.65;
+    transform: scale(1.08);
+  }
+}
+
+.flow-range-gauge__value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-top: -0.25rem;
+}
+
+.flow-range-gauge__zone-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.flow-range-gauge__zone-label--ok {
+  color: #059669;
+}
+
+.flow-range-gauge__zone-label--warn {
+  color: #d97706;
+}
+
+.flow-range-gauge__zone-label--danger {
+  color: #dc2626;
+}
+
+.flow-range-gauge__label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.flow-range-gauge__detail {
+  font-size: 0.8rem;
+  margin-top: 0.15rem;
+}
+
+/* Volatility wrapper — high-frequency jitter badge */
+.flow-volatility-gauge {
+  position: relative;
+}
+
+.flow-volatility-gauge__badge {
+  font-size: 0.7rem;
+  margin-top: -0.15rem;
 }

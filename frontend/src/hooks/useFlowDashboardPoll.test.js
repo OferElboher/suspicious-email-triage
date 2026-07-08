@@ -32,4 +32,35 @@ describe("useFlowDashboardPoll", () => {
 
     await waitFor(() => expect(getJson).toHaveBeenCalledTimes(2));
   });
+
+  it("respects minimum 500 ms interval", async () => {
+    getJson.mockResolvedValue({ queue: { pending: 0 } });
+
+    renderHook(() => useFlowDashboardPoll({ enabled: true, autoRefresh: true, intervalMs: 100 }));
+
+    await waitFor(() => expect(getJson).toHaveBeenCalledTimes(1));
+
+    await act(async () => {
+      jest.advanceTimersByTime(400);
+    });
+    expect(getJson).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      jest.advanceTimersByTime(100);
+    });
+    await waitFor(() => expect(getJson).toHaveBeenCalledTimes(2));
+  });
+
+  it("does not poll when autoRefresh is false", async () => {
+    getJson.mockResolvedValue({ queue: { pending: 0 } });
+
+    renderHook(() => useFlowDashboardPoll({ enabled: true, autoRefresh: false, intervalMs: 1000 }));
+
+    await waitFor(() => expect(getJson).toHaveBeenCalledTimes(1));
+
+    await act(async () => {
+      jest.advanceTimersByTime(5000);
+    });
+    expect(getJson).toHaveBeenCalledTimes(1);
+  });
 });

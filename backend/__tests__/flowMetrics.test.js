@@ -29,6 +29,16 @@ jest.mock("../src/search/reviewSearchIndex", () => ({
   })),
 }));
 
+jest.mock("../src/metrics/arrivalVolatility", () => ({
+  computeArrivalVolatility: jest.fn(async () => ({
+    sampleSize: 10,
+    gapCount: 9,
+    meanGapMs: 2000,
+    stdDevMs: 800,
+    volatilityPercent: 16,
+  })),
+}));
+
 const Review = require("../src/models/Review");
 const {
   getFlowDashboardSnapshot,
@@ -63,6 +73,8 @@ describe("flowMetrics snapshot", () => {
     expect(snap.gauges.pendingActivityPercent).toBeGreaterThan(0);
     expect(snap.gauges.ingestRatePercent).toBeGreaterThan(50);
     expect(snap.gauges.ingestGaugeMax).toBeGreaterThanOrEqual(28);
+    expect(snap.gauges.arrivalVolatilityPercent).toBe(16);
+    expect(snap.rates.arrivalVolatility.stdDevMs).toBe(800);
     expect(snap.clocks.uptimeSeconds).toBeGreaterThan(0);
   });
 

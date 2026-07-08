@@ -248,10 +248,9 @@ If you are new to a topic (Kafka, Neo4j, JWT, etc.), follow the linked guides in
   - PostgreSQL `date_trunc`, Express, React Recharts UI.
 
 - **Live flow dashboard (`#flow`)**
-  - Real-time gauges (SVG semicircle + `stroke-dasharray` arcs, needles via SVG `transform`) and analog/uptime clocks polled from `GET /metrics/flow-dashboard`.
-  - MongoDB queue counts, rolling ingest/completion rates, `appMetrics` counters, dev simulation state from Redis.
-  - **Activity-based gauge scaling** in `flowMetrics.js` so needles move during fast simulation (share-of-total alone stuck at 0% when completed history is large).
-  - React `useFlowDashboardPoll` (3s interval); primary display shows raw counts (`28/min`, pending integer) plus percent-of-scale.
+  - Configurable **auto-refresh** (0.5 s minimum, localStorage via `flowDashboardRefresh.js`); `useFlowDashboardPoll` background vs manual loading.
+  - Semicircle gauges (`FlowGauge.jsx`), **vertical tank** (`FlowVerticalGauge.jsx`), **range bands** green/amber/red with ⚠ (`FlowRangeGauge.jsx`), **volatility σ jitter** at 100 ms (`FlowVolatilityGauge.jsx`, `arrivalVolatility.js`, `useVolatilityNeedle.js`).
+  - Mongo counts, activity-based needle scales, inter-arrival std dev, `appMetrics`, Redis simulation state.
   - Guide: [ui_guide_flow_dashboard.md](ui_guide_flow_dashboard.md).
 
 - **Central merged logging**
