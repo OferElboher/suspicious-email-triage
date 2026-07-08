@@ -8,19 +8,30 @@ const ZONES = [
 ];
 
 describe("FlowRangeGauge", () => {
-  it("shows zone label for value in green band", () => {
+  it("always shows idle gray warning icon in normal zone", () => {
     render(
       <FlowRangeGauge value={25} zones={ZONES} label="Backlog" primaryDisplay="25%" detail="test" />
     );
     expect(screen.getByText("Normal")).toBeInTheDocument();
-    expect(screen.queryByText("⚠")).not.toBeInTheDocument();
+    const warning = screen.getByTestId("flow-range-warning");
+    expect(warning).toHaveClass("flow-range-gauge__warning--idle");
+    expect(warning).toHaveTextContent("⚠");
+    expect(warning).not.toHaveClass("flow-range-gauge__warning--active");
   });
 
-  it("shows warning sign in danger zone", () => {
+  it("activates colored warning in danger zone", () => {
     render(
       <FlowRangeGauge value={85} zones={ZONES} label="Backlog" primaryDisplay="85%" detail="test" />
     );
     expect(screen.getByText("Critical")).toBeInTheDocument();
-    expect(screen.getByText("⚠")).toBeInTheDocument();
+    const warning = screen.getByTestId("flow-range-warning");
+    expect(warning).toHaveClass("flow-range-gauge__warning--active");
+    expect(warning).toHaveClass("flow-range-gauge__warning--danger");
+  });
+
+  it("activates amber warning in elevated zone", () => {
+    render(<FlowRangeGauge value={55} zones={ZONES} label="Backlog" primaryDisplay="55%" />);
+    const warning = screen.getByTestId("flow-range-warning");
+    expect(warning).toHaveClass("flow-range-gauge__warning--warn");
   });
 });

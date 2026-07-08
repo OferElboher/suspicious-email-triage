@@ -1,170 +1,160 @@
-# Live flow dashboard — gauges, clocks, and real-time pipeline view
+# Live flow dashboard — single-screen SOC wall (gauges, clocks, live pipeline)
 
-This guide explains the **Live flow dashboard** tab in plain language: configurable auto-refresh, semicircle and vertical gauges, traffic-light range bands with warning icons, a high-frequency volatility dial, clocks, and how the backend builds the numbers. You do not need prior experience with SVG graphics, statistics, or SOC wall displays.
+This guide explains the **Live flow dashboard** tab (`#flow`) in plain language: why it fits **one screen without scrolling**, configurable auto-refresh, nine compact gauges (semicircle, vertical tank, traffic-light ranges, volatility jitter), clocks, and how the backend builds the numbers. No prior experience with SVG, statistics, or SOC wall displays is required.
 
-**Related:** [ui_guide_app_navigation.md](ui_guide_app_navigation.md), [ui_guide_analytics_charts.md](ui_guide_analytics_charts.md), [stack_guide_dev_simulation.md](stack_guide_dev_simulation.md), [ops_guide_metrics_alerting.md](ops_guide_metrics_alerting.md).
+**Related:** [ui_guide_app_navigation.md](ui_guide_app_navigation.md), [stack_guide_dev_simulation.md](stack_guide_dev_simulation.md), [ops_guide_metrics_alerting.md](ops_guide_metrics_alerting.md).
 
 ---
 
 ## What is this tab for?
 
-Security operations centers (SOCs) often mount **wall displays** with:
+Real **network / security operations center (NOC/SOC) dashboards** are designed so an operator sees **everything at once** — no scrolling, no hidden panels. If you must scroll, you might miss an alert on a wall display that is ten feet away.
 
-- **Gauges** — dials or vertical “tanks” showing pressure (queue depth, ingest rate, burstiness).
-- **Threshold colors** — green / amber / red bands so operators spot trouble without reading exact numbers.
-- **Clocks** — server time and service uptime so everyone shares the same reference frame.
+This tab follows that pattern:
 
-This project implements a **browser-based** version inside the React single-page app. It is lighter than Grafana or Datadog, but you can **poll the API as often as every 0.5 seconds** and watch needles move while **dev simulation** creates synthetic email reviews.
+- **Single viewport** — CSS class `flow-dashboard--viewport` sets `height: calc(100dvh − header)` and `overflow: hidden` so the full wall fits below the app navigation bar.
+- **3×3 gauge grid** — six operational semicircle dials plus three “pattern demo” widgets (vertical, range, volatility) in one grid.
+- **Compact side strip** — UTC clock, uptime ring, simulation pill (dev), and pipeline counters in one horizontal row (no separate stats card).
 
-| Audience | What you learn here |
-|----------|---------------------|
-| **Analyst / demo viewer** | How reviews move through `pending` → `processing` → `completed` in near real time |
-| **Developer new to dashboards** | Polling intervals, SVG gauges, range bands, and local animation between API calls |
+You can **poll the API every 0.5 seconds** (minimum) while **dev simulation** creates synthetic reviews.
+
+| Audience | What you learn |
+|----------|----------------|
+| **Analyst / demo viewer** | Queue flow `pending` → `processing` → `completed` at a glance |
+| **Developer new to dashboards** | Viewport-bound layouts, SVG gauges, idle vs active warning indicators |
 
 ---
 
 ## How to open it
 
-1. Sign in at `http://localhost:3001` (bootstrap admin — see [auth_guide_dev_admin_credentials.md](auth_guide_dev_admin_credentials.md); password lives in gitignored `backend/dev.secrets`, never in documentation).
-2. Click the **speedometer** icon (**Live flow dashboard**) in the header navigation bar.
-3. Or open directly: `http://localhost:3001/#flow`.
+1. Sign in at `http://localhost:3001` (bootstrap admin — [auth_guide_dev_admin_credentials.md](auth_guide_dev_admin_credentials.md); password in gitignored `backend/dev.secrets`, never in docs).
+2. Click the **speedometer** icon (**Live flow dashboard**).
+3. Or: `http://localhost:3001/#flow`.
 
-**Permission:** `metrics.read` (bootstrap **admin** and **manager** roles — see [auth_guide_rbac.md](auth_guide_rbac.md)).
-
----
-
-## Auto-refresh (configurable interval)
-
-At the top of the tab you will find:
-
-| Control | Technology | Behavior |
-|---------|------------|----------|
-| **Auto-refresh** checkbox | `flowDashboardRefresh.js` → `localStorage` key `triage_flow_dashboard_refresh` | When off, only **Refresh now** fetches data (useful while debugging) |
-| **Preset select** | Same module, presets `[0.5, 1, 2, 3, 5, 10, 30]` seconds | Quick interval pick |
-| **Custom seconds input** | `normalizeFlowDashboardIntervalMs()` enforces **minimum 0.5 s (500 ms)** | Type any half-second step ≥ 0.5 |
-| **Refresh now** button | `useFlowDashboardPoll` with `{ manual: true }` | Immediate fetch; shows loading spinner |
-
-**Pattern — background vs manual poll:** The hook `useFlowDashboardPoll.js` uses React `useEffect` + `setInterval`. Background polls **do not** flash the loading spinner (only the first load and manual refresh do), so fast 0.5 s polling stays readable.
-
-**Security note:** Refresh preferences are **browser-only** (localStorage). They are not synced to the server and contain no secrets.
+**Permission:** `metrics.read` ([auth_guide_rbac.md](auth_guide_rbac.md)).
 
 ---
 
-## What you see on screen
+## Layout (single screen, no scroll)
 
-### Clocks (top row)
-
-| Widget | File / technology | What it means |
-|--------|-------------------|---------------|
-| **Server time (UTC)** | `FlowAnalogClock.jsx` — SVG `transform="rotate(...)"` on hand groups | API server clock; resynced each poll |
-| **API uptime** | `FlowUptimeClock.jsx` — SVG circle `stroke-dashoffset` | Node.js process lifetime |
-| **Simulation pill** (dev only) | Redis `triage:dev:simulation` via `simulationStore.js` | Simulation on/off and configured rate |
-
-**Pattern — analog clock trick:** Server sends `clocks.serverUtc` once per poll; the UI ticks hands every second locally between polls.
-
-### Gauge patterns showcase (SOC demos)
-
-A dedicated card demonstrates three alternate gauge styles used on real SOC walls:
-
-| Widget | Component | Pattern / technology | What it shows |
-|--------|-----------|----------------------|---------------|
-| **Vertical — pending level** | `FlowVerticalGauge.jsx` | SVG `<rect>` fill rising from bottom (“tank” gauge) | Pending queue depth as vertical fill |
-| **Range — backlog pressure** | `FlowRangeGauge.jsx` | Stacked arc segments with `stroke-dasharray` + `stroke-dashoffset`; zones `{ from, to, tone, label }` | Green 0–40% “Normal”, amber 40–70% “Elevated”, red 70–100% “Critical” |
-| **Arrival volatility (σ jitter)** | `FlowVolatilityGauge.jsx` + `useVolatilityNeedle.js` | Mongo gap **standard deviation** + **100 ms local jitter** | How “bursty” arrivals are; needle shakes furiously between polls |
-
-**Range gauge warning icon:** When the needle enters amber or red (`tone: warn | danger`), a **⚠** badge pulses in the corner (`@keyframes flow-range-pulse` in `triage.css`). This is a visual alert pattern — no modal — like a wall display LED.
-
-**Volatility math (backend):** Module `arrivalVolatility.js` loads the **40 most recent** reviews’ `createdAt` timestamps, computes **gaps** between consecutive arrivals (milliseconds), then the **population standard deviation (σ)** of those gaps. Steady simulation ≈ low σ; irregular bursts ≈ high σ. Mapped to 0–100% with ceiling `STD_DEV_CEILING_MS = 5000`. Exposed as:
-
-- `rates.arrivalVolatility.stdDevMs`
-- `gauges.arrivalVolatilityPercent`
-
-**Volatility animation (frontend):** Even at 0.5 s polling, σ changes slowly. The hook `useVolatilityNeedle` re-renders the needle every **100 ms** with bounded random walk noise anchored to the server percent — so the dial feels **sensitive and alive** during demos while still reflecting real burstiness.
-
-### Standard semicircle gauges (main grid)
-
-Each uses `FlowGauge.jsx` (semicircle arc + SVG needle). Primary captions show raw counts (`28/min`, pending integer).
-
-| Gauge | Data source | Activity scale |
-|-------|-------------|----------------|
-| Ingest rate (1 min) | Mongo `createdAt` window | `ingestGaugeMax` |
-| Pending / Processing | Mongo status counts | `pendingScaleMax`, `processingScaleMax` |
-| Backlog pressure | `backlog / (backlog + completed)` | 0–100% |
-| Completion throughput | Completed in last minute | `completionScaleMax` |
-| Readiness | `appMetrics.lastReadinessStatus` | Healthy vs degraded |
-
-See prior sections in this guide for why **activity scaling** matters when `completed` history is huge.
-
-### Pipeline counters (bottom card)
-
-From **`appMetrics.js`** and volatility stats:
-
-- Reviews created (API + simulation)
-- HTTP requests / 5xx / graph sync failures
-- Search index document count
-- **Arrival σ (ms)** — same std dev as the volatility gauge
-
----
-
-## Watch it move during dev simulation
-
-1. Start stack + Celery — [stack_guide_full_feature_activation.md](stack_guide_full_feature_activation.md).
-2. Review dashboard → **Dev simulation** → Start (max **30/min** on laptops — `SIMULATION_MAX_EVENTS_PER_MIN` in gitignored env).
-3. Open `#flow`; set **Auto-refresh** to **0.5 s** or **1 s** for snappy demos.
-4. Observe: ingest primary line rises; vertical tank fills; range gauge may enter amber under backlog; **volatility needle trembles** (especially if simulation intervals vary).
-
----
-
-## API reference
-
-**Route:** `GET /metrics/flow-dashboard`  
-**Auth:** JWT + `metrics.read`  
-**Default poll:** 3 s (user override in UI)
-
-New / notable response fields:
-
-| Field | Meaning |
-|-------|---------|
-| `rates.arrivalVolatility` | `{ sampleSize, gapCount, meanGapMs, stdDevMs, volatilityPercent }` |
-| `gauges.arrivalVolatilityPercent` | 0–100 needle input for volatility widget |
-
-**Backend:** `flowMetrics.js` aggregates Mongo + `computeArrivalVolatility()` from `arrivalVolatility.js`.  
-**Route:** `backend/src/api/metrics.js`.
-
-Example (use JWT from [auth_guide_obtain_jwt.md](auth_guide_obtain_jwt.md)):
-
-```bash
-curl -sS -H "Authorization: Bearer YOUR_JWT" \
-  http://localhost:3000/metrics/flow-dashboard | python3 -m json.tool
 ```
+┌─────────────────────────────────────────────────────────────┐
+│ Title │ Refresh │ Auto │ interval │ last update UTC         │
+├─────────────────────────────────────────────────────────────┤
+│ [UTC clock] [Uptime] [Sim] │ Created HTTP 5xx Graph ES σ …  │
+├───────────────┬───────────────┬─────────────────────────────┤
+│ Ingest / min  │ Pending       │ Processing                  │
+├───────────────┼───────────────┼─────────────────────────────┤
+│ Backlog       │ Completed /m  │ Readiness                   │
+├───────────────┼───────────────┼─────────────────────────────┤
+│ Vertical tank │ Range + ⚠     │ Volatility σ (jitter)       │
+└───────────────┴───────────────┴─────────────────────────────┘
+```
+
+**Technology:** CSS Grid in `triage.css` — `.flow-dashboard__grid` is `3×3` with `minmax(0, 1fr)` rows so cells shrink to fit. Long detail captions are hidden in viewport mode (primary value + short label only).
+
+**Pattern — viewport height:** We subtract `--flow-header-offset` (~4.25 rem) for the global app header (`app-header` in `TriageApp.jsx`). Using `100dvh` handles mobile browser chrome better than `100vh`.
+
+---
+
+## Auto-refresh
+
+| Control | File / pattern | Behavior |
+|---------|----------------|----------|
+| **Refresh** | `useFlowDashboardPoll` `{ manual: true }` | Immediate fetch |
+| **Auto** checkbox | `flowDashboardRefresh.js` → `localStorage` | Off = manual only |
+| **Interval select** | Presets 0.5, 1, 2, 3, 5, 10, 30 s | Minimum **500 ms** enforced in code |
+
+Background polls do **not** flash the loading spinner (only first load + manual refresh) so fast polling stays readable.
+
+Preferences are **browser-only** — no secrets, not sent to the server.
+
+---
+
+## Gauges in the 3×3 grid
+
+### Row 1–2 — operational semicircles (`FlowGauge.jsx`)
+
+| Cell | Mongo / metrics source |
+|------|------------------------|
+| Ingest / min | `createdAt` in last minute |
+| Pending / Processing | Status counts (activity-scaled needles) |
+| Backlog | `backlog / (backlog + completed)` |
+| Completed / min | Completed with `updatedAt` in last minute |
+| Readiness | `appMetrics.lastReadinessStatus` |
+
+**Activity scaling** (in `flowMetrics.js`): needles scale against simulation rate so fast Celery drains do not pin dials at 0% when `completed` history is huge.
+
+### Row 3 — SOC pattern demos
+
+| Cell | Component | Idea |
+|------|-----------|------|
+| **Vertical pending** | `FlowVerticalGauge.jsx` | SVG `<rect>` fill from bottom (“tank”) |
+| **Range backlog** | `FlowRangeGauge.jsx` | Green / amber / red arc bands |
+| **Volatility σ** | `FlowVolatilityGauge.jsx` + `useVolatilityNeedle.js` | Inter-arrival std dev + 100 ms local jitter |
+
+---
+
+## Warning indicator (⚠) — idle gray, active color
+
+On the **range gauge**, the **⚠ icon is always visible** in **light gray** (`flow-range-gauge__warning--idle`). This mirrors physical SOC panels where indicator lamps sit dim until an alarm condition lights them up.
+
+| Needle zone | ⚠ appearance | CSS classes |
+|-------------|--------------|-------------|
+| Green (0–40%) | Gray, static | `--idle` |
+| Amber (40–70%) | Orange + pulse | `--active --warn` |
+| Red (70–100%) | Red + pulse | `--active --danger` |
+
+**Pattern — armed indicator:** Operators always know *where* to look; color means *something is wrong now*, not *this widget exists*.
+
+Arc band colors (green/amber/red) remain visible at all times so thresholds are readable even when the needle is in the green zone.
+
+---
+
+## Volatility (backend + frontend)
+
+**Backend** (`arrivalVolatility.js`): last 40 reviews → gaps between `createdAt` → population **standard deviation (σ)** in milliseconds → `gauges.arrivalVolatilityPercent` (0–100, ceiling 5000 ms).
+
+**Frontend** (`useVolatilityNeedle`): re-renders needle every **100 ms** with bounded noise anchored to the server value so the dial **trembles** between API polls during bursty simulation.
+
+---
+
+## Clocks and stat strip
+
+- **UTC** / **Uptime** — compact 64 px SVG clocks in the side row.
+- **Sim** (dev) — Redis `triage:dev:simulation` rate or “Off”.
+- **Stat strip** — Created, HTTP, 5xx, graph sync failures, ES docs, σ ms from the same snapshot (replaces the old scrollable stats card).
+
+---
+
+## API
+
+`GET /metrics/flow-dashboard` — JWT + `metrics.read`. See [auth_guide_obtain_jwt.md](auth_guide_obtain_jwt.md) for tokens.
+
+Notable fields: `rates.arrivalVolatility`, `gauges.arrivalVolatilityPercent`.
 
 ---
 
 ## Code map
 
-| Layer | File | Role |
-|-------|------|------|
-| Refresh prefs | `frontend/src/lib/flowDashboardRefresh.js` | localStorage, 500 ms floor |
-| Poll hook | `frontend/src/hooks/useFlowDashboardPoll.js` | `setInterval`, manual vs background |
-| View | `frontend/src/views/FlowDashboardView.jsx` | Toolbar + showcase + main grid |
-| Semicircle | `FlowGauge.jsx` | Default arc gauge |
-| Vertical | `FlowVerticalGauge.jsx` | Tank fill |
-| Range | `FlowRangeGauge.jsx` | Traffic-light bands + ⚠ |
-| Volatility | `FlowVolatilityGauge.jsx`, `useVolatilityNeedle.js` | σ + jitter |
-| Volatility stats | `backend/src/metrics/arrivalVolatility.js` | Mongo gap std dev |
-| Snapshot | `backend/src/metrics/flowMetrics.js` | Full dashboard JSON |
-| Styles | `frontend/src/styles/triage.css` | `.flow-range-gauge__*`, etc. |
+| File | Role |
+|------|------|
+| `FlowDashboardView.jsx` | Viewport layout, 3×3 grid |
+| `triage.css` | `.flow-dashboard--viewport`, compact sizing |
+| `FlowRangeGauge.jsx` | Idle/active ⚠ logic |
+| `flowMetrics.js` / `arrivalVolatility.js` | Snapshot + σ |
+| `flowDashboardRefresh.js` | localStorage interval prefs |
 
 ---
 
 ## Troubleshooting
 
-| Symptom | Likely cause | Fix |
-|---------|--------------|-----|
-| Polling too heavy at 0.5 s | Expected — lower interval or disable auto-refresh | Use 3–10 s for normal dev |
-| Volatility always low | Few reviews or steady simulation | Run simulation longer; gaps become regular |
-| ⚠ never appears | Backlog pressure &lt; 40% | Normal — warning is intentional |
-| Settings reset | Cleared localStorage | Defaults return (auto on, 3 s) |
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Content clipped | Window very short | Maximize browser; wall targets ~768 px+ height |
+| ⚠ stays gray | Backlog &lt; 40% | Expected — indicator idle until threshold |
+| ⚠ orange/red | Backlog elevated/critical | Expected — active warning |
+| Gauges flat | No traffic | Start dev simulation |
 
 ---
 
@@ -172,10 +162,10 @@ curl -sS -H "Authorization: Bearer YOUR_JWT" \
 
 ```bash
 cd ~/suspicious-email-triage/backend
-npm test -- --watchAll=false --testPathPattern="flowMetrics|arrivalVolatility|metricsApi"
+npm test -- --watchAll=false --testPathPattern="flowMetrics|arrivalVolatility"
 
 cd ~/suspicious-email-triage/frontend
-npm test -- --watchAll=false --testPathPattern="FlowGauge|FlowVertical|FlowRange|FlowVolatility|FlowDashboard|useFlowDashboardPoll|useVolatilityNeedle|flowDashboardRefresh"
+npm test -- --watchAll=false --testPathPattern="FlowRange|FlowDashboard"
 ```
 
 ---
@@ -184,12 +174,12 @@ npm test -- --watchAll=false --testPathPattern="FlowGauge|FlowVertical|FlowRange
 
 <div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
 
-<p><strong>Run in terminal</strong> — flow dashboard with fast refresh</p>
+<p><strong>Run in terminal</strong> — single-screen flow wall</p>
 
 ```bash
 cd ~/suspicious-email-triage
 DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d backend celery-worker
-# Browser: http://localhost:3001/#flow → enable Auto-refresh → 0.5 s → start simulation
+# Browser: http://localhost:3001/#flow (full wall visible without scrolling)
 ```
 
 </div>

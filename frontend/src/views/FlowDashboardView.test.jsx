@@ -44,15 +44,17 @@ jest.mock("../hooks/useFlowDashboardPoll", () => ({
 }));
 
 describe("FlowDashboardView", () => {
-  it("renders refresh controls, showcase gauges, and simulation pill", () => {
+  it("renders single-viewport grid with refresh controls and nine gauges", () => {
     render(<FlowDashboardView />);
     expect(screen.getByRole("heading", { name: /Live flow dashboard/i })).toBeInTheDocument();
-    expect(screen.getByLabelText(/Auto-refresh/i)).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /Gauge patterns/i })).toBeInTheDocument();
-    expect(screen.getByText(/Vertical — pending level/i)).toBeInTheDocument();
-    expect(screen.getByText(/Range — backlog pressure/i)).toBeInTheDocument();
-    expect(screen.getByText(/Arrival volatility/i)).toBeInTheDocument();
-    expect(screen.getByText("28/min")).toBeInTheDocument();
-    expect(screen.getByText(/Running · 30\/min/i)).toBeInTheDocument();
+    expect(screen.getByTestId("flow-dashboard-viewport")).toBeInTheDocument();
+    expect(screen.getByTestId("flow-dashboard-grid")).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: /Auto/i })).toBeInTheDocument();
+    expect(screen.getByText("28/m")).toBeInTheDocument();
+    expect(screen.getByText(/Vertical pending/i)).toBeInTheDocument();
+    expect(screen.getByText(/Range backlog/i)).toBeInTheDocument();
+    expect(screen.getByText(/Volatility/i)).toBeInTheDocument();
+    expect(screen.getByText("30/min")).toBeInTheDocument();
+    expect(screen.getByLabelText(/Pipeline counters/i)).toBeInTheDocument();
   });
 });

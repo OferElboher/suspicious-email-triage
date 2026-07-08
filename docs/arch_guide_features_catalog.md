@@ -248,9 +248,9 @@ If you are new to a topic (Kafka, Neo4j, JWT, etc.), follow the linked guides in
   - PostgreSQL `date_trunc`, Express, React Recharts UI.
 
 - **Live flow dashboard (`#flow`)**
-  - Configurable **auto-refresh** (0.5 s minimum, localStorage via `flowDashboardRefresh.js`); `useFlowDashboardPoll` background vs manual loading.
-  - Semicircle gauges (`FlowGauge.jsx`), **vertical tank** (`FlowVerticalGauge.jsx`), **range bands** green/amber/red with ⚠ (`FlowRangeGauge.jsx`), **volatility σ jitter** at 100 ms (`FlowVolatilityGauge.jsx`, `arrivalVolatility.js`, `useVolatilityNeedle.js`).
-  - Mongo counts, activity-based needle scales, inter-arrival std dev, `appMetrics`, Redis simulation state.
+  - **Single-viewport SOC wall** — `flow-dashboard--viewport` fills `100dvh − header` with `overflow: hidden` (no scroll); 3×3 gauge grid + compact clock/stat strip.
+  - Configurable **auto-refresh** (0.5 s minimum, localStorage via `flowDashboardRefresh.js`).
+  - Semicircle, **vertical tank**, **range bands** (⚠ always visible gray; amber/red only when threshold active), **volatility σ jitter** at 100 ms.
   - Guide: [ui_guide_flow_dashboard.md](ui_guide_flow_dashboard.md).
 
 - **Central merged logging**

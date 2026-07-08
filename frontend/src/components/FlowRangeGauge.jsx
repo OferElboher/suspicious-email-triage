@@ -2,7 +2,8 @@
  * Semicircle gauge with colored threshold bands (green / amber / red SOC zones).
  *
  * Pattern: traffic-light ranges — needle position shows current value; arc segments show limits;
- * warning badge appears when value enters warn or danger zones (visual alert without modal).
+ * the ⚠ badge is **always visible** in light gray (idle) and gains amber/red only when the needle
+ * enters warn/danger zones (SOC “armed indicator” — operators see the slot before an alert fires).
  * Technology: stacked SVG arc paths with pathLength=100; zone boundaries as percentages.
  *
  * @typedef {{ from: number, to: number, tone: string, label: string }} FlowRangeZone
@@ -25,12 +26,18 @@ export default function FlowRangeGauge({
   const rotation = -90 + (clamped / 100) * 180;
   const headline = primaryDisplay != null && primaryDisplay !== "" ? primaryDisplay : `${clamped}%`;
 
-  /** Active zone drives warning badge + ARIA status text. */
+  /** Active zone drives colored warning + ARIA status text. */
   const activeZone =
     zones.find((z) => clamped >= z.from && clamped < z.to) || zones[zones.length - 1] || null;
-  const showWarning = activeZone && (activeZone.tone === "warn" || activeZone.tone === "danger");
+  const warningActive =
+    activeZone && (activeZone.tone === "warn" || activeZone.tone === "danger");
 
   const arcPath = "M 12 62 A 48 48 0 0 1 108 62";
+
+  /** Compose warning class: idle gray by default; active + tone when threshold breached. */
+  const warningClass = warningActive
+    ? `flow-range-gauge__warning flow-range-gauge__warning--active flow-range-gauge__warning--${activeZone.tone}`
+    : "flow-range-gauge__warning flow-range-gauge__warning--idle";
 
   return (
     <div
@@ -41,15 +48,14 @@ export default function FlowRangeGauge({
       aria-valuemax={100}
       aria-label={`${label}: ${headline}${activeZone ? `, ${activeZone.label}` : ""}`}
     >
-      {showWarning && (
-        <div
-          className={`flow-range-gauge__warning flow-range-gauge__warning--${activeZone.tone}`}
-          title={activeZone.label}
-          aria-hidden="true"
-        >
-          ⚠
-        </div>
-      )}
+      <div
+        className={warningClass}
+        data-testid="flow-range-warning"
+        title={warningActive ? activeZone.label : "Threshold indicator (idle)"}
+        aria-hidden={!warningActive}
+      >
+        ⚠
+      </div>
       <svg className="flow-range-gauge__svg" viewBox="0 0 120 70" aria-hidden="true">
         {zones.map((zone) => {
           const len = Math.max(0, zone.to - zone.from);
@@ -73,7 +79,11 @@ export default function FlowRangeGauge({
       </svg>
       <div className="flow-range-gauge__value">{headline}</div>
       {activeZone && (
-        <div className={`flow-range-gauge__zone-label flow-range-gauge__zone-label--${activeZone.tone}`}>
+        <div
+          className={`flow-range-gauge__zone-label flow-range-gauge__zone-label--${
+            warningActive || activeZone.tone === "ok" ? activeZone.tone : "idle"
+          }`}
+        >
           {activeZone.label}
         </div>
       )}
