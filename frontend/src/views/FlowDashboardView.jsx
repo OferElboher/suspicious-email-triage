@@ -1,8 +1,9 @@
 /**
  * Live flow dashboard — single-viewport SOC wall (no scroll) for inbound review pipeline.
  *
- * Pattern: `flow-dashboard__body` uses a two-column grid — 3×3 gauges on the left, a dedicated
- * `flow-dashboard__meta` column on the right for clocks/sim/stats so nothing overlaps the dials.
+ * Pattern: `flow-dashboard__body` uses a two-column grid — compact 3×3 gauges (left, max-width capped)
+ * and a wider `flow-dashboard__meta` column (right) for clocks/sim/stats. UTC time appears only
+ * on the analog clock in meta (not duplicated in the toolbar).
  * Technology: FlowGauge family, clocks, useFlowDashboardPoll, localStorage refresh prefs.
  */
 import { useCallback, useEffect, useState } from "react";
@@ -71,7 +72,7 @@ export default function FlowDashboardView() {
         <HoverHelp text="Single-screen SOC view: queue depths, ingest rates, vertical/range/volatility gauge demos. Clocks and simulation rate sit in the right column. Auto-refresh from 0.5 s.">
           <h2 className="flow-dashboard__title">Live flow dashboard</h2>
         </HoverHelp>
-        <div className="toolbar flow-dashboard__toolbar">
+        <div className="toolbar flow-dashboard__toolbar" data-testid="flow-dashboard-toolbar">
           <button type="button" disabled={loading} onClick={() => refresh().catch(() => {})}>
             {loading ? "…" : "Refresh"}
           </button>
@@ -97,11 +98,6 @@ export default function FlowDashboardView() {
               ))}
             </select>
           </label>
-          {snapshot?.generatedAt && (
-            <span className="flow-dashboard__stamp muted">
-              {String(snapshot.generatedAt).slice(11, 19)} UTC
-            </span>
-          )}
         </div>
         {error && <p className="status-failed flow-dashboard__error">{error}</p>}
         {awaitingFirstSnapshot && (

@@ -252,10 +252,26 @@
 }
 
 .theme-selector {
-  display: inline-flex;
-  align-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 0.35rem;
   font-size: 0.85rem;
+}
+
+.settings-panel__appearance .theme-selector {
+  width: 100%;
+  max-width: 20rem;
+}
+
+.settings-panel__appearance .theme-selector select {
+  width: 100%;
+}
+
+/** Auth screens keep label + select on one row for compact header bars. */
+.auth-theme-bar .theme-selector {
+  flex-direction: row;
+  align-items: center;
 }
 
 .theme-selector-label {

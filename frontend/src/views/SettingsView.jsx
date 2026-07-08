@@ -19,7 +19,11 @@ export default function SettingsView({ onSignOut }) {
           <h2>Settings</h2>
         </HoverHelp>
 
-        <div className="settings-panel__section">
+        <div
+          className="settings-panel__section settings-panel__appearance"
+          data-testid="settings-panel-appearance"
+        >
+          {/* Theme dropdown stacks under Appearance heading (vertical .theme-selector in themes.css). */}
           <HoverHelp text="CSS variable themes applied via data-theme on the document root — see ui_guide_color_themes.md.">
             <h3 className="settings-panel__subtitle">Appearance</h3>
           </HoverHelp>

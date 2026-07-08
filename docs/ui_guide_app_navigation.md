@@ -118,11 +118,11 @@ Log search used to live inside the Review dashboard tools row. It now has its ow
 
 **`SettingsView.jsx`** contains:
 
-- **Theme** selector (`ThemeSelector.jsx`) — all 18 CSS themes including **`spring-blossom`**; see [ui_guide_color_themes.md](ui_guide_color_themes.md)
+- **Appearance** section — heading with **Theme** dropdown stacked **below** it (`ThemeSelector.jsx` + `.settings-panel__appearance` in `themes.css`). All 18 CSS themes including **`spring-blossom`**; see [ui_guide_color_themes.md](ui_guide_color_themes.md).
 - **Account** summary (email, roles, permission count)
 - **Sign out** (duplicate of header sign-out for convenience)
 
-Guests on the login screen still see a theme picker in the `auth-theme-bar` (`App.js`) because Settings requires authentication.
+Guests on the login screen still see a theme picker in the `auth-theme-bar` (`App.js`) — that bar keeps label and select **inline** for compact layout. Settings uses the vertical stacked layout instead.
 
 ---
 

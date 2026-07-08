@@ -36,7 +36,7 @@ Every component uses `var(--bg)`, `var(--accent)`, and so on. Changing **one att
 | Token definitions | `frontend/src/styles/themes.css` | One `[data-theme="…"]` block per theme id |
 | Catalog & helpers | `frontend/src/themes/themes.js` | Lists themes, validates ids, applies `data-theme` |
 | React state | `frontend/src/context/ThemeContext.jsx` | Loads/saves preference, merges API + bundled catalog |
-| Picker UI | `frontend/src/components/ThemeSelector.jsx` | Grouped `<select>` in Settings |
+| Picker UI | `frontend/src/components/ThemeSelector.jsx` | Grouped `<select>` under **Appearance** in Settings (vertical field layout) |
 | Server validation | `backend/src/auth/themeConstants.js` | Same ids as frontend; rejects unknown ids on PUT |
 | Persistence | `backend/src/auth/authPg.js` | Reads/writes `auth_users.ui_theme` |
 
@@ -62,7 +62,7 @@ When you are signed in, `ThemeContext` fetches the theme list from **`GET /auth/
 
 **Fix (implemented):** `mergeThemeCatalogs()` in `themes.js` always starts from the **bundled** `THEMES` array shipped with the frontend build, then overlays any matching entries from the server. New SPA themes therefore appear in Settings even before the API image catches up. Server labels still win when both sides define the same id.
 
-**Where to pick it:** open the **Settings** sub-window (`#settings` in the URL hash) → **Theme** dropdown → **colorful** group → **Spring blossom (light blue & green)**.
+**Where to pick it:** open the **Settings** sub-window (`#settings` in the URL hash) → **Appearance** heading → **Theme** dropdown (label above the select, not beside it) → **colorful** group → **Spring blossom (light blue & green)**.
 
 ---
 
@@ -165,7 +165,10 @@ curl -sS -X PUT http://localhost:3000/auth/preferences \
 
 - `frontend/src/context/ThemeContext.jsx` — React Context provider; syncs DOM, API, localStorage
 - `frontend/src/components/ThemeSelector.jsx` — grouped `<select>` using `useTheme()`
+- `frontend/src/styles/themes.css` — `.theme-selector` vertical stack in Settings; inline row in `auth-theme-bar`
 - `frontend/src/App.js` — wraps the tree with `<ThemeProvider>`
+
+**Settings layout pattern:** In `SettingsView.jsx`, the **Appearance** `<h3>` sits above the theme control. CSS class `.settings-panel__appearance .theme-selector` uses `flex-direction: column` so the **Theme** label appears on its own line and the `<select>` spans the full field width (up to ~20 rem). Login/register screens override this with `.auth-theme-bar .theme-selector { flex-direction: row }` so the picker stays compact in the header bar.
 
 **Behavior by user state:**
 
@@ -194,6 +197,7 @@ curl -sS -X PUT http://localhost:3000/auth/preferences \
 |-----------|------------------|
 | `backend/__tests__/authPreferences.test.js` | GET catalog includes `spring-blossom`; PUT validation |
 | `frontend/src/themes/themes.test.js` | `isValidTheme`, `applyThemeToDocument`, `mergeThemeCatalogs` |
+| `frontend/src/views/SettingsView.test.jsx` | Theme selector stacked under Appearance heading |
 | `integration_tests/test_repo_guardrails.py` | Repo guardrail: spring-blossom present in theme constants |
 
 <div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">

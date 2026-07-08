@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import SettingsView from "../views/SettingsView";
 
 jest.mock("../context/AuthContext", () => ({
@@ -22,5 +22,13 @@ describe("SettingsView", () => {
     expect(screen.getByRole("heading", { name: /Settings/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/Color theme/i)).toBeInTheDocument();
     expect(screen.getByText(/a@test.com/)).toBeInTheDocument();
+  });
+
+  it("stacks Theme selector under Appearance heading (label above select)", () => {
+    render(<SettingsView onSignOut={() => {}} />);
+    const appearance = screen.getByTestId("settings-panel-appearance");
+    expect(within(appearance).getByRole("heading", { name: /Appearance/i })).toBeInTheDocument();
+    expect(within(appearance).getByText("Theme")).toBeInTheDocument();
+    expect(within(appearance).getByLabelText(/Color theme/i)).toBeInTheDocument();
   });
 });

@@ -1,10 +1,13 @@
 /**
  * ThemeSelector — dropdown grouped by category (light/dark/bw/colorful).
+ *
+ * Pattern: stacked field under the Appearance heading in Settings (label above select, not inline).
+ * Technology: ThemeContext + grouped HTML `<select>` / `<optgroup>`.
  */
 import { useMemo } from "react";
 import { useTheme } from "../context/ThemeContext";
 
-/** Render grouped <select> for CSS-variable themes. */
+/** Render grouped <select> for CSS-variable themes (vertical field layout). */
 export default function ThemeSelector() {
   const { themeId, themes, setThemeId, loading } = useTheme();
 

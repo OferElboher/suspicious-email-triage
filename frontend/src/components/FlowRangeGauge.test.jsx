@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import FlowRangeGauge from "./FlowRangeGauge";
 
 const ZONES = [
@@ -8,14 +8,14 @@ const ZONES = [
 ];
 
 describe("FlowRangeGauge", () => {
-  it("always shows idle gray warning icon in normal zone", () => {
+  it("always shows idle SVG warning badge in normal zone", () => {
     render(
       <FlowRangeGauge value={25} zones={ZONES} label="Backlog" primaryDisplay="25%" detail="test" />
     );
     expect(screen.getByText("Normal")).toBeInTheDocument();
     const warning = screen.getByTestId("flow-range-warning");
     expect(warning).toHaveClass("flow-range-gauge__warning--idle");
-    expect(warning).toHaveTextContent("⚠");
+    expect(within(warning).getByTestId("flow-warning-badge-svg")).toBeInTheDocument();
     expect(warning).not.toHaveClass("flow-range-gauge__warning--active");
   });
 
@@ -27,11 +27,18 @@ describe("FlowRangeGauge", () => {
     const warning = screen.getByTestId("flow-range-warning");
     expect(warning).toHaveClass("flow-range-gauge__warning--active");
     expect(warning).toHaveClass("flow-range-gauge__warning--danger");
+    expect(warning).toHaveAttribute("aria-label", "Critical");
   });
 
   it("activates amber warning in elevated zone", () => {
     render(<FlowRangeGauge value={55} zones={ZONES} label="Backlog" primaryDisplay="55%" />);
     const warning = screen.getByTestId("flow-range-warning");
     expect(warning).toHaveClass("flow-range-gauge__warning--warn");
+  });
+
+  it("places warning in top rail (not absolute overlay)", () => {
+    render(<FlowRangeGauge value={10} zones={ZONES} label="Backlog" primaryDisplay="10%" />);
+    const rail = screen.getByTestId("flow-range-warning-rail");
+    expect(within(rail).getByTestId("flow-range-warning")).toBeInTheDocument();
   });
 });

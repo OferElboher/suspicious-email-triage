@@ -2,9 +2,9 @@
  * Semicircle gauge with colored threshold bands (green / amber / red SOC zones).
  *
  * Pattern: traffic-light ranges — needle position shows current value; arc segments show limits;
- * the ⚠ badge is **always visible** in light gray (idle) and gains amber/red only when the needle
- * enters warn/danger zones (SOC “armed indicator” — operators see the slot before an alert fires).
- * Technology: stacked SVG arc paths with pathLength=100; zone boundaries as percentages.
+ * FlowWarningBadge sits in a top rail (not over the SVG) so it is never clipped and stays visible
+ * on all Appearance themes. Idle gray → amber/red when thresholds breach.
+ * Technology: stacked SVG arc paths with pathLength=100; FlowWarningBadge SVG indicator.
  *
  * @typedef {{ from: number, to: number, tone: string, label: string }} FlowRangeZone
  *
@@ -15,6 +15,8 @@
  * @param {string} [props.primaryDisplay]
  * @param {string} [props.detail]
  */
+import FlowWarningBadge from "./FlowWarningBadge";
+
 export default function FlowRangeGauge({
   value = 0,
   label,
@@ -39,6 +41,8 @@ export default function FlowRangeGauge({
     ? `flow-range-gauge__warning flow-range-gauge__warning--active flow-range-gauge__warning--${activeZone.tone}`
     : "flow-range-gauge__warning flow-range-gauge__warning--idle";
 
+  const warningTitle = warningActive ? activeZone.label : "Threshold indicator (idle)";
+
   return (
     <div
       className={`flow-range-gauge flow-range-gauge--${activeZone?.tone || "default"}`}
@@ -48,13 +52,12 @@ export default function FlowRangeGauge({
       aria-valuemax={100}
       aria-label={`${label}: ${headline}${activeZone ? `, ${activeZone.label}` : ""}`}
     >
-      <div
-        className={warningClass}
-        data-testid="flow-range-warning"
-        title={warningActive ? activeZone.label : "Threshold indicator (idle)"}
-        aria-hidden={!warningActive}
-      >
-        ⚠
+      <div className="flow-range-gauge__warning-rail" data-testid="flow-range-warning-rail">
+        <FlowWarningBadge
+          className={warningClass}
+          title={warningTitle}
+          ariaHidden={!warningActive}
+        />
       </div>
       <svg className="flow-range-gauge__svg" viewBox="0 0 120 70" aria-hidden="true">
         {zones.map((zone) => {

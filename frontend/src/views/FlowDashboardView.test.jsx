@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import FlowDashboardView from "../views/FlowDashboardView";
 
 jest.mock("../hooks/useFlowDashboardPoll", () => ({
@@ -55,5 +55,20 @@ describe("FlowDashboardView", () => {
     expect(screen.getByText(/Vertical pending/i)).toBeInTheDocument();
     expect(screen.getByText("30/min")).toBeInTheDocument();
     expect(screen.getByText("Created")).toBeInTheDocument();
+  });
+
+  it("does not duplicate UTC time in the toolbar (only analog clock in meta column)", () => {
+    render(<FlowDashboardView />);
+    expect(screen.queryByTestId("flow-dashboard-stamp")).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/Clocks and pipeline counters/i)).toHaveTextContent(/UTC/i);
+    const toolbar = screen.getByTestId("flow-dashboard-toolbar");
+    expect(within(toolbar).queryByText(/UTC/i)).not.toBeInTheDocument();
+  });
+
+  it("renders theme-safe range warning badge on the dashboard", () => {
+    render(<FlowDashboardView />);
+    const warnings = screen.getAllByTestId("flow-range-warning");
+    expect(warnings.length).toBeGreaterThan(0);
+    expect(within(warnings[0]).getByTestId("flow-warning-badge-svg")).toBeInTheDocument();
   });
 });
