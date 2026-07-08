@@ -8,17 +8,21 @@ This guide walks you through **every step** from a fresh clone (or a Docker rebu
 
 ---
 
+
+
 ## Why login breaks after `docker compose build`
 
 Three things interact:
 
-| Piece | Technology | What happens on rebuild |
-|-------|------------|-------------------------|
-| **Postgres volume** | Docker named volume `postgres-data` | **Survives** rebuild — `auth_users` rows and bcrypt password hashes stay |
-| **Bootstrap script** | Node + `authPg.bootstrapAdminUser()` | Runs **only when the user table is empty** — does **not** reset an existing password |
-| **Backend env** | `env_file: backend/.env.dev` + gitignored `backend/.env` | Injected when the **container starts** — changing `.env` without recreating the container leaves stale values inside |
 
-So after rebuild you often have: **old password hash in Postgres**, **new `AUTH_BOOTSTRAP_*` in `.env`**, or **wrong email typed in the UI**. That looks like “invalid credentials” even though DBeaver shows your email in `auth_users`.
+| Piece                | Technology                                               | What happens on rebuild                                                                                              |
+| -------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| **Postgres volume**  | Docker named volume `postgres-data`                      | **Survives** rebuild — `auth_users` rows and bcrypt password hashes stay                                             |
+| **Bootstrap script** | Node + `authPg.bootstrapAdminUser()`                     | Runs **only when the user table is empty** — does **not** reset an existing password                                 |
+| **Backend env**      | `env_file: backend/.env.dev` + gitignored `backend/.env` | Injected when the **container starts** — changing `.env` without recreating the container leaves stale values inside |
+
+
+So after rebuild you often have: **old password hash in Postgres**, **new** `AUTH_BOOTSTRAP_`* **in** `.env`, or **wrong email typed in the UI**. That looks like “invalid credentials” even though DBeaver shows your email in `auth_users`.
 
 **Fix (pick one):**
 
@@ -27,6 +31,8 @@ So after rebuild you often have: **old password hash in Postgres**, **new `AUTH_
 3. **Manual:** [auth_guide_dev_auth_recovery.md](auth_guide_dev_auth_recovery.md)
 
 ---
+
+
 
 ## Architecture snapshot (ports and proxy)
 
@@ -47,18 +53,20 @@ Browser (Windows)  →  http://localhost:3001  →  CRA dev server (React)
 
 ---
 
+
+
 ## Part 1 — One-time setup (clone → images)
 
-<div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
 
-<p><strong>Run in terminal</strong> — WSL, repository root</p>
+
+**Run in terminal** — WSL, repository root
 
 ```bash
 cd ~/suspicious-email-triage
 bash scripts/setup-and-build-dev.sh
 ```
 
-</div>
+
 
 **What this does:**
 
@@ -70,11 +78,21 @@ bash scripts/setup-and-build-dev.sh
 
 ---
 
+
+
 ## Part 2 — Start infrastructure
 
-<div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
+Choose **one** of the options below. Both use **`DEPLOYMENT_ENV=dev`**, which tells Docker Compose to load `backend/.env.dev` plus your gitignored `backend/.env` / `backend/dev.secrets`. That profile enables dev-only API routes (bootstrap password reset, dev simulation, local mocks). **Never commit real passwords** — they live only in gitignored files ([ops_guide_secrets_management.md](ops_guide_secrets_management.md)).
 
-<p><strong>Run in terminal</strong> — databases + API</p>
+Docker Compose also starts **dependency containers** automatically. For example, `backend` declares `depends_on` for Redpanda (Kafka), Mailpit, mock secrets/Snowflake/S3, and Elasticsearch — so those start even if you do not name them on the command line.
+
+---
+
+### Option A — Minimal (sign-in + manual triage only)
+
+Enough to **sign in**, submit reviews via the UI, and hit the API. Reviews stay **`pending`** until you add workers later ([stack_guide_full_feature_activation.md](stack_guide_full_feature_activation.md)).
+
+**Run in terminal** — databases + API
 
 ```bash
 cd ~/suspicious-email-triage
@@ -82,9 +100,52 @@ DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d mongo
 docker compose -f infra/docker/docker-compose.yml ps
 ```
 
-</div>
+| Service | Technology | Why it is here |
+|---------|------------|----------------|
+| `mongo` | MongoDB 6 | Review documents |
+| `postgres` | PostgreSQL 16 | Auth (`auth_users`) + analytics stats |
+| `redis` | Redis 7 | Cache / Celery broker |
+| `neo4j` | Neo4j 5 | Phishing graph (optional until graph tab used) |
+| `backend` | Node / Express | REST API on port **3000** |
 
-**Motivation:** The API needs **MongoDB** (reviews), **Postgres** (`triage_stats` — auth + analytics), **Redis** (queues/cache), and optionally **Neo4j** (phishing graph). `DEPLOYMENT_ENV=dev` enables dev-only routes like bootstrap reset.
+Compose will also bring up **Mailpit**, **Redpanda**, **Elasticsearch**, and the **mock AWS** sidecars because `backend` depends on them — that is normal for this project’s dev profile.
+
+---
+
+### Option B — Full dev stack (recommended after clone)
+
+Starts everything needed for **async analysis** (pending → processing → completed), **dev simulation**, **Elasticsearch search**, **Live flow dashboard** metrics, **phishing graph** sync, and **mock LLM** scoring — without starting optional extras like Django admin or the legacy BullMQ worker.
+
+**Run in terminal** — dev version with workers, search, and mock LLM
+
+```bash
+cd ~/suspicious-email-triage
+DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d elasticsearch mongo postgres redis neo4j backend ai-celery ai-kafka-dispatch mock-llm
+docker compose -f infra/docker/docker-compose.yml ps
+```
+
+(Single line — same command without the line break:)
+
+```bash
+DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d elasticsearch mongo postgres redis neo4j backend ai-celery ai-kafka-dispatch mock-llm
+```
+
+| Service | Technology | What it unlocks |
+|---------|------------|-----------------|
+| `elasticsearch` | Elasticsearch 8 (single-node) | **Search past reviews** tab (`#search`) |
+| `mongo` / `postgres` / `redis` / `neo4j` | Same as Option A | Reviews, auth, stats, graph |
+| `backend` | Node / Express | API + in-process **dev simulation** timer |
+| `ai-kafka-dispatch` | Python Kafka consumer | Reads ingest events from **Redpanda** |
+| `ai-celery` | Python Celery worker | LLM analysis → `completed` status |
+| `mock-llm` | OpenAI-compatible mock | Zero-cost `LLM_PROVIDER=mock_commercial` |
+
+**Also started via `depends_on` (not listed above):** `redpanda` (Kafka API), `mock-secrets-manager`, `mock-snowflake`, `mock-s3`, `mailpit`. See [stack_guide_full_feature_activation.md](stack_guide_full_feature_activation.md) if you want **Django admin** (port 8000) or a `--build` after code changes.
+
+**Expected:** `backend`, `ai-celery`, and `ai-kafka-dispatch` show **running** (not restart-looping). Elasticsearch may take ~30 s before `GET /search/status` is reachable.
+
+---
+
+### Recreate backend after `.env` changes
 
 If you changed `backend/.env` after the container was created, recreate the backend so env vars reload:
 
@@ -94,7 +155,11 @@ DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --for
 
 ---
 
+
+
 ## Part 3 — Bootstrap admin (first time or after rebuild)
+
+
 
 ### First time (empty `auth_users`)
 
@@ -118,6 +183,8 @@ This runs `resetBootstrapAdminForDev()` inside the backend container: sets passw
 
 ---
 
+
+
 ## Part 4 — Verify API login (before opening the browser)
 
 Replace `you@example.com` with your configured email:
@@ -134,7 +201,11 @@ If this works but the UI fails, the problem is almost always the **CRA proxy** �
 
 ---
 
+
+
 ## Part 5 — Start React UI and sign in
+
+If you used **Option B** in Part 2, you can use **dev simulation** and the **Live flow dashboard** (`#flow`) as soon as you sign in — see [stack_guide_dev_simulation.md](stack_guide_dev_simulation.md) and [ui_guide_flow_dashboard.md](ui_guide_flow_dashboard.md).
 
 ```bash
 cd ~/suspicious-email-triage
@@ -143,10 +214,12 @@ PORT=3001 npm start --prefix frontend
 
 Open `http://localhost:3001`.
 
-| Field | Value |
-|-------|-------|
-| Email | From `grep AUTH_BOOTSTRAP_ADMIN_EMAIL backend/.env` |
+
+| Field    | Value                                                                |
+| -------- | -------------------------------------------------------------------- |
+| Email    | From `grep AUTH_BOOTSTRAP_ADMIN_EMAIL backend/.env`                  |
 | Password | `temp-admin-pswd` unless you changed `AUTH_BOOTSTRAP_ADMIN_PASSWORD` |
+
 
 The sign-in form shows a **masked** hint (`yo***@example.com`) from `GET /auth/config` when `DEPLOYMENT_ENV=dev`.
 
@@ -154,43 +227,3 @@ The sign-in form shows a **masked** hint (`yo***@example.com`) from `GET /auth/c
 
 ---
 
-## Part 6 — Optional workers (triage + graph)
-
-For full email analysis, Neo4j graph, Elasticsearch search, and simulation:
-
-See **[stack_guide_full_feature_activation.md](stack_guide_full_feature_activation.md)** for the complete `docker compose up` command list.
-
-Minimal workers only:
-
-```bash
-DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d ai-celery ai-kafka-dispatch mock-llm
-```
-
-Manual phishing identification test: [graph_test_manual_phishing_identification.md](graph_test_manual_phishing_identification.md).
-
----
-
-## Troubleshooting
-
-| Symptom | Likely cause | Fix |
-|---------|--------------|-----|
-| `curl: (7) Failed to connect` to :3000 | Backend not running | `docker compose … up -d backend` |
-| API login OK, UI “Cannot reach the API” | `REACT_APP_API_URL` in `frontend/.env` | Remove it; use CRA proxy — [stack_guide_frontend_api.md](stack_guide_frontend_api.md) |
-| `invalid_credentials` | Wrong email/password or stale hash | `--reset-password` or UI button |
-| Email in DBeaver but login fails | Password hash ≠ current env password | `--reset-password` |
-| `bootstrap_email_not_configured` | Missing real email in env | `bash scripts/configure-dev-bootstrap-admin.sh you@example.com` then recreate backend |
-| Changed `.env` but behavior unchanged | Container has old env | `--force-recreate backend` |
-
----
-
-## Security note
-
-Documentation uses **variable names** and the shared dev default password `temp-admin-pswd` from committed `backend/.env.dev`. Your personal email lives only in gitignored `backend/.env`. Never commit real production secrets.
-
----
-
-## Related docs
-
-- [auth_guide_dev_admin_credentials.md](auth_guide_dev_admin_credentials.md) — password change, forgot-password, Django admin users
-- [stack_guide_running_tests.md](stack_guide_running_tests.md) — `bash scripts/test-all.sh`
-- [stack_guide_pre_push_verification.md](stack_guide_pre_push_verification.md) — lint + test before push

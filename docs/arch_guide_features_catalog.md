@@ -248,7 +248,7 @@ If you are new to a topic (Kafka, Neo4j, JWT, etc.), follow the linked guides in
   - PostgreSQL `date_trunc`, Express, React Recharts UI.
 
 - **Live flow dashboard (`#flow`)**
-  - **Single-viewport SOC wall** — `flow-dashboard--viewport` fills `100dvh − header` with `overflow: hidden` (no scroll); 3×3 gauge grid + compact clock/stat strip.
+  - **Single-viewport SOC wall** — `flow-dashboard--viewport`; 3×3 gauges + **right meta column** (`flow-dashboard__meta`) for clocks/sim/stats without overlap; range ⚠ idle badge always visible.
   - Configurable **auto-refresh** (0.5 s minimum, localStorage via `flowDashboardRefresh.js`).
   - Semicircle, **vertical tank**, **range bands** (⚠ always visible gray; amber/red only when threshold active), **volatility σ jitter** at 100 ms.
   - Guide: [ui_guide_flow_dashboard.md](ui_guide_flow_dashboard.md).

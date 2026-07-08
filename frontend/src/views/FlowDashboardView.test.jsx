@@ -44,17 +44,16 @@ jest.mock("../hooks/useFlowDashboardPoll", () => ({
 }));
 
 describe("FlowDashboardView", () => {
-  it("renders single-viewport grid with refresh controls and nine gauges", () => {
+  it("renders viewport grid and isolated meta column for clocks and sim", () => {
     render(<FlowDashboardView />);
     expect(screen.getByRole("heading", { name: /Live flow dashboard/i })).toBeInTheDocument();
     expect(screen.getByTestId("flow-dashboard-viewport")).toBeInTheDocument();
     expect(screen.getByTestId("flow-dashboard-grid")).toBeInTheDocument();
+    expect(screen.getByLabelText(/Clocks and pipeline counters/i)).toHaveClass("flow-dashboard__meta");
     expect(screen.getByRole("checkbox", { name: /Auto/i })).toBeInTheDocument();
     expect(screen.getByText("28/m")).toBeInTheDocument();
     expect(screen.getByText(/Vertical pending/i)).toBeInTheDocument();
-    expect(screen.getByText(/Range backlog/i)).toBeInTheDocument();
-    expect(screen.getByText(/Volatility/i)).toBeInTheDocument();
     expect(screen.getByText("30/min")).toBeInTheDocument();
-    expect(screen.getByLabelText(/Pipeline counters/i)).toBeInTheDocument();
+    expect(screen.getByText("Created")).toBeInTheDocument();
   });
 });

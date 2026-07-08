@@ -1,8 +1,8 @@
 /**
  * Live flow dashboard — single-viewport SOC wall (no scroll) for inbound review pipeline.
  *
- * Pattern: entire tab fits `calc(100vh − app header)` via CSS grid + compact gauge sizing; all widgets
- * visible at once like a NOC wall display. Poll GET /metrics/flow-dashboard on configurable interval.
+ * Pattern: `flow-dashboard__body` uses a two-column grid — 3×3 gauges on the left, a dedicated
+ * `flow-dashboard__meta` column on the right for clocks/sim/stats so nothing overlaps the dials.
  * Technology: FlowGauge family, clocks, useFlowDashboardPoll, localStorage refresh prefs.
  */
 import { useCallback, useEffect, useState } from "react";
@@ -21,7 +21,7 @@ import {
   writeFlowDashboardRefreshPrefs,
 } from "../lib/flowDashboardRefresh";
 
-/** Format integer counts for compact stat strip and gauge captions. */
+/** Format integer counts for compact stat stack and gauge captions. */
 function fmt(n) {
   return Number(n || 0).toLocaleString();
 }
@@ -68,7 +68,7 @@ export default function FlowDashboardView() {
   return (
     <main className="layout layout--single flow-dashboard flow-dashboard--viewport" data-testid="flow-dashboard-viewport">
       <header className="flow-dashboard__top">
-        <HoverHelp text="Single-screen SOC view: queue depths, ingest rates, vertical/range/volatility gauge demos, clocks. Auto-refresh from 0.5 s. Start dev simulation on Review dashboard to animate needles.">
+        <HoverHelp text="Single-screen SOC view: queue depths, ingest rates, vertical/range/volatility gauge demos. Clocks and simulation rate sit in the right column. Auto-refresh from 0.5 s.">
           <h2 className="flow-dashboard__title">Live flow dashboard</h2>
         </HoverHelp>
         <div className="toolbar flow-dashboard__toolbar">
@@ -111,101 +111,103 @@ export default function FlowDashboardView() {
         )}
       </header>
 
-      <aside className="flow-dashboard__side">
-        <FlowAnalogClock serverUtc={snapshot?.clocks?.serverUtc} label="UTC" />
-        <FlowUptimeClock uptimeSeconds={snapshot?.clocks?.uptimeSeconds} label="Uptime" />
-        {sim.available && (
-          <div className="flow-dashboard__sim-pill">
-            <strong>Sim</strong>
-            <span className={sim.enabled ? "status-ok" : "muted"}>
-              {sim.enabled ? `${sim.eventsPerMinute}/min` : "Off"}
-            </span>
-          </div>
-        )}
-        <ul className="flow-dashboard__stat-strip" aria-label="Pipeline counters">
-          <li>
-            <span className="muted">Created</span>
-            <strong>{fmt(pipe.reviewsCreatedTotal)}</strong>
-          </li>
-          <li>
-            <span className="muted">HTTP</span>
-            <strong>{fmt(pipe.httpRequestsTotal)}</strong>
-          </li>
-          <li>
-            <span className="muted">5xx</span>
-            <strong>{fmt(pipe.httpErrorsTotal)}</strong>
-          </li>
-          <li>
-            <span className="muted">Graph ∅</span>
-            <strong>{fmt(pipe.graphSyncFailuresTotal)}</strong>
-          </li>
-          <li>
-            <span className="muted">ES docs</span>
-            <strong>{fmt(snapshot?.searchIndex?.documentCount)}</strong>
-          </li>
-          <li>
-            <span className="muted">σ ms</span>
-            <strong>{volatility.stdDevMs ?? 0}</strong>
-          </li>
-        </ul>
-      </aside>
+      <div className="flow-dashboard__body">
+        <div className="flow-dashboard__grid" aria-busy={awaitingFirstSnapshot} data-testid="flow-dashboard-grid">
+          <FlowGauge
+            value={gauges.ingestRatePercent}
+            primaryDisplay={snapshot ? `${fmt(rates.createdLastMinute)}/m` : "—"}
+            label="Ingest / min"
+            tone={rates.createdLastMinute > 0 ? "ok" : "default"}
+          />
+          <FlowGauge
+            value={gauges.pendingActivityPercent}
+            primaryDisplay={snapshot ? fmt(q.pending) : "—"}
+            label="Pending"
+            tone={q.pending > (gauges.pendingScaleMax || 10) * 0.6 ? "warn" : "default"}
+          />
+          <FlowGauge
+            value={gauges.processingActivityPercent}
+            primaryDisplay={snapshot ? fmt(q.processing) : "—"}
+            label="Processing"
+            tone={q.processing > 0 ? "ok" : "default"}
+          />
+          <FlowGauge
+            value={gauges.backlogPressurePercent}
+            primaryDisplay={snapshot ? fmt(q.backlog) : "—"}
+            label="Backlog"
+            tone={gauges.backlogPressurePercent > 60 ? "warn" : "ok"}
+          />
+          <FlowGauge
+            value={gauges.completionThroughputPercent}
+            primaryDisplay={snapshot ? `${fmt(rates.completedLastMinute)}/m` : "—"}
+            label="Completed / min"
+            tone={rates.completedLastMinute > 0 ? "ok" : "default"}
+          />
+          <FlowGauge
+            value={pipe.readinessStatus === 1 ? 100 : 15}
+            primaryDisplay={pipe.readinessStatus === 1 ? "OK" : "Degraded"}
+            label="Readiness"
+            tone={pipe.readinessStatus === 1 ? "ok" : "danger"}
+          />
+          <FlowVerticalGauge
+            value={gauges.pendingActivityPercent}
+            primaryDisplay={snapshot ? fmt(q.pending) : "—"}
+            label="Vertical pending"
+            tone={q.pending > (gauges.pendingScaleMax || 10) * 0.6 ? "warn" : "ok"}
+          />
+          <FlowRangeGauge
+            value={gauges.backlogPressurePercent}
+            zones={BACKLOG_RANGE_ZONES}
+            primaryDisplay={snapshot ? `${gauges.backlogPressurePercent ?? 0}%` : "—"}
+            label="Range backlog"
+          />
+          <FlowVolatilityGauge
+            basePercent={gauges.arrivalVolatilityPercent ?? 0}
+            label="Volatility σ"
+            primaryDisplay={
+              snapshot && volatility.stdDevMs != null ? `${fmt(volatility.stdDevMs)} ms` : "—"
+            }
+          />
+        </div>
 
-      <div className="flow-dashboard__grid" aria-busy={awaitingFirstSnapshot} data-testid="flow-dashboard-grid">
-        <FlowGauge
-          value={gauges.ingestRatePercent}
-          primaryDisplay={snapshot ? `${fmt(rates.createdLastMinute)}/m` : "—"}
-          label="Ingest / min"
-          tone={rates.createdLastMinute > 0 ? "ok" : "default"}
-        />
-        <FlowGauge
-          value={gauges.pendingActivityPercent}
-          primaryDisplay={snapshot ? fmt(q.pending) : "—"}
-          label="Pending"
-          tone={q.pending > (gauges.pendingScaleMax || 10) * 0.6 ? "warn" : "default"}
-        />
-        <FlowGauge
-          value={gauges.processingActivityPercent}
-          primaryDisplay={snapshot ? fmt(q.processing) : "—"}
-          label="Processing"
-          tone={q.processing > 0 ? "ok" : "default"}
-        />
-        <FlowGauge
-          value={gauges.backlogPressurePercent}
-          primaryDisplay={snapshot ? fmt(q.backlog) : "—"}
-          label="Backlog"
-          tone={gauges.backlogPressurePercent > 60 ? "warn" : "ok"}
-        />
-        <FlowGauge
-          value={gauges.completionThroughputPercent}
-          primaryDisplay={snapshot ? `${fmt(rates.completedLastMinute)}/m` : "—"}
-          label="Completed / min"
-          tone={rates.completedLastMinute > 0 ? "ok" : "default"}
-        />
-        <FlowGauge
-          value={pipe.readinessStatus === 1 ? 100 : 15}
-          primaryDisplay={pipe.readinessStatus === 1 ? "OK" : "Degraded"}
-          label="Readiness"
-          tone={pipe.readinessStatus === 1 ? "ok" : "danger"}
-        />
-        <FlowVerticalGauge
-          value={gauges.pendingActivityPercent}
-          primaryDisplay={snapshot ? fmt(q.pending) : "—"}
-          label="Vertical pending"
-          tone={q.pending > (gauges.pendingScaleMax || 10) * 0.6 ? "warn" : "ok"}
-        />
-        <FlowRangeGauge
-          value={gauges.backlogPressurePercent}
-          zones={BACKLOG_RANGE_ZONES}
-          primaryDisplay={snapshot ? `${gauges.backlogPressurePercent ?? 0}%` : "—"}
-          label="Range backlog"
-        />
-        <FlowVolatilityGauge
-          basePercent={gauges.arrivalVolatilityPercent ?? 0}
-          label="Volatility σ"
-          primaryDisplay={
-            snapshot && volatility.stdDevMs != null ? `${fmt(volatility.stdDevMs)} ms` : "—"
-          }
-        />
+        <aside className="flow-dashboard__meta" aria-label="Clocks and pipeline counters">
+          <FlowAnalogClock serverUtc={snapshot?.clocks?.serverUtc} label="UTC" />
+          <FlowUptimeClock uptimeSeconds={snapshot?.clocks?.uptimeSeconds} label="Uptime" />
+          {sim.available && (
+            <div className="flow-dashboard__sim-pill">
+              <strong>Sim</strong>
+              <span className={sim.enabled ? "status-ok" : "muted"}>
+                {sim.enabled ? `${sim.eventsPerMinute}/min` : "Off"}
+              </span>
+            </div>
+          )}
+          <ul className="flow-dashboard__stat-stack">
+            <li>
+              <span className="muted">Created</span>
+              <strong>{fmt(pipe.reviewsCreatedTotal)}</strong>
+            </li>
+            <li>
+              <span className="muted">HTTP</span>
+              <strong>{fmt(pipe.httpRequestsTotal)}</strong>
+            </li>
+            <li>
+              <span className="muted">5xx</span>
+              <strong>{fmt(pipe.httpErrorsTotal)}</strong>
+            </li>
+            <li>
+              <span className="muted">Graph ∅</span>
+              <strong>{fmt(pipe.graphSyncFailuresTotal)}</strong>
+            </li>
+            <li>
+              <span className="muted">ES</span>
+              <strong>{fmt(snapshot?.searchIndex?.documentCount)}</strong>
+            </li>
+            <li>
+              <span className="muted">σ ms</span>
+              <strong>{volatility.stdDevMs ?? 0}</strong>
+            </li>
+          </ul>
+        </aside>
       </div>
     </main>
   );

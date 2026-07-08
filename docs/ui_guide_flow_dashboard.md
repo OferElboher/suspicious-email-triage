@@ -13,8 +13,8 @@ Real **network / security operations center (NOC/SOC) dashboards** are designed 
 This tab follows that pattern:
 
 - **Single viewport** — CSS class `flow-dashboard--viewport` sets `height: calc(100dvh − header)` and `overflow: hidden` so the full wall fits below the app navigation bar.
-- **3×3 gauge grid** — six operational semicircle dials plus three “pattern demo” widgets (vertical, range, volatility) in one grid.
-- **Compact side strip** — UTC clock, uptime ring, simulation pill (dev), and pipeline counters in one horizontal row (no separate stats card).
+- **3×3 gauge grid** — six operational semicircle dials plus three “pattern demo” widgets (vertical, range, volatility) on the **left**.
+- **Dedicated meta column** — UTC clock, uptime ring, simulation pill (dev), and pipeline counters stacked on the **right** (`flow-dashboard__meta`) so clocks and sim rate never overlap the gauge grid.
 
 You can **poll the API every 0.5 seconds** (minimum) while **dev simulation** creates synthetic reviews.
 
@@ -38,20 +38,19 @@ You can **poll the API every 0.5 seconds** (minimum) while **dev simulation** cr
 ## Layout (single screen, no scroll)
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│ Title │ Refresh │ Auto │ interval │ last update UTC         │
-├─────────────────────────────────────────────────────────────┤
-│ [UTC clock] [Uptime] [Sim] │ Created HTTP 5xx Graph ES σ …  │
-├───────────────┬───────────────┬─────────────────────────────┤
-│ Ingest / min  │ Pending       │ Processing                  │
-├───────────────┼───────────────┼─────────────────────────────┤
-│ Backlog       │ Completed /m  │ Readiness                   │
-├───────────────┼───────────────┼─────────────────────────────┤
-│ Vertical tank │ Range + ⚠     │ Volatility σ (jitter)       │
-└───────────────┴───────────────┴─────────────────────────────┘
+┌──────────────────────────────────────────────┬──────────┐
+│ Title │ Refresh │ Auto │ interval │ stamp   │          │
+├──────────────────────────────────────────────┤  Meta    │
+│ Ingest   │ Pending    │ Processing           │  column  │
+│ Backlog  │ Completed  │ Readiness            │  ──────  │
+│ Vertical │ Range + ⚠  │ Volatility σ         │  UTC     │
+│          │              │                      │  Uptime  │
+│          │              │                      │  Sim/min │
+│          │              │                      │  stats   │
+└──────────────────────────────────────────────┴──────────┘
 ```
 
-**Technology:** CSS Grid in `triage.css` — `.flow-dashboard__grid` is `3×3` with `minmax(0, 1fr)` rows so cells shrink to fit. Long detail captions are hidden in viewport mode (primary value + short label only).
+**Technology:** CSS Grid in `triage.css` — `.flow-dashboard__body` is two columns (`1fr` gauges + `5.75rem` meta). The gauge grid is `3×3` with `overflow: visible` so the range ⚠ badge is not clipped. Clock digital/uptime text uses **static positioning** in viewport mode (no negative margins overlaying the SVG).
 
 **Pattern — viewport height:** We subtract `--flow-header-offset` (~4.25 rem) for the global app header (`app-header` in `TriageApp.jsx`). Using `100dvh` handles mobile browser chrome better than `100vh`.
 
@@ -97,7 +96,7 @@ Preferences are **browser-only** — no secrets, not sent to the server.
 
 ## Warning indicator (⚠) — idle gray, active color
 
-On the **range gauge**, the **⚠ icon is always visible** in **light gray** (`flow-range-gauge__warning--idle`). This mirrors physical SOC panels where indicator lamps sit dim until an alarm condition lights them up.
+On the **range gauge**, the **⚠ icon is always visible** as a small **gray badge** with border (`flow-range-gauge__warning--idle`, `z-index: 3`). This mirrors physical SOC panels where indicator lamps sit dim until an alarm condition lights them up. Previously the icon could clip or blend into the gauge background — viewport layout now reserves top padding and sets `overflow: visible` on gauge cells.
 
 | Needle zone | ⚠ appearance | CSS classes |
 |-------------|--------------|-------------|
@@ -119,11 +118,11 @@ Arc band colors (green/amber/red) remain visible at all times so thresholds are 
 
 ---
 
-## Clocks and stat strip
+## Clocks and stat stack
 
-- **UTC** / **Uptime** — compact 64 px SVG clocks in the side row.
+- **UTC** / **Uptime** — compact 52 px SVG clocks in the **right meta column**; time/uptime text stacks **below** the face (not overlaid with negative margins).
 - **Sim** (dev) — Redis `triage:dev:simulation` rate or “Off”.
-- **Stat strip** — Created, HTTP, 5xx, graph sync failures, ES docs, σ ms from the same snapshot (replaces the old scrollable stats card).
+- **Stat stack** — vertical list of Created, HTTP, 5xx, graph sync failures, ES docs, σ ms (replaces the old horizontal strip that overlapped clocks).
 
 ---
 
@@ -139,8 +138,8 @@ Notable fields: `rates.arrivalVolatility`, `gauges.arrivalVolatilityPercent`.
 
 | File | Role |
 |------|------|
-| `FlowDashboardView.jsx` | Viewport layout, 3×3 grid |
-| `triage.css` | `.flow-dashboard--viewport`, compact sizing |
+| `FlowDashboardView.jsx` | Viewport layout, 3×3 grid + right meta column |
+| `triage.css` | `.flow-dashboard__body`, `.flow-dashboard__meta`, visible ⚠ badge |
 | `FlowRangeGauge.jsx` | Idle/active ⚠ logic |
 | `flowMetrics.js` / `arrivalVolatility.js` | Snapshot + σ |
 | `flowDashboardRefresh.js` | localStorage interval prefs |

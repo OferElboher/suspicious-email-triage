@@ -119,7 +119,7 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 - `GET /ops/prometheus` — Prometheus text scrape (no auth, standard pattern)
 - `GET /ops/alerts` — JSON alert evaluation from readiness + thresholds (`metrics.read`)
 - **`GET /metrics/flow-dashboard`** — live Mongo queue depths + ingest rates + **arrival gap std dev** (`arrivalVolatility.js`) for gauge UI (`metrics.read`)
-- **`#flow` Live flow dashboard** — **single-viewport** SOC wall (`flow-dashboard--viewport`, no scroll); 3×3 compact gauge grid; configurable auto-refresh (0.5 s–30 s); vertical + range (idle gray ⚠ → colored when threshold breached) + volatility jitter gauges
+- **`#flow` Live flow dashboard** — **single-viewport** SOC wall (`flow-dashboard--viewport`); 3×3 gauge grid + **right meta column** for clocks/sim/stats (no overlap); configurable auto-refresh (0.5 s–30 s); range ⚠ idle bordered badge → amber/red when threshold breached; volatility jitter gauge
 - Env tuning: `ALERT_MAX_GRAPH_SYNC_FAILURES`, `ALERT_MAX_HTTP_ERRORS`
 
 **Guides:** [ops_guide_metrics_alerting.md](ops_guide_metrics_alerting.md), [ui_guide_flow_dashboard.md](ui_guide_flow_dashboard.md)
