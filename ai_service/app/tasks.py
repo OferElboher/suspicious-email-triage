@@ -1,4 +1,4 @@
-"""Celery task: Kafka-dispatched review analysis (NLP/LLM scoring) writes Mongo."""
+"""Celery task: Kafka-dispatched review analysis (rules + LLM or agent triage) writes Mongo."""
 from bson import ObjectId
 
 from app.celery_app import celery_app
@@ -9,6 +9,12 @@ from app.merge import merge_results
 from app.mongo import get_db
 from app.rule_engine import run_rule_engine
 from app.stats import record_status
+
+try:
+    from app.agent.orchestrator import agent_triage_enabled, run_agent_triage
+except ImportError:  # pragma: no cover — defensive import for partial deployments
+    agent_triage_enabled = lambda: False  # noqa: E731
+    run_agent_triage = None  # type: ignore[assignment]
 
 
 @celery_app.task(name="analyze_review")
@@ -27,13 +33,23 @@ def analyze_review(review_id: str) -> str:
     )
     # PostgreSQL keeps lightweight status events for charts; Mongo stores the review.
     record_status(review_id, "processing")
+    agent_trace = None
     try:
         rules = run_rule_engine(review)
-        llm = analyze_with_llm(review)
+        if agent_triage_enabled() and run_agent_triage is not None:
+            # Agent FSM: orchestration, tools, workflow, guardrails (data_guide_agent_triage.md).
+            agent_result = run_agent_triage(review)
+            llm = agent_result.structured_output
+            agent_trace = agent_result.agent_trace
+        else:
+            llm = analyze_with_llm(review)
         result = merge_results(rules, llm)
+        update_doc: dict = {"analysisResult": result, "status": "completed"}
+        if agent_trace:
+            update_doc["agentTrace"] = agent_trace
         db.reviews.update_one(
             {"_id": oid},
-            {"$set": {"analysisResult": result, "status": "completed"}},
+            {"$set": update_doc},
         )
         # Persist final chart status without scanning the Mongo review collection later.
         record_status(review_id, "completed", result.get("verdict"))

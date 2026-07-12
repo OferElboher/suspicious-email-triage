@@ -439,6 +439,29 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 
 ---
 
+### 5.2a Agent triage FSM — orchestration, tools, workflows, guardrails (implemented)
+
+**User value:** Demonstrates production-shaped **LLM agent** patterns (bounded FSM, tool allowlist, YAML workflows, pre/post guardrails) on the existing Celery path — without replacing analyst override.
+
+**Status:** Shipped — [data_guide_agent_triage.md](data_guide_agent_triage.md).
+
+**Exact demand delivered:**
+
+| Pillar | Implementation |
+|--------|----------------|
+| Orchestration | `app/agent/orchestrator.py` — INTAKE → PLAN → TOOL_LOOP → SYNTHESIZE → GUARD_VALIDATE → PERSIST |
+| Tools | `app/agent/tools.py` + Node `/agent/internal/*` (Mongo, Postgres, Neo4j HTTP) |
+| Workflows | `workflow_policy.yaml` + `workflow.py` conditional branches |
+| Guardrails | `app/guardrails/*` — PII mask, injection filter, jsonschema, verdict floors |
+
+**Cloud LLM:** `LLM_CLOUD_PROVIDER=bedrock|vertex|mock`; dev uses **`mock-cloud-llm`** container (port 8091) at zero cost.
+
+**Enable:** `AGENT_TRIAGE_ENABLED=true` (default `false` for deterministic CI).
+
+**Free path:** **Already free** — mock-cloud-llm + local guardrails (`GUARDRAIL_CLOUD_PROVIDER=local`).
+
+---
+
 ### 5.3 Analyst feedback loop (P1)
 
 **User value:** Model improves from thumbs up/down on verdicts.
@@ -531,8 +554,9 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 
 **Exact demand (agent phase 2):**
 
-- **LangChain** (or LangGraph) orchestrates a tool-calling loop: `search_similar_reviews`, `get_graph_campaign`, `fetch_rule_findings`.
-- LLM via existing `mock_commercial` or Ollama; analyst **override** remains the compliance source of truth.
+- **Bounded agent FSM (implemented)** — see [data_guide_agent_triage.md](data_guide_agent_triage.md): `run_rule_engine`, `get_graph_neighborhood`, `query_review_stats`, `lookup_sender_history` via tool allowlist + `workflow_policy.yaml`.
+- **Remaining:** LangChain/LangGraph for semantic `search_similar_reviews` once vector DB (§8 MVP) ships.
+- LLM via **mock-cloud-llm**, Bedrock, or Vertex; analyst **override** remains the compliance source of truth.
 
 **Tech pattern:**
 
@@ -641,7 +665,7 @@ This section lists **vendor services the architecture naturally maps to** but wh
 | **Amazon EventBridge + SNS** | Alert routing from `/ops/alerts` | Manual log review | SNS topics per severity | Lambda polls metrics or EventBridge rules on DLQ depth |
 | **Amazon Keyspaces** | Wide-column audit store (years of overrides) | Not implemented | Managed Cassandra-compatible | New writer on `POST /reviews/:id/override` — [§9 wide-column](#9-wide-column-audit-store-cassandra--scylladb-p2) |
 | **AWS Lambda** | Secret rotation, scheduled graph prune | Manual scripts | Rotation Lambdas | Rotate JWT/DB passwords per [ops_guide_secrets_management.md](ops_guide_secrets_management.md) |
-| **Amazon Bedrock** | Alternative to OpenAI for LLM scoring | `mock-llm` | Bedrock runtime endpoint | Set `LLM_BASE_URL` to Bedrock OpenAI-compatible proxy when available |
+| **Amazon Bedrock** | Agent triage + LLM scoring | `mock-cloud-llm` + `mock-llm` | Bedrock Converse (`LLM_CLOUD_PROVIDER=bedrock`) | `BEDROCK_MODEL_ID`, IAM `bedrock:InvokeModel` — [data_guide_agent_triage.md](data_guide_agent_triage.md) |
 | **Amazon GuardDuty / Macie** | Threat detection on S3/email exports | N/A | Enable on AWS account | Operational — no app code required |
 
 **Pattern for new integrations:** add env vars + secrets keys + optional mock container in dev; document in `data_guide_dev_mock_services.md`; add row to this table until shipped.

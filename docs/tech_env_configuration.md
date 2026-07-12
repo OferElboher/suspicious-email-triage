@@ -58,6 +58,8 @@ Neo4j graph variables (`NEO4J_*`, `GRAPH_INTERNAL_TOKEN`, `BACKEND_INTERNAL_URL`
 
 LLM and PostgreSQL prompt context variables (`DISABLE_LLM`, `LLM_*`, `STATISTICS_PG_URL`) are documented in [data_guide_mock_llm.md](data_guide_mock_llm.md).
 
+Agent triage variables (`AGENT_TRIAGE_ENABLED`, `LLM_CLOUD_PROVIDER`, `MOCK_CLOUD_LLM_URL`, `AGENT_*`, `AGENT_INTERNAL_SERVICE_TOKEN` in secrets) are documented in [data_guide_agent_triage.md](data_guide_agent_triage.md).
+
 Snowflake analytics variables (`SNOWFLAKE_ENABLED`, `SNOWFLAKE_URL`) are documented in [data_guide_snowflake_analytics.md](data_guide_snowflake_analytics.md).
 
 ---

@@ -87,6 +87,9 @@ DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d djang
 
 # Mock commercial LLM (only if DISABLE_LLM=false in your env)
 DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d mock-llm
+
+# Agent triage FSM (only if AGENT_TRIAGE_ENABLED=true — see data_guide_agent_triage.md)
+DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d mock-cloud-llm ai-celery backend
 ```
 
 ---

@@ -4,7 +4,7 @@ This guide is for developers **new to AWS, OpenAI, or Snowflake** who run the lo
 
 **Short answer:** each mock implements the **same HTTP shapes our application code expects**, aligned with the real vendor protocol where practical. Mocks run **only when `DEPLOYMENT_ENV=dev`** (local Docker Compose). **Staging and production** profiles in `backend/.env.staging` and `backend/.env.prod` point at **real paid services** — see [stack_guide_staging_production_services.md](stack_guide_staging_production_services.md).
 
-**Related:** [ops_guide_secrets_management.md](ops_guide_secrets_management.md), [data_guide_mock_llm.md](data_guide_mock_llm.md), [data_guide_snowflake_analytics.md](data_guide_snowflake_analytics.md), [stack_guide_full_feature_activation.md](stack_guide_full_feature_activation.md), [stack_guide_staging_production_services.md](stack_guide_staging_production_services.md).
+**Related:** [ops_guide_secrets_management.md](ops_guide_secrets_management.md), [data_guide_mock_llm.md](data_guide_mock_llm.md), [data_guide_agent_triage.md](data_guide_agent_triage.md), [data_guide_snowflake_analytics.md](data_guide_snowflake_analytics.md), [stack_guide_full_feature_activation.md](stack_guide_full_feature_activation.md), [stack_guide_staging_production_services.md](stack_guide_staging_production_services.md).
 
 ---
 
@@ -14,6 +14,7 @@ This guide is for developers **new to AWS, OpenAI, or Snowflake** who run the lo
 |--------------|---------------------|----------------|
 | **AWS Secrets Manager** | Costs money; secrets must not live in git | `mock-secrets-manager` (:4566) |
 | **OpenAI Chat Completions** | Per-token billing | `mock-llm` (:8090) |
+| **Bedrock/Vertex Converse (agent triage)** | Per-token billing on Bedrock/Vertex | `mock-cloud-llm` (:8091) — see [data_guide_agent_triage.md](data_guide_agent_triage.md) |
 | **Snowflake warehouse** | Cloud account required | `mock-snowflake` (:4567) |
 | **Amazon S3** | Cloud storage + IAM | `mock-s3` (:4568) |
 

@@ -8,6 +8,7 @@ const reviewRoutes = require("../api/reviews");
 const metricsRoutes = require("../api/metrics");
 const graphRoutes = require("../api/graph");
 const graphInternalRoutes = require("../api/graphInternal");
+const agentInternalRoutes = require("../api/agentInternal");
 const authRoutes = require("../api/auth");
 const healthRoutes = require("../api/health");
 const opsRoutes = require("../api/ops");
@@ -42,6 +43,7 @@ function createApp() {
 
   app.use("/auth", authRoutes);
   app.use("/graph/internal", graphInternalRoutes);
+  app.use("/agent/internal", agentInternalRoutes);
 
   app.use(authenticate);
 

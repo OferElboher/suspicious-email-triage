@@ -454,3 +454,23 @@ def test_pipeline_prefect_dbt_wired_to_analytics_ui():
     guide = (ROOT / "docs/data_guide_prefect_dbt_demo.md").read_text(encoding="utf-8")
     assert "PipelineOrchestrationPanel" in guide
     assert "does not depend on them" not in guide.lower()
+
+
+def test_agent_triage_fsm_wired_in_ai_service():
+    """Agent triage modules, mock-cloud-llm, internal API, and docs are present."""
+    assert (ROOT / "ai_service/app/agent/orchestrator.py").is_file()
+    assert (ROOT / "ai_service/app/agent/workflow_policy.yaml").is_file()
+    assert (ROOT / "ai_service/mock_cloud_llm/server.py").is_file()
+    assert (ROOT / "backend/src/api/agentInternal.js").is_file()
+    compose = (ROOT / "infra/docker/docker-compose.yml").read_text(encoding="utf-8")
+    assert "mock-cloud-llm" in compose
+    dev_env = (ROOT / "backend/.env.dev").read_text(encoding="utf-8")
+    assert "AGENT_TRIAGE_ENABLED" in dev_env
+    assert "LLM_CLOUD_PROVIDER" in dev_env
+    secrets_example = (ROOT / "backend/dev.secrets.example").read_text(encoding="utf-8")
+    assert "AGENT_INTERNAL_SERVICE_TOKEN" in secrets_example
+    readme = (ROOT / "docs/README.md").read_text(encoding="utf-8")
+    assert "data_guide_agent_triage.md" in readme
+    guide = (ROOT / "docs/data_guide_agent_triage.md").read_text(encoding="utf-8")
+    assert "orchestrator" in guide.lower()
+    assert "guardrail" in guide.lower()

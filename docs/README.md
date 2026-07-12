@@ -19,6 +19,7 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 | Goal | Document |
 |------|----------|
 | Non-technical product overview | [biz_guide_user.md](biz_guide_user.md) |
+| **Agent triage FSM** (Bedrock/Vertex/mock, tools, guardrails) | [data_guide_agent_triage.md](data_guide_agent_triage.md) |
 | **Dev mocks vs staging/prod real cloud services** | [stack_guide_staging_production_services.md](stack_guide_staging_production_services.md) |
 | **Review dashboard UI** (queue, detail, modal submit, HoverHelp) | [ui_guide_review_dashboard.md](ui_guide_review_dashboard.md) |
 | **App navigation** (icon tabs, Live flow, Search, Logs, Settings, Admin) | [ui_guide_app_navigation.md](ui_guide_app_navigation.md) |
@@ -59,7 +60,8 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 - [arch_guide_worker_pipeline.md](arch_guide_worker_pipeline.md) — Kafka / Celery workers
 - [arch_guide_system_comprehensive.md](arch_guide_system_comprehensive.md) — end-to-end deep dive
 - [arch_assignment_historical.md](arch_assignment_historical.md) — original assignment brief
-- [data_guide_mock_llm.md](data_guide_mock_llm.md) — mock commercial LLM
+- [data_guide_mock_llm.md](data_guide_mock_llm.md) — mock commercial LLM (single-shot path)
+- [data_guide_agent_triage.md](data_guide_agent_triage.md) — agent FSM (orchestration, tools, workflows, guardrails)
 - [data_guide_dev_mock_services.md](data_guide_dev_mock_services.md) — all dev mocks vs real cloud APIs
 - [data_guide_kafka_events.md](data_guide_kafka_events.md) — Kafka topics & consumers
 - [data_guide_prefect_dbt_demo.md](data_guide_prefect_dbt_demo.md) — Prefect / dbt integrated in Analytics pipeline panel

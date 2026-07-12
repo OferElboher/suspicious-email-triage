@@ -130,6 +130,11 @@ If you are new to a topic (Kafka, Neo4j, JWT, etc.), follow the linked guides in
   - Rules authoritative; LLM cannot downgrade suspicious/phishing to benign.
   - Python `merge.py`, Node worker merge.
 
+- **Agent triage FSM (optional — `AGENT_TRIAGE_ENABLED`)**
+  - Bounded orchestrator: PLAN → tools → SYNTHESIZE with YAML workflow branches and pre/post guardrails; persists `agentTrace` on Mongo reviews.
+  - Cloud LLM via **mock-cloud-llm** (dev), **Amazon Bedrock Converse**, or **Google Vertex Gemini**; internal tools hit `/agent/internal/*` with service token.
+  - Guide: [data_guide_agent_triage.md](data_guide_agent_triage.md).
+
 - **Legacy BullMQ worker (optional profile)**
   - Node Redis queue consumer for fallback demos (`--profile legacy-bullmq`).
   - BullMQ, IORedis, MongoDB.

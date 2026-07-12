@@ -1,0 +1,34 @@
+# Workflow policy — conditional branches driven by tool results and synthesis output.
+# Technology: YAML loaded by workflow.py; interpreted safely (no arbitrary code eval).
+version: "1"
+steps:
+  - id: always_rules
+    when:
+      always: true
+    run_tool: run_rule_engine
+
+  - id: graph_if_suspicious
+    when:
+      rule_verdict_in:
+        - suspicious
+        - likely_phishing
+    suggest_tool: get_graph_neighborhood
+
+  - id: stats_if_repeat_sender
+    when:
+      sender_review_count_gte: 2
+    suggest_tool: query_review_stats
+
+  - id: escalate_if_campaign_edge
+    when:
+      last_tool_campaign_edges_gt: 0
+    set:
+      min_verdict: suspicious
+      recommended_action: investigate
+
+  - id: block_if_high_confidence_phish
+    when:
+      synthesis_verdict_is: likely_phishing
+      synthesis_confidence_gte: 0.85
+    set:
+      recommended_action: report_and_block
