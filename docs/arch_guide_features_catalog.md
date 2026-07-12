@@ -132,8 +132,14 @@ If you are new to a topic (Kafka, Neo4j, JWT, etc.), follow the linked guides in
 
 - **Agent triage FSM (optional — `AGENT_TRIAGE_ENABLED`)**
   - Bounded orchestrator: PLAN → tools → SYNTHESIZE with YAML workflow branches and pre/post guardrails; persists `agentTrace` on Mongo reviews.
+  - Wall-clock and tool-step caps via `app/agent/safety.py`; default-off for CI and dev laptops.
   - Cloud LLM via **mock-cloud-llm** (dev), **Amazon Bedrock Converse**, or **Google Vertex Gemini**; internal tools hit `/agent/internal/*` with service token.
-  - Guide: [data_guide_agent_triage.md](data_guide_agent_triage.md).
+  - Guides: [data_guide_agent_triage.md](data_guide_agent_triage.md), [ui_guide_agent_activity.md](ui_guide_agent_activity.md).
+
+- **Agent activity UI (`#agent` + embedded trace panel)**
+  - Per-review `AgentTracePanel` in review detail; fleet view polls `GET /metrics/agent-triage` (25-row cap).
+  - React + CSS timeline; permission `metrics.read`.
+  - Guide: [ui_guide_agent_activity.md](ui_guide_agent_activity.md).
 
 - **Legacy BullMQ worker (optional profile)**
   - Node Redis queue consumer for fallback demos (`--profile legacy-bullmq`).

@@ -106,3 +106,12 @@ def test_run_agent_triage_fallback_on_synthesis_error(
     assert result.fallback_rules_only is True
     assert result.structured_output.get("_agentFallback") is True
     assert "FALLBACK_RULES" in result.agent_trace["statesVisited"]
+
+
+@patch("app.agent.orchestrator.wall_budget_exceeded", return_value=True)
+def test_run_agent_triage_wall_budget_fallback(mock_wall, phishing_review):
+    """Wall-clock cap triggers safe rule-only fallback before expensive LLM calls."""
+    result = run_agent_triage(phishing_review)
+    assert result.fallback_rules_only is True
+    assert "FALLBACK_RULES" in result.agent_trace["statesVisited"]
+    assert "wall_budget_exceeded" in result.structured_output["summary"]

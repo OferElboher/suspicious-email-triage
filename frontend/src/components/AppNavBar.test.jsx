@@ -11,6 +11,7 @@ describe("AppNavBar", () => {
           workspace: true,
           analytics: false,
           flow: false,
+          agent: false,
           graph: true,
           search: true,
           logs: false,
@@ -24,7 +25,29 @@ describe("AppNavBar", () => {
     expect(screen.getByRole("button", { name: /Search past reviews/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Settings/i })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Analytics/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Agent activity/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Search unified logs/i })).not.toBeInTheDocument();
+  });
+
+  it("renders agent tab when access.agent is true", () => {
+    render(
+      <AppNavBar
+        screen="agent"
+        setScreen={() => {}}
+        access={{
+          workspace: true,
+          analytics: false,
+          flow: false,
+          agent: true,
+          graph: false,
+          search: false,
+          logs: false,
+          admin: false,
+          settings: false,
+        }}
+      />
+    );
+    expect(screen.getByRole("button", { name: /Agent activity/i })).toBeInTheDocument();
   });
 
   it("calls setScreen when an icon is clicked", () => {
@@ -37,6 +60,7 @@ describe("AppNavBar", () => {
           workspace: true,
           analytics: true,
           flow: false,
+          agent: false,
           graph: false,
           search: false,
           logs: false,

@@ -7,6 +7,7 @@
 import NavIconButton from "./NavIconButton";
 import {
   IconAdmin,
+  IconAgent,
   IconAnalytics,
   IconDashboard,
   IconFlow,
@@ -27,6 +28,7 @@ export default function AppNavBar({ screen, setScreen, access }) {
     workspace,
     analytics,
     flow,
+    agent,
     graph,
     search,
     logs,
@@ -52,6 +54,15 @@ export default function AppNavBar({ screen, setScreen, access }) {
           onClick={() => setScreen("flow")}
         >
           <IconFlow />
+        </NavIconButton>
+      )}
+      {agent && (
+        <NavIconButton
+          label="Agent activity"
+          active={screen === "agent"}
+          onClick={() => setScreen("agent")}
+        >
+          <IconAgent />
         </NavIconButton>
       )}
       {analytics && (

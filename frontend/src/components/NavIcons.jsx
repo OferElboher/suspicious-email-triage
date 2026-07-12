@@ -41,6 +41,19 @@ export function IconFlow({ className = "nav-icon__svg" }) {
   );
 }
 
+/** Agent activity — hub with branching nodes (bounded FSM + tool orchestration). */
+export function IconAgent({ className = "nav-icon__svg" }) {
+  return (
+    <svg className={className} {...COMMON}>
+      <circle cx="12" cy="6" r="2.5" fill="currentColor" stroke="none" />
+      <circle cx="6" cy="18" r="2" fill="currentColor" stroke="none" />
+      <circle cx="18" cy="18" r="2" fill="currentColor" stroke="none" />
+      <path d="M12 8.5v4M9.5 14.5 7.5 16.5M14.5 14.5l2 2" />
+      <path d="M4 20h16" opacity="0.35" />
+    </svg>
+  );
+}
+
 /** Analytics — bar chart with baseline (metrics / KPIs). */
 export function IconAnalytics({ className = "nav-icon__svg" }) {
   return (

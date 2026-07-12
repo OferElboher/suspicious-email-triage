@@ -13,6 +13,16 @@ jest.mock("../src/metrics/flowMetrics", () => ({
   })),
 }));
 
+jest.mock("../src/metrics/agentTriageMetrics", () => ({
+  getAgentTriageSnapshot: jest.fn(async () => ({
+    agentEnabled: false,
+    cloudProvider: "mock",
+    safetyLimits: { maxToolSteps: 3, maxWallMs: 30000, maxBodyChars: 8000 },
+    summary: { reviewsWithTrace: 0, recentSampleSize: 0 },
+    recentRuns: [],
+  })),
+}));
+
 jest.mock("../src/http/middleware/auth", () => ({
   requirePermission: () => (_req, _res, next) => next(),
 }));
@@ -22,6 +32,7 @@ const express = require("express");
 const metricsRoutes = require("../src/api/metrics");
 const { getTimeseries } = require("../src/stats/statsPg");
 const { getFlowDashboardSnapshot } = require("../src/metrics/flowMetrics");
+const { getAgentTriageSnapshot } = require("../src/metrics/agentTriageMetrics");
 
 function buildApp() {
   const app = express();
@@ -57,5 +68,13 @@ describe("metrics API", () => {
     expect(res.status).toBe(200);
     expect(getFlowDashboardSnapshot).toHaveBeenCalled();
     expect(res.body.queue.pending).toBe(1);
+  });
+
+  it("GET /metrics/agent-triage returns agent activity snapshot", async () => {
+    const app = buildApp();
+    const res = await request(app).get("/metrics/agent-triage");
+    expect(res.status).toBe(200);
+    expect(getAgentTriageSnapshot).toHaveBeenCalled();
+    expect(res.body.cloudProvider).toBe("mock");
   });
 });

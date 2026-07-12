@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from app.agent.providers.factory import get_cloud_llm_client
+from app.agent.safety import get_agent_safety_limits, wall_budget_exceeded
 from app.agent.tools import execute_tool, list_tool_specs
 from app.agent.workflow import count_campaign_edges, evaluate_workflow, load_workflow_policy
 from app.guardrails.post_llm import run_post_llm_guardrails
@@ -79,7 +80,8 @@ def run_agent_triage(review: dict[str, Any]) -> AgentTriageResult:
     Never raises for guardrail failures — returns rule-only fallback instead.
     """
     run_id = str(uuid.uuid4())
-    started = time.time()
+    started = time.monotonic()
+    limits = get_agent_safety_limits()
     states: list[str] = []
     guard_events: list[dict[str, Any]] = []
     tool_calls: list[dict[str, Any]] = []
@@ -104,6 +106,15 @@ def run_agent_triage(review: dict[str, Any]) -> AgentTriageResult:
 
     # --- PLAN ---
     states.append("PLAN")
+    if wall_budget_exceeded(started, limits):
+        states.append("FALLBACK_RULES")
+        return AgentTriageResult(
+            structured_output=_disabled_fallback_summary("wall_budget_exceeded"),
+            agent_trace=_build_trace(
+                run_id, provider, model_id, states, tool_calls, guard_events, started
+            ),
+            fallback_rules_only=True,
+        )
     rules_tuple = run_rule_engine(working_review)
     rule_verdict = rules_tuple[0]
     client = get_cloud_llm_client()
@@ -132,11 +143,13 @@ def run_agent_triage(review: dict[str, Any]) -> AgentTriageResult:
     policy = load_workflow_policy()
     wf = evaluate_workflow(policy, ctx)
     tools_to_run = wf["run_tools"]
-    max_steps = int(os.environ.get("AGENT_MAX_TOOL_STEPS", "3"))
-    tools_to_run = tools_to_run[:max_steps]
+    tools_to_run = tools_to_run[: limits.max_tool_steps]
 
     tool_outputs: list[dict[str, Any]] = []
     for tool_name in tools_to_run:
+        if wall_budget_exceeded(started, limits):
+            log_line("warn", "agent", "wall budget exceeded during tool loop")
+            break
         args: dict[str, Any] = {}
         review_id = str(working_review.get("_id") or working_review.get("id") or "")
         if tool_name == "run_rule_engine":
@@ -170,6 +183,15 @@ def run_agent_triage(review: dict[str, Any]) -> AgentTriageResult:
 
     # --- SYNTHESIZE ---
     states.append("SYNTHESIZE")
+    if wall_budget_exceeded(started, limits):
+        states.append("FALLBACK_RULES")
+        return AgentTriageResult(
+            structured_output=_disabled_fallback_summary("wall_budget_exceeded"),
+            agent_trace=_build_trace(
+                run_id, provider, model_id, states, tool_calls, guard_events, started
+            ),
+            fallback_rules_only=True,
+        )
     synth_context = {
         "plan": plan,
         "ruleVerdict": rule_verdict,
@@ -252,5 +274,5 @@ def _build_trace(
         "toolCalls": tool_calls,
         "guardrailEvents": guard_events,
         "plan": plan or {},
-        "wallDurationMs": int((time.time() - started) * 1000),
+        "wallDurationMs": int((time.monotonic() - started) * 1000),
     }

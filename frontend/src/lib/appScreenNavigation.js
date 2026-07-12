@@ -2,6 +2,7 @@
 export const APP_SCREENS = [
   "workspace",
   "flow",
+  "agent",
   "analytics",
   "graph",
   "search",
@@ -14,6 +15,7 @@ export const APP_SCREENS = [
 export const SCREEN_FALLBACK_ORDER = [
   "workspace",
   "flow",
+  "agent",
   "analytics",
   "graph",
   "search",

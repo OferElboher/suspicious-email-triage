@@ -458,6 +458,8 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 
 **Enable:** `AGENT_TRIAGE_ENABLED=true` (default `false` for deterministic CI).
 
+**Safety & UI:** Wall-clock caps in `safety.py`; visualization via `AgentTracePanel` + `#agent` tab — [ui_guide_agent_activity.md](ui_guide_agent_activity.md). Metrics API: `GET /metrics/agent-triage`.
+
 **Free path:** **Already free** — mock-cloud-llm + local guardrails (`GUARDRAIL_CLOUD_PROVIDER=local`).
 
 ---

@@ -129,6 +129,8 @@ Protected (JWT + permission where noted)
 ├── POST /reviews/:id/override          (reviews.override)
 ├── GET  /metrics/timeseries            (metrics.read)
 ├── GET  /metrics/status-breakdown      (metrics.read)
+├── GET  /metrics/flow-dashboard        (metrics.read)
+├── GET  /metrics/agent-triage          (metrics.read)
 ├── GET  /graph/status                  (graph.read)
 ├── GET  /graph/campaigns               (graph.read)
 ├── GET  /graph/review/:id/neighborhood (graph.read)
@@ -980,6 +982,61 @@ curl -s "http://localhost:3000/metrics/timeseries?bucket=1h&from=2026-05-01T00:0
 curl -s "http://localhost:3000/metrics/status-breakdown" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
+
+---
+
+### GET /metrics/flow-dashboard
+
+**Auth:** JWT required
+
+**Permission:** `metrics.read`
+
+Live pipeline snapshot for the **Live flow dashboard** (`#flow`): queue depths, ingest rates, gauges, clocks, simulation status. Backed by Mongo counts and in-process counters — not a full collection scan.
+
+**Response (200):** JSON object with `generatedAt`, `queue`, `rates`, `gauges`, `clocks`, `pipeline`, `simulation`, `searchIndex`.
+
+**Guide:** [ui_guide_flow_dashboard.md](ui_guide_flow_dashboard.md)
+
+---
+
+### GET /metrics/agent-triage
+
+**Auth:** JWT required
+
+**Permission:** `metrics.read`
+
+Read-only snapshot for the **Agent activity** view (`#agent`): recent agent FSM runs, safety limit metadata, aggregate tool counts. Returns at most **25** recent reviews that have `agentTrace` — no email bodies.
+
+**Response (200):**
+
+```json
+{
+  "agentEnabled": false,
+  "cloudProvider": "mock",
+  "safetyLimits": {
+    "maxToolSteps": 3,
+    "maxWallMs": 30000,
+    "maxBodyChars": 8000
+  },
+  "summary": {
+    "reviewsWithTrace": 12,
+    "recentSampleSize": 5,
+    "recentFallbacks": 1,
+    "avgWallDurationMs": 420,
+    "toolCallTotals": { "run_rule_engine": 5 }
+  },
+  "recentRuns": []
+}
+```
+
+**curl:**
+
+```bash
+curl -s "http://localhost:3000/metrics/agent-triage" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+**Guide:** [ui_guide_agent_activity.md](ui_guide_agent_activity.md)
 
 ---
 

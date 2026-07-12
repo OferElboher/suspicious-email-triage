@@ -225,6 +225,45 @@ Use Compass to inspect — never copy live email bodies into tickets.
 
 ---
 
+## Safety limits (laptop dev and staging/production) {#safety-limits}
+
+Agent triage is designed so a misconfiguration **cannot** melt your laptop CPU, exhaust Mongo, or silently run up a cloud LLM bill.
+
+### Default-off master switch
+
+`AGENT_TRIAGE_ENABLED` defaults to **`false`**. CI, fresh clones, and most dev laptops therefore keep the legacy single-shot or mock LLM path. You must **explicitly** set `true` and recreate `ai-celery` to activate the FSM.
+
+### Bounded FSM (not unbounded ReAct)
+
+| Cap | Env variable | Default | What it prevents |
+|-----|--------------|---------|------------------|
+| Tool steps | `AGENT_MAX_TOOL_STEPS` | `3` | Infinite tool loops |
+| Wall clock | `AGENT_MAX_WALL_MS` | `30000` (30 s) | Hung HTTP/LLM calls blocking a Celery worker |
+| Body size | `AGENT_MAX_BODY_CHARS` | `8000` | Oversized prompts to paid APIs |
+| Input tokens | `AGENT_MAX_INPUT_TOKENS` | `6000` | Token budget blowout (pre-LLM hard-fail) |
+| Output tokens | `AGENT_MAX_OUTPUT_TOKENS` | `1024` | Long generations |
+
+**Implementation:** `ai_service/app/agent/safety.py` reads caps; `orchestrator.py` calls `wall_budget_exceeded()` between FSM phases and routes to `FALLBACK_RULES` instead of continuing.
+
+**Pattern:** *fail-safe degradation* — when a cap trips, analysts still get rule-engine output; Mongo stores the partial `agentTrace` for audit.
+
+### Dev laptop: zero cloud cost
+
+With `LLM_CLOUD_PROVIDER=mock`, all PLAN/SYNTHESIZE calls hit the local **`mock-cloud-llm`** container (port 8091). No AWS or GCP credentials are required. Docker Compose memory for the mock is small (single FastAPI process).
+
+### Staging/production servers
+
+| Concern | Mitigation |
+|---------|------------|
+| Bedrock/Vertex spend | Same tool/wall caps; monitor `agentTrace.wallDurationMs` via `GET /metrics/agent-triage` |
+| Worker starvation | One FSM per `analyze_review` task — same Celery concurrency model as today |
+| Internal API abuse | `/agent/internal/*` requires `X-Agent-Internal-Token` from gitignored secrets |
+| Data exfiltration | Tool allowlist only — no arbitrary shell or SQL |
+
+**UI visibility:** [ui_guide_agent_activity.md](ui_guide_agent_activity.md) documents the `#agent` fleet view and per-review `AgentTracePanel`.
+
+---
+
 ## Environment variables (committed metadata only)
 
 Set in `backend/.env.dev` (safe in Git):
@@ -235,6 +274,7 @@ Set in `backend/.env.dev` (safe in Git):
 | `LLM_CLOUD_PROVIDER` | `mock` | `mock`, `bedrock`, or `vertex` |
 | `MOCK_CLOUD_LLM_URL` | `http://mock-cloud-llm:8091` | Dev mock base URL |
 | `AGENT_MAX_TOOL_STEPS` | `3` | Tool loop cap |
+| `AGENT_MAX_WALL_MS` | `30000` | FSM wall-clock budget (ms) |
 | `AGENT_PII_MASK_ENABLED` | `true` | Pre-LLM redaction |
 
 Secrets in `backend/dev.secrets` (gitignored):
@@ -249,10 +289,10 @@ Secrets in `backend/dev.secrets` (gitignored):
 
 ```bash
 cd ~/suspicious-email-triage/ai_service
-pytest tests/test_agent_orchestrator.py tests/test_guardrails.py tests/test_workflow.py tests/test_agent_tools.py tests/test_mock_cloud_llm.py -q
+pytest tests/test_agent_orchestrator.py tests/test_agent_safety.py tests/test_guardrails.py tests/test_workflow.py tests/test_agent_tools.py tests/test_mock_cloud_llm.py -q
 
 cd ~/suspicious-email-triage/backend
-npm test -- --watchAll=false --testPathPattern=agentInternal
+npm test -- --watchAll=false --testPathPattern="agentInternal|agentTriageMetrics"
 ```
 
 ---

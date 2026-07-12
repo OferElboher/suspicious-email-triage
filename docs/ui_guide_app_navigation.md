@@ -18,6 +18,7 @@ Each sub-window is a full-page view rendered inside `TriageApp.jsx`. The mapping
 | `#analytics` | Analytics & graphs | `metrics.read` **and** analytics feature flag |
 | `#graph` | Phishing graph | `graph.read` |
 | `#flow` | Live flow dashboard | `metrics.read` |
+| `#agent` | Agent activity | `metrics.read` |
 | `#search` | Search past reviews | `reviews.read` |
 | `#logs` | Search unified logs | `logs.read` |
 | `#admin` | User administration | `admin` role or `admin.users` permission |
@@ -47,6 +48,7 @@ Icons use **stroke-based SVG** at 2px weight (`NavIcons.jsx`) so metaphors stay 
 | `IconAnalytics` | Bar chart with axis — KPIs |
 | `IconGraph` | Hub node with three links — relationship graph |
 | `IconFlow` | Speedometer — live pipeline gauges |
+| `IconAgent` | Hub with branching nodes — bounded agent FSM activity |
 | `IconSearchReviews` | Envelope + magnifying glass — Elasticsearch review search |
 | `IconLogs` | Document + magnifying glass — log search |
 | `IconAdmin` | Person + shield — admin / RBAC gateway |

@@ -1658,3 +1658,208 @@ button.danger {
   font-size: 0.7rem;
   margin-top: -0.15rem;
 }
+
+/* --- Agent trace panel (embedded in review detail) --- */
+.agent-trace-panel {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-muted, rgba(0, 0, 0, 0.08));
+}
+
+.agent-trace-panel__meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+  gap: 0.5rem 1rem;
+  margin: 0.75rem 0;
+  font-size: 0.85rem;
+}
+
+.agent-trace-panel__meta dt {
+  font-weight: 600;
+  margin: 0;
+}
+
+.agent-trace-panel__meta dd {
+  margin: 0.15rem 0 0;
+}
+
+.agent-trace-panel__mono {
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+  word-break: break-all;
+}
+
+.agent-trace-panel__banner {
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  margin: 0.5rem 0;
+}
+
+.agent-trace-panel__banner--warn {
+  background: rgba(217, 119, 6, 0.12);
+  border: 1px solid rgba(217, 119, 6, 0.35);
+}
+
+.agent-trace-panel__heading {
+  margin: 0.75rem 0 0.35rem;
+  font-size: 0.9rem;
+}
+
+.agent-trace-panel__timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 0.5rem;
+  border-left: 2px solid var(--border-muted, rgba(0, 0, 0, 0.12));
+}
+
+.agent-trace-panel__step {
+  position: relative;
+  padding: 0.35rem 0 0.35rem 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.5rem;
+  align-items: baseline;
+}
+
+.agent-trace-panel__step-dot {
+  position: absolute;
+  left: -0.45rem;
+  top: 0.55rem;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--accent, #2563eb);
+  border: 2px solid var(--card-bg, #fff);
+}
+
+.agent-trace-panel__step--warn .agent-trace-panel__step-dot {
+  background: #d97706;
+}
+
+.agent-trace-panel__step-label {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.agent-trace-panel__step-id {
+  font-size: 0.75rem;
+}
+
+.agent-trace-panel__tools,
+.agent-trace-panel__guardrails {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.85rem;
+}
+
+.agent-trace-panel__tools li,
+.agent-trace-panel__guardrails li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.5rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--border-muted, rgba(0, 0, 0, 0.06));
+}
+
+.agent-trace-panel__tool--fail {
+  color: #dc2626;
+}
+
+.agent-trace-panel__guard-stage {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.agent-trace-panel__plan {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+}
+
+/* --- Agent activity fleet view (#agent) --- */
+.agent-activity-view__toolbar {
+  margin-bottom: 1rem;
+}
+
+.agent-activity-view__safety-card {
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  background: var(--surface-muted, rgba(0, 0, 0, 0.03));
+}
+
+.agent-activity-view__limits {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+  font-size: 0.9rem;
+}
+
+.agent-activity-view__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.agent-activity-view__stat {
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem;
+  border: 1px solid var(--border-muted, rgba(0, 0, 0, 0.08));
+  border-radius: 6px;
+}
+
+.agent-activity-view__stat-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.agent-activity-view__hint {
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  background: var(--surface-muted, rgba(0, 0, 0, 0.04));
+  font-size: 0.85rem;
+}
+
+.agent-activity-view__table-wrap {
+  overflow-x: auto;
+  margin-top: 0.5rem;
+}
+
+.agent-activity-view__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.agent-activity-view__table th,
+.agent-activity-view__table td {
+  text-align: left;
+  padding: 0.5rem 0.65rem;
+  border-bottom: 1px solid var(--border-muted, rgba(0, 0, 0, 0.08));
+  vertical-align: top;
+}
+
+.agent-activity-view__table th {
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.agent-activity-view__row--fallback {
+  background: rgba(217, 119, 6, 0.08);
+}
+
+.agent-activity-view__subject {
+  display: block;
+  font-weight: 600;
+}
+
+.agent-activity-view__sender {
+  display: block;
+  font-size: 0.75rem;
+}
+
+.agent-activity-view__states {
+  font-size: 0.8rem;
+}

@@ -5,6 +5,7 @@
  * Technology: effectiveVerdict helper merges analyst override over analysisResult.
  */
 import HoverHelp from "./HoverHelp";
+import AgentTracePanel from "./AgentTracePanel";
 import { effectiveVerdict, hasOverride } from "../lib/effectiveVerdict";
 
 /** Override verdict dropdown options (persisted on review.override in MongoDB). */
@@ -96,6 +97,8 @@ export default function ReviewDetailPanel({
                   <li key={index}>{question}</li>
                 ))}
               </ul>
+
+              <AgentTracePanel trace={review.agentTrace} />
 
               {canOverride && (
                 <>

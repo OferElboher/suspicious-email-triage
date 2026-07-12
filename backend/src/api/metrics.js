@@ -6,6 +6,7 @@ const express = require("express");
 const logger = require("../lib/logger");
 const { getTimeseries, getStatusBreakdown } = require("../stats/statsPg");
 const { getFlowDashboardSnapshot } = require("../metrics/flowMetrics");
+const { getAgentTriageSnapshot } = require("../metrics/agentTriageMetrics");
 const { requirePermission } = require("../http/middleware/auth");
 
 /** router: Express metrics route collection mounted at /metrics. */
@@ -85,6 +86,20 @@ router.get("/flow-dashboard", requirePermission("metrics.read"), async (_req, re
   } catch (err) {
     logger.error("metrics", "flow-dashboard failed", { error: err.message });
     res.status(500).json({ error: "flow_dashboard_failed" });
+  }
+});
+
+/**
+ * GET /metrics/agent-triage — recent agent FSM runs + safety limit metadata for Agent Activity UI.
+ * Pattern: capped Mongo query (25 docs); no email bodies — safe for laptop dev and prod API.
+ */
+router.get("/agent-triage", requirePermission("metrics.read"), async (_req, res) => {
+  try {
+    const snapshot = await getAgentTriageSnapshot();
+    res.json(snapshot);
+  } catch (err) {
+    logger.error("metrics", "agent-triage failed", { error: err.message });
+    res.status(500).json({ error: "agent_triage_metrics_failed" });
   }
 });
 

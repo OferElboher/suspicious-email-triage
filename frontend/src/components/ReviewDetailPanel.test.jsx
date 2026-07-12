@@ -54,4 +54,40 @@ describe("ReviewDetailPanel", () => {
     expect(screen.getByText(/likely_phishing/i)).toBeInTheDocument();
     expect(screen.getByText(/Suspicious link/)).toBeInTheDocument();
   });
+
+  it("renders AgentTracePanel when review includes agentTrace", () => {
+    render(
+      <ReviewDetailPanel
+        review={{
+          _id: "abc",
+          subject: "Agent run",
+          senderEmail: "a@b.com",
+          status: "completed",
+          analysisResult: {
+            verdict: "suspicious",
+            recommendedAction: "investigate",
+            summary: "Test",
+            findings: [],
+            followUpQuestions: [],
+          },
+          agentTrace: {
+            runId: "run-1",
+            provider: "mock",
+            modelId: "mock",
+            statesVisited: ["INTAKE", "PLAN", "PERSIST"],
+            toolCalls: [{ name: "run_rule_engine", ok: true, latencyMs: 2 }],
+            guardrailEvents: [],
+            wallDurationMs: 80,
+          },
+        }}
+        canOverride={false}
+        overrideReason=""
+        overrideVerdict="suspicious"
+        onOverrideReasonChange={() => {}}
+        onOverrideVerdictChange={() => {}}
+        onSaveOverride={async () => {}}
+      />
+    );
+    expect(screen.getByTestId("agent-trace-panel")).toBeInTheDocument();
+  });
 });
