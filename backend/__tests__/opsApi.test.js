@@ -28,6 +28,24 @@ jest.mock("../src/backups/backupService", () => ({
   })),
 }));
 
+jest.mock("../src/backups/backupStats", () => ({
+  getBackupUsageSnapshot: jest.fn(async () => ({
+    enabled: true,
+    provider: "mock-aws",
+    bucket: "triage-dev-backups",
+    endpoint: "http://mock-s3:4568",
+    prefix: "postgres/",
+    summary: {
+      objectCount: 1,
+      totalSizeBytes: 120,
+      totalSizeLabel: "120 B",
+      latestKey: "postgres/logical-2026.json",
+      latestModified: "2026-01-01T00:00:00.000Z",
+    },
+    recentObjects: [{ key: "postgres/logical-2026.json", size: 120, lastModified: "2026-01-01T00:00:00.000Z" }],
+  })),
+}));
+
 jest.mock("../src/http/middleware/auth", () => ({
   authenticate: (req, res, next) => {
     if (!req.headers.authorization) {
@@ -77,6 +95,7 @@ const opsRoutes = require("../src/api/ops");
 const { renderPrometheusText } = require("../src/lib/appMetrics");
 const { runPostgresBackupToS3 } = require("../src/backups/backupService");
 const { listBackupObjects } = require("../src/backups/s3BackupProvider");
+const { getBackupUsageSnapshot } = require("../src/backups/backupStats");
 
 /** Build app with optional permission override on req.auth. */
 function buildApp({ permissions } = {}) {
@@ -137,6 +156,14 @@ describe("ops API routes", () => {
     expect(res.status).toBe(200);
     expect(listBackupObjects).toHaveBeenCalled();
     expect(res.body.items.length).toBeGreaterThan(0);
+  });
+
+  it("GET /ops/backups/stats returns usage snapshot for ops.backups", async () => {
+    const app = buildApp({ permissions: ["ops.backups"] });
+    const res = await request(app).get("/ops/backups/stats").set(bearer);
+    expect(res.status).toBe(200);
+    expect(getBackupUsageSnapshot).toHaveBeenCalled();
+    expect(res.body.summary.objectCount).toBe(1);
   });
 
   it("POST /ops/backups/run triggers logical backup upload", async () => {

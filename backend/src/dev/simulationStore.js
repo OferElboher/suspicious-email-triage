@@ -9,7 +9,7 @@ const { getRedis } = require("../lib/getRedis");
 const KEY = "triage:dev:simulation";
 
 /**
- * SIMULATION_MAX_EVENTS_PER_MIN: hard ceiling for synthetic events to protect laptops.
+ * SIMULATION_MAX_EVENTS_PER_MIN: hard ceiling for synthetic events to protect shared dev hosts.
  * Override via env for larger dev machines.
  */
 const MAX_EVENTS_PER_MIN = Number(process.env.SIMULATION_MAX_EVENTS_PER_MIN || 30);

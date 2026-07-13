@@ -20,12 +20,13 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 |------|----------|
 | Non-technical product overview | [biz_guide_user.md](biz_guide_user.md) |
 | **Agent triage FSM** (Bedrock/Vertex/mock, tools, guardrails) | [data_guide_agent_triage.md](data_guide_agent_triage.md) |
+| **S3 database backups** (dev mock / AWS stg/prod) | [ops_guide_s3_backups.md](ops_guide_s3_backups.md) |
+| **S3 backups Admin UI** (usage stats + run backup) | [ui_guide_s3_backups.md](ui_guide_s3_backups.md) |
 | **Agent activity UI** (per-review trace + `#agent` fleet view) | [ui_guide_agent_activity.md](ui_guide_agent_activity.md) |
 | **Dev mocks vs staging/prod real cloud services** | [stack_guide_staging_production_services.md](stack_guide_staging_production_services.md) |
 | **Review dashboard UI** (queue, detail, modal submit, HoverHelp) | [ui_guide_review_dashboard.md](ui_guide_review_dashboard.md) |
 | **App navigation** (icon tabs, Live flow, Search, Logs, Settings, Admin) | [ui_guide_app_navigation.md](ui_guide_app_navigation.md) |
 | **Live flow dashboard** (gauges + clocks, simulation-friendly) | [ui_guide_flow_dashboard.md](ui_guide_flow_dashboard.md) |
-| **Agent activity** (FSM traces, safety caps, fleet table) | [ui_guide_agent_activity.md](ui_guide_agent_activity.md) |
 | **Complete list of implemented features** | [arch_guide_features_catalog.md](arch_guide_features_catalog.md) |
 | Full technical handbook | [arch_guide_system_comprehensive.md](arch_guide_system_comprehensive.md) |
 | **Build → bootstrap → sign in** (after clone or rebuild) | [stack_guide_build_and_run.md](stack_guide_build_and_run.md) |
@@ -117,6 +118,7 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 - [ops_guide_central_logging.md](ops_guide_central_logging.md) — merged logs
 - [ops_guide_metrics_alerting.md](ops_guide_metrics_alerting.md) — Prometheus / alerts
 - [ops_guide_s3_backups.md](ops_guide_s3_backups.md) — Amazon S3 database backups (mock-s3 in dev)
+- [ui_guide_s3_backups.md](ui_guide_s3_backups.md) — Admin UI for S3 backup statistics
 - [roadmap_tbd.md](roadmap_tbd.md) — backlog
 - [roadmap_implemented_beyond_requirements.md](roadmap_implemented_beyond_requirements.md) — extras delivered
 

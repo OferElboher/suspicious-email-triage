@@ -132,7 +132,7 @@ If you are new to a topic (Kafka, Neo4j, JWT, etc.), follow the linked guides in
 
 - **Agent triage FSM (optional — `AGENT_TRIAGE_ENABLED`)**
   - Bounded orchestrator: PLAN → tools → SYNTHESIZE with YAML workflow branches and pre/post guardrails; persists `agentTrace` on Mongo reviews.
-  - Wall-clock and tool-step caps via `app/agent/safety.py`; default-off for CI and dev laptops.
+  - Wall-clock and tool-step caps via `app/agent/safety.py`; default-off for CI and optional dev stacks.
   - Cloud LLM via **mock-cloud-llm** (dev), **Amazon Bedrock Converse**, or **Google Vertex Gemini**; internal tools hit `/agent/internal/*` with service token.
   - Guides: [data_guide_agent_triage.md](data_guide_agent_triage.md), [ui_guide_agent_activity.md](ui_guide_agent_activity.md).
 
@@ -271,6 +271,11 @@ If you are new to a topic (Kafka, Neo4j, JWT, etc.), follow the linked guides in
 - **Log search and summary APIs**
   - Keyword/topic/time filter and aggregated counts for SOC-style triage.
   - Node readline, Express, RBAC `logs.read`.
+
+- **S3 PostgreSQL logical backups**
+  - `POST /ops/backups/run` uploads JSON snapshot via `@aws-sdk/client-s3`; mock-s3 in dev, real bucket in staging/prod.
+  - `GET /ops/backups/stats` powers Admin UI usage panel (`S3BackupsPanel.jsx`, `ops.backups` permission).
+  - Guides: [ops_guide_s3_backups.md](ops_guide_s3_backups.md), [ui_guide_s3_backups.md](ui_guide_s3_backups.md).
 
 ---
 

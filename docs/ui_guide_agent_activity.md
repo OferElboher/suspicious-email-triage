@@ -1,6 +1,6 @@
 # Agent activity UI — visualizing bounded FSM runs
 
-This guide explains how the React app **visualizes** agent triage activity: what you see in the browser, which APIs power each panel, and why the design is safe for your **dev laptop** and for **staging/production servers**.
+This guide explains how the React app **visualizes** agent triage activity: what you see in the browser, which APIs power each panel, and why the design is safe across **development, staging, and production** deployments.
 
 If you are new to **finite-state machines (FSMs)** or **LLM agents**: an FSM is a fixed checklist of steps (intake → plan → tools → synthesize → validate). Our agent is **bounded** — it cannot loop forever or call unlimited tools. The UI shows exactly which steps ran and whether the system fell back to deterministic rules.
 
@@ -69,7 +69,7 @@ URL hash: `#agent` (see [ui_guide_app_navigation.md](ui_guide_app_navigation.md)
 | Fields returned | Subject, sender, verdict, states, tools, duration — **no email body** |
 | Safety metadata | `safetyLimits` echo env caps (`AGENT_MAX_TOOL_STEPS`, `AGENT_MAX_WALL_MS`, `AGENT_MAX_BODY_CHARS`) |
 
-**Why capped at 25?** Prevents heavy Mongo scans on a laptop or small API pod when thousands of reviews exist.
+**Why capped at 25?** Prevents heavy Mongo scans on small API instances when thousands of reviews exist.
 
 ### UI sections
 
@@ -77,7 +77,7 @@ URL hash: `#agent` (see [ui_guide_app_navigation.md](ui_guide_app_navigation.md)
 2. **Summary stats** — total reviews with traces, recent fallbacks, average duration in the sample.
 3. **Recent runs table** — one row per agent run; fallback rows highlighted.
 
-Refresh is **manual** (button) — no background polling, so dev laptops are not hammered.
+Refresh is **manual** (button) — no background polling, keeping API load predictable.
 
 ### Technologies
 
@@ -89,7 +89,7 @@ Refresh is **manual** (button) — no background polling, so dev laptops are not
 
 ---
 
-## Safety for dev laptops and servers
+## Safety across environments
 
 These UI and API choices intentionally avoid harm:
 

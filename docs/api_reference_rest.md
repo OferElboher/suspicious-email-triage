@@ -120,6 +120,10 @@ Public (no JWT)
 Protected (JWT + permission where noted)
 ├── GET  /ops/alerts                    (metrics.read)
 ├── GET  /ops/logs/summary              (logs.read)
+├── GET  /ops/backups/status            (ops.backups)
+├── GET  /ops/backups/stats             (ops.backups)
+├── GET  /ops/backups                   (ops.backups)
+├── POST /ops/backups/run               (ops.backups)
 ├── GET  /auth/me
 ├── GET  /auth/preferences
 ├── PUT  /auth/preferences
@@ -354,6 +358,83 @@ curl -s http://localhost:3000/ops/alerts \
 ```bash
 curl -s "http://localhost:3000/ops/logs/summary?limit=1000" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+---
+
+### GET /ops/backups/status
+
+**Auth:** JWT required
+
+**Permission:** `ops.backups` (admin role)
+
+Returns S3 backup provider metadata: `enabled`, `provider` (`mock-aws` or `aws`), `bucket`, `endpoint`.
+
+**Guide:** [ops_guide_s3_backups.md](ops_guide_s3_backups.md)
+
+---
+
+### GET /ops/backups/stats
+
+**Auth:** JWT required
+
+**Permission:** `ops.backups`
+
+Usage snapshot for the Admin **S3 database backups** panel: object count, total size, latest modification time, and up to 20 recent keys.
+
+**Response (200):**
+
+```json
+{
+  "enabled": true,
+  "provider": "mock-aws",
+  "bucket": "triage-dev-backups",
+  "endpoint": "http://mock-s3:4568",
+  "prefix": "postgres/",
+  "summary": {
+    "objectCount": 3,
+    "totalSizeBytes": 38400,
+    "totalSizeLabel": "37.5 KB",
+    "latestKey": "postgres/logical-2026-06-01.json",
+    "latestModified": "2026-06-01T12:00:00.000Z"
+  },
+  "recentObjects": []
+}
+```
+
+**Guide:** [ui_guide_s3_backups.md](ui_guide_s3_backups.md)
+
+---
+
+### GET /ops/backups
+
+**Auth:** JWT required
+
+**Permission:** `ops.backups`
+
+Lists recent backup object keys under optional `prefix` query (default `postgres/`).
+
+---
+
+### POST /ops/backups/run
+
+**Auth:** JWT required
+
+**Permission:** `ops.backups`
+
+Builds logical PostgreSQL JSON snapshot (auth users without password hashes + recent stats events) and uploads to S3.
+
+**Response (200):**
+
+```json
+{
+  "ok": true,
+  "bucket": "triage-dev-backups",
+  "key": "postgres/logical-2026-06-01T12-00-00-000Z.json",
+  "size": 12680,
+  "summary": { "reviewStatsEventCount": 42, "authUserCount": 3 },
+  "createdAt": "2026-06-01T12:00:00.000Z"
+}
 ```
 
 ---

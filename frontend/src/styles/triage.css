@@ -1659,6 +1659,82 @@ button.danger {
   margin-top: -0.15rem;
 }
 
+/* --- S3 backups panel (Admin tab) --- */
+.s3-backups-panel {
+  margin-top: 1.25rem;
+}
+
+.s3-backups-panel__toolbar {
+  margin-bottom: 1rem;
+}
+
+.s3-backups-panel__meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  gap: 0.5rem 1rem;
+  margin: 0.75rem 0;
+  font-size: 0.85rem;
+}
+
+.s3-backups-panel__meta dt {
+  font-weight: 600;
+  margin: 0;
+}
+
+.s3-backups-panel__meta dd {
+  margin: 0.15rem 0 0;
+}
+
+.s3-backups-panel__mono {
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+  word-break: break-all;
+}
+
+.s3-backups-panel__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.s3-backups-panel__stat {
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem;
+  border: 1px solid var(--border-muted, rgba(0, 0, 0, 0.08));
+  border-radius: 6px;
+}
+
+.s3-backups-panel__stat-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.s3-backups-panel__table-wrap {
+  overflow-x: auto;
+  margin-top: 0.5rem;
+}
+
+.s3-backups-panel__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.s3-backups-panel__table th,
+.s3-backups-panel__table td {
+  text-align: left;
+  padding: 0.5rem 0.65rem;
+  border-bottom: 1px solid var(--border-muted, rgba(0, 0, 0, 0.08));
+  vertical-align: top;
+}
+
+.s3-backups-panel__run-msg {
+  margin: 0.5rem 0;
+  font-size: 0.85rem;
+}
+
 /* --- Agent trace panel (embedded in review detail) --- */
 .agent-trace-panel {
   margin-top: 1.25rem;

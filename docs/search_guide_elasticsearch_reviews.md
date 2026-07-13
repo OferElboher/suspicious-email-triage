@@ -140,7 +140,7 @@ curl -sG -H "Authorization: Bearer YOUR_JWT" \
 
 ---
 
-## Start Elasticsearch (dev laptop)
+## Start Elasticsearch (development stack)
 
 Single-node ES 8 with **256 MB heap** — see `infra/docker/docker-compose.yml` service `elasticsearch`.
 

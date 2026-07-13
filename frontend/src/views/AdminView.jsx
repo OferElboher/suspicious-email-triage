@@ -1,15 +1,19 @@
 /**
- * User administration gateway — Django admin for auth_users CRUD.
+ * User administration gateway — Django admin for auth_users CRUD + S3 backup ops panel.
  *
  * Pattern: React shell + external Django admin (admin role / admin.users permission).
- * Technology: Django runserver container on port 8000; not embedded (X-Frame-Options).
+ * Technology: Django runserver container on port 8000; S3BackupsPanel for ops.backups.
  */
+import { useAuth } from "../context/AuthContext";
 import HoverHelp from "../components/HoverHelp";
+import S3BackupsPanel from "../components/S3BackupsPanel";
 import { djangoAdminUrl } from "../lib/appUrls";
 
 /** Explains Django admin access and opens it in a new browser tab. */
 export default function AdminView() {
+  const { hasPermission } = useAuth();
   const adminUrl = djangoAdminUrl();
+  const canManageBackups = hasPermission("ops.backups");
 
   return (
     <main className="layout layout--single">
@@ -38,6 +42,8 @@ export default function AdminView() {
           Guide: <code>docs/auth_guide_django_admin_users.md</code> in the repository.
         </p>
       </section>
+
+      {canManageBackups && <S3BackupsPanel enabled />}
     </main>
   );
 }

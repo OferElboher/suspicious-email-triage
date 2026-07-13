@@ -38,7 +38,7 @@ export default function AgentActivityView() {
   return (
     <main className="layout layout--single agent-activity-view" data-testid="agent-activity-view">
       <section className="card">
-        <HoverHelp text="Read-only view of bounded agent FSM runs. Safe for dev laptops — backend caps Mongo reads and tool/LLM loops. See ui_guide_agent_activity.md.">
+        <HoverHelp text="Read-only view of bounded agent FSM runs. Backend caps Mongo reads and tool/LLM loops. See ui_guide_agent_activity.md.">
           <h2>Agent activity</h2>
         </HoverHelp>
 
@@ -61,8 +61,8 @@ export default function AgentActivityView() {
             <div className="agent-activity-view__safety card agent-activity-view__safety-card">
               <h3>Safety limits (server config)</h3>
               <p className="muted">
-                These caps protect your laptop in dev and workers in staging/production — they
-                prevent unbounded LLM loops, oversized prompts, and long HTTP tool calls.
+                These caps protect Celery workers in every environment — they prevent unbounded
+                LLM loops, oversized prompts, and long HTTP tool calls.
               </p>
               <ul className="agent-activity-view__limits">
                 <li>

@@ -91,7 +91,7 @@ router.get("/flow-dashboard", requirePermission("metrics.read"), async (_req, re
 
 /**
  * GET /metrics/agent-triage — recent agent FSM runs + safety limit metadata for Agent Activity UI.
- * Pattern: capped Mongo query (25 docs); no email bodies — safe for laptop dev and prod API.
+ * Pattern: capped Mongo query (25 docs); no email bodies — safe for all deployment tiers.
  */
 router.get("/agent-triage", requirePermission("metrics.read"), async (_req, res) => {
   try {

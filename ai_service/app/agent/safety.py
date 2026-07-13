@@ -1,5 +1,5 @@
 """
-Agent safety limits — bounded resource use for laptop dev and cloud servers.
+Agent safety limits — bounded resource use for all deployment environments.
 
 Pattern: all caps are env-tunable; orchestrator checks wall-clock budget between FSM steps.
 Technology: pure Python helpers (no external calls) — safe to import anywhere in Celery.
@@ -14,7 +14,7 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class AgentSafetyLimits:
-    """Hard caps preventing runaway LLM/tool loops on dev laptops or prod workers."""
+    """Hard caps preventing runaway LLM/tool loops on Celery workers in any environment."""
 
     max_tool_steps: int
     max_wall_ms: int

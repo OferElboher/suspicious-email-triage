@@ -13,6 +13,7 @@ const {
   backupProviderMode,
 } = require("../backups/s3BackupProvider");
 const { runPostgresBackupToS3 } = require("../backups/backupService");
+const { getBackupUsageSnapshot } = require("../backups/backupStats");
 
 const router = express.Router();
 
@@ -48,6 +49,21 @@ router.get("/logs/summary", authenticate, requirePermission("logs.read"), async 
 /** GET /ops/backups/status — S3 backup provider metadata (requires ops.backups). */
 router.get("/backups/status", authenticate, requirePermission("ops.backups"), async (_req, res) => {
   res.json(backupProviderStatus());
+});
+
+/** GET /ops/backups/stats — S3 usage snapshot for Admin UI (requires ops.backups). */
+router.get("/backups/stats", authenticate, requirePermission("ops.backups"), async (_req, res) => {
+  try {
+    if (backupProviderMode() === "disabled") {
+      res.status(503).json({ error: "backups_disabled" });
+      return;
+    }
+    const snapshot = await getBackupUsageSnapshot();
+    res.json(snapshot);
+  } catch (err) {
+    logger.error("ops", "backup stats failed", { error: err.message });
+    res.status(500).json({ error: "backup_stats_failed" });
+  }
 });
 
 /** GET /ops/backups — list recent S3 backup objects (requires ops.backups). */

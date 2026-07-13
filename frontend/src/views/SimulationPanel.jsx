@@ -134,7 +134,7 @@ export default function SimulationPanel({ maxPerMin }) {
           </HoverHelp>
 
           <HoverHelp
-            text={`How many synthetic emails to queue each minute. The server will not exceed ${maxPerMin} per minute on this laptop.`}
+            text={`How many synthetic emails to queue each minute. The server will not exceed ${maxPerMin} per minute (configured cap).`}
           >
             <label className="field field--stacked simulation-panel__rate">
               Emails per minute

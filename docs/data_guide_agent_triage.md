@@ -225,13 +225,13 @@ Use Compass to inspect — never copy live email bodies into tickets.
 
 ---
 
-## Safety limits (laptop dev and staging/production) {#safety-limits}
+## Safety limits (all environments) {#safety-limits}
 
-Agent triage is designed so a misconfiguration **cannot** melt your laptop CPU, exhaust Mongo, or silently run up a cloud LLM bill.
+Agent triage is designed so a misconfiguration **cannot** exhaust CPU, Mongo, or silently run up a cloud LLM bill on any deployment tier.
 
 ### Default-off master switch
 
-`AGENT_TRIAGE_ENABLED` defaults to **`false`**. CI, fresh clones, and most dev laptops therefore keep the legacy single-shot or mock LLM path. You must **explicitly** set `true` and recreate `ai-celery` to activate the FSM.
+`AGENT_TRIAGE_ENABLED` defaults to **`false`**. CI, fresh clones, and default dev stacks therefore keep the legacy single-shot or mock LLM path. You must **explicitly** set `true` and recreate `ai-celery` to activate the FSM.
 
 ### Bounded FSM (not unbounded ReAct)
 
@@ -247,7 +247,7 @@ Agent triage is designed so a misconfiguration **cannot** melt your laptop CPU, 
 
 **Pattern:** *fail-safe degradation* — when a cap trips, analysts still get rule-engine output; Mongo stores the partial `agentTrace` for audit.
 
-### Dev laptop: zero cloud cost
+### Development: zero cloud cost
 
 With `LLM_CLOUD_PROVIDER=mock`, all PLAN/SYNTHESIZE calls hit the local **`mock-cloud-llm`** container (port 8091). No AWS or GCP credentials are required. Docker Compose memory for the mock is small (single FastAPI process).
 

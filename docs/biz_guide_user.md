@@ -45,7 +45,7 @@ You can adjust the **time range** and the **bucket size** (for example hourly vs
 
 In the **development** configuration, the product can optionally generate **synthetic test traffic** at a controlled rate. This helps engineers validate queues and dashboards without asking humans to repeatedly submit emails.
 
-Simulation is rate-limited on purpose so a laptop does not get overwhelmed. It should **never** be treated as “real incidents”; it is a lab feature available only to users with the **developer** role in development configuration (`auth_guide_rbac.md`).
+Simulation is rate-limited on purpose so a development host does not get overwhelmed. It should **never** be treated as “real incidents”; it is a lab feature available only to users with the **developer** role in development configuration (`auth_guide_rbac.md`).
 
 Development mode also includes a **reset local databases & queues** action. It is meant for engineers and demo operators: it turns simulation off, clears local review data, clears chart statistics, empties queue state, and gives the local system a clean start.
 

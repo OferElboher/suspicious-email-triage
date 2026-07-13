@@ -13,7 +13,7 @@ from app.agent.safety import (
 
 
 def test_get_agent_safety_limits_defaults(monkeypatch):
-    """Conservative defaults protect laptops when env vars are unset."""
+    """Conservative defaults protect hosts when env vars are unset."""
     monkeypatch.delenv("AGENT_MAX_TOOL_STEPS", raising=False)
     monkeypatch.delenv("AGENT_MAX_WALL_MS", raising=False)
     limits = get_agent_safety_limits()

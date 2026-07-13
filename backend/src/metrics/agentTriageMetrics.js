@@ -1,7 +1,7 @@
 /**
  * Agent triage metrics — read-only Mongo aggregates for the Agent Activity UI.
  *
- * Pattern: capped queries (max 25 docs) so laptop dev and prod API stay lightweight.
+ * Pattern: capped queries (max 25 docs) so dev and prod API stay lightweight.
  * Technology: Mongoose Review model; never scans full email bodies for the list view.
  */
 const Review = require("../models/Review");

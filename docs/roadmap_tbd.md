@@ -199,6 +199,7 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 - `mongo-data`, `postgres-data`, and `neo4j-data` named volumes in `infra/docker/docker-compose.yml` so `docker compose up --build` does **not** wipe review/graph data
 - Auth password hashes live in Postgres — **persisted volumes mean rebuild alone does not reset passwords**; dev recovery is implemented via `POST /auth/dev/bootstrap-reset`, sign-in UI **Reset dev bootstrap password**, and `bash scripts/bootstrap-auth-admin.sh --reset-password` (`resetBootstrapAdminForDev` in `authPg.js`)
 - **Amazon S3 logical PostgreSQL backup** — `POST /ops/backups/run` uploads JSON snapshot via `@aws-sdk/client-s3`; dev uses **`mock-s3`** container (`BACKUP_PROVIDER=mock-aws`); staging/prod use real S3 bucket — [ops_guide_s3_backups.md](ops_guide_s3_backups.md)
+- **S3 backups Admin UI** — `S3BackupsPanel` on `#admin` shows `GET /ops/backups/stats` usage + manual run — [ui_guide_s3_backups.md](ui_guide_s3_backups.md)
 
 **Guides:** [stack_guide_build_and_run.md](stack_guide_build_and_run.md), [auth_guide_dev_admin_credentials.md](auth_guide_dev_admin_credentials.md), [auth_guide_dev_auth_recovery.md](auth_guide_dev_auth_recovery.md), [ops_guide_s3_backups.md](ops_guide_s3_backups.md)
 

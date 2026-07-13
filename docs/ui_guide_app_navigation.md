@@ -21,7 +21,7 @@ Each sub-window is a full-page view rendered inside `TriageApp.jsx`. The mapping
 | `#agent` | Agent activity | `metrics.read` |
 | `#search` | Search past reviews | `reviews.read` |
 | `#logs` | Search unified logs | `logs.read` |
-| `#admin` | User administration | `admin` role or `admin.users` permission |
+| `#admin` | User administration | `admin` role or `admin.users` permission (includes S3 backups panel when `ops.backups` granted) |
 | `#settings` | Settings | Any authenticated user |
 
 **Pattern name:** hash-based client routing — lightweight alternative to React Router for a fixed set of top-level tabs.
@@ -30,7 +30,7 @@ Each sub-window is a full-page view rendered inside `TriageApp.jsx`. The mapping
 
 ## Icon navigation bar (header)
 
-Text labels were removed from the header to save horizontal space on smaller laptops. Instead, each destination is a **round button** with a **large inline SVG icon**. The full tab name appears in a tooltip when you hover (implemented with the shared `HoverHelp` component).
+Text labels were removed from the header to save horizontal space on narrow viewports. Instead, each destination is a **round button** with a **large inline SVG icon**. The full tab name appears in a tooltip when you hover (implemented with the shared `HoverHelp` component).
 
 ### Size and visual design
 
@@ -131,6 +131,8 @@ Guests on the login screen still see a theme picker in the `auth-theme-bar` (`Ap
 ## User administration sub-window (`#admin`)
 
 **`AdminView.jsx`** is a **gateway** to Django admin (opens in a new browser tab). Full user CRUD remains in Django — we do not reimplement admin tables in React. Users with the admin role see the shield icon.
+
+When the signed-in user has **`ops.backups`** permission (included in the admin role), a second card appears below: **S3 database backups** (`S3BackupsPanel.jsx`). It shows object counts, total stored size, recent backup keys, and a **Run backup now** button. See [ui_guide_s3_backups.md](ui_guide_s3_backups.md).
 
 ---
 

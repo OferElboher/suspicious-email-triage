@@ -165,7 +165,7 @@ With **simulation running** (admin or developer, dev only — **Start simulation
 - Line chart ingests (many `review_created` events)
 - Status bars as the pipeline runs
 
-Use simulation to populate charts on an empty laptop — see [stack_guide_dev_simulation.md](stack_guide_dev_simulation.md).
+Use simulation to populate charts on an empty development database — see [stack_guide_dev_simulation.md](stack_guide_dev_simulation.md).
 
 **Reset local databases & queues** (dev button) **truncates** `review_stats_events` — charts go empty until new activity.
 

@@ -1,8 +1,8 @@
 /**
  * Logical PostgreSQL backup builder — exports stats/auth metadata as JSON for S3 upload.
  *
- * Pattern: application-level snapshot (no pg_dump in container) — portable and testable.
- * Real disaster recovery would add mongodump/neo4j-admin; this implements roadmap §1.5 S3 path for stats DB.
+ * Pattern: application-level snapshot (no pg_dump in container) — portable across dev/stg/prod.
+ * Technology: pg Pool + s3BackupProvider factory (mock-aws or aws).
  */
 const { Pool } = require("pg");
 const logger = require("../lib/logger");
