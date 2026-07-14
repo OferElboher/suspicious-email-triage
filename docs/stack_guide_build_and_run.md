@@ -4,6 +4,8 @@ This guide walks you through **every step** from a fresh clone (or a Docker rebu
 
 **Audience:** developers new to Docker, Create React App (CRA), or JWT auth in this project.
 
+**Staging or production deploy?** This guide is for **local dev only**. Use [stack_guide_production.md](stack_guide_production.md) for the staging/prod runbook.
+
 **Related:** [auth_guide_dev_admin_credentials.md](auth_guide_dev_admin_credentials.md), [stack_guide_windows_startup.md](stack_guide_windows_startup.md), [stack_guide_frontend_api.md](stack_guide_frontend_api.md)
 
 ---

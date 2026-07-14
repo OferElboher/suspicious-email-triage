@@ -19,7 +19,8 @@ React UI → Node Express API → MongoDB (Review document, status=pending)
          → MongoDB (analysisResult, status=completed)
          → PostgreSQL (review_stats_events for charts)
          → Node internal graph sync → Neo4j (verdict + campaigns)
-         → Elasticsearch re-index (optional full-text search)
+         → Elasticsearch re-index (background, full-text search)
+         → Snowflake export (background, analytics warehouse)
 ```
 
 | Step | Technology | What it does |
@@ -30,7 +31,11 @@ React UI → Node Express API → MongoDB (Review document, status=pending)
 | 4 | **Celery** + **Redis** | Task queue — workers pull jobs asynchronously |
 | 5 | **analyze_review** (`ai_service/app/tasks.py`) | Rule engine + LLM stub/merge, writes final verdict |
 | 6 | **graph_sync.py** | HTTP callback to Node `POST /graph/internal/sync/:id` |
-| 7 | **Elasticsearch** (optional) | Background index update for keyword search |
+| 7 | **graphInternal.js** | Neo4j sync (awaited) + **`scheduleSearchIndex`** + **`scheduleSnowflakeExport`** (background) |
+| 8 | **Elasticsearch** (optional) | Keyword search index — fire-and-forget |
+| 9 | **Snowflake export** (optional) | Analytical rows for reporting APIs — fire-and-forget |
+
+After step 5, **MongoDB remains the source of truth** for case work. Steps 7–9 are derived copies for graph, search, and BI — failures are logged but do not roll back the completed verdict. See [data_guide_snowflake_analytics.md](data_guide_snowflake_analytics.md).
 
 **Yes — reviews arriving via Kafka are always handled asynchronously by Celery.** The API never blocks on LLM or rule-engine scoring. If Celery is down, reviews stay `pending` until a worker picks them up (or you enable the optional BullMQ fallback — see below).
 

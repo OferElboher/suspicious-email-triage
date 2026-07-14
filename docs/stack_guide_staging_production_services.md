@@ -2,7 +2,9 @@
 
 This guide explains **how the same application code runs in three deployment slices** (`dev`, `staging`, `prod`) while **changing only configuration** — not forking source code. If you are new to environment profiles, secrets managers, or the difference between a Docker mock and a paid AWS service, read this before editing `.env` files.
 
-**Related:** [data_guide_dev_mock_services.md](data_guide_dev_mock_services.md), [ops_guide_secrets_management.md](ops_guide_secrets_management.md), [tech_env_configuration.md](tech_env_configuration.md), [stack_guide_production.md](stack_guide_production.md).
+**Deploy staging or production?** Follow the numbered runbook in [stack_guide_production.md](stack_guide_production.md) (Phases 1–7) — this document explains *why* each service switches from mock to cloud; the production guide lists *exact commands*.
+
+**Related:** [data_guide_dev_mock_services.md](data_guide_dev_mock_services.md), [ops_guide_secrets_management.md](ops_guide_secrets_management.md), [tech_env_configuration.md](tech_env_configuration.md).
 
 ---
 
@@ -99,6 +101,8 @@ For day-to-day laptop work, keep `DEPLOYMENT_ENV=dev`.
 ---
 
 ## Checklist before staging/prod deploy
+
+Full step-by-step commands: **[stack_guide_production.md](stack_guide_production.md)** (Phases 1–7). Summary:
 
 1. Create AWS Secrets Manager secrets `triage/staging` and `triage/prod` with keys from `backend/staging.secrets.example` / `prod.secrets.example`.
 2. Set `SECRETS_PROVIDER=aws` and `AWS_REGION` on every Node/Python container.

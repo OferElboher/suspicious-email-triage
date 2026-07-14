@@ -8,14 +8,64 @@ This guide explains how the Suspicious Email Triage project exports **completed 
 
 ## Why MongoDB and Snowflake together?
 
-| Store | Type | Role in this project |
-|-------|------|----------------------|
-| **MongoDB** | Document (NoSQL OLTP) | Live review payloads, analyst overrides, async status — optimized for read/write of full email documents |
-| **Snowflake** | Cloud analytical warehouse (OLAP) | Denormalized tables for **trends**, **verdict distributions**, **override rates**, and **processing-time statistics** over long time ranges |
+Think of two different jobs:
 
-MongoDB stays the **source of truth** for triage operations. Snowflake receives **exported snapshots** after analysis completes (same fire-and-forget pattern as Elasticsearch indexing and Neo4j graph sync).
+| Job | Question it answers | Best store type |
+|-----|---------------------|-----------------|
+| **Run triage today** | “Show me this email’s body, verdict, override, and status right now.” | **Operational** database (OLTP) |
+| **Report over months** | “What was our phishing rate last quarter? How often do analysts override the model?” | **Analytical** warehouse (OLAP) |
 
-In **development**, the `mock-snowflake` Docker container stores rows **in memory only** — nothing is written to AWS or a real Snowflake account.
+### MongoDB = source of truth for operations
+
+**MongoDB** holds the **full review document** — subject, body, links, `analysisResult`, analyst override, async `status` (`pending` → `completed`). When an analyst opens a review in the dashboard, **MongoDB is always the authority**. If Snowflake, Elasticsearch, or Neo4j are empty or stale, triage still works as long as Mongo has the document.
+
+That is what **“source of truth”** means here: other systems get **copies** or **projections** derived from Mongo; they do not replace Mongo for day-to-day case work.
+
+### Snowflake = reporting warehouse (derived data)
+
+**Snowflake** (or our dev **`mock-snowflake`** container) holds **flat, denormalized rows** optimized for aggregates — verdict histograms, override rates, processing-time percentiles, daily phishing trends. Those tables are built **after** a review is `completed`, not instead of storing the review in Mongo.
+
+In **development**, `mock-snowflake` keeps rows **in memory only** — no AWS account and no bill. In **staging/production**, the same export code targets a real Snowflake account or compatible warehouse API.
+
+### “Fire-and-forget” — same pattern as graph sync and search
+
+When Celery finishes scoring an email, the Python worker does **not** wait for Neo4j, Elasticsearch, and Snowflake to all succeed. Instead:
+
+1. Celery writes the final verdict to **MongoDB** (this step **must** succeed for the product to work).
+2. Celery calls Node **`POST /graph/internal/sync/:id`** with a service token.
+3. Node runs **graph sync first** (Neo4j nodes/edges for campaigns), then schedules two **background** jobs:
+   - **`scheduleSearchIndex(reviewId)`** → Elasticsearch full-text index
+   - **`scheduleSnowflakeExport(reviewId)`** → Snowflake analytical tables
+
+**Fire-and-forget** means: the HTTP handler returns without blocking on those background exports. If Elasticsearch is down, search may lag; if Snowflake export fails, reporting charts may lag — but the review is already **completed in Mongo** and the analyst sees the verdict. Failures are logged (`logger.warn`) and can be retried via manual export APIs.
+
+Implementation references:
+
+| Side effect | Scheduler function | Module |
+|-------------|-------------------|--------|
+| Neo4j graph | synchronous in same request | `graphSyncService.js` via `graphInternal.js` |
+| Elasticsearch | `scheduleSearchIndex` | `reviewSearchSync.js` |
+| Snowflake | `scheduleSnowflakeExport` | `snowflakeExport.js` |
+
+Analyst **override** (`POST /reviews/:id/override`) also calls `scheduleSnowflakeExport` so warehouse rows reflect the human verdict.
+
+---
+
+### Demo scenario — one email from queue to warehouse
+
+**Setup:** Docker dev stack running (`backend`, `ai-celery`, `mock-snowflake`, Neo4j, Elasticsearch optional).
+
+1. **Analyst submits** a suspicious email via the dashboard → `POST /reviews`.
+2. **MongoDB** inserts a document: `{ status: "pending", subject: "...", body: "..." }`. API responds immediately.
+3. **Kafka → Celery** runs `analyze_review`. Worker sets `{ status: "completed", analysisResult: { verdict: "likely_phishing", ... } }` in **MongoDB** — this is the operational record analysts rely on.
+4. **Celery** POSTs to **`/graph/internal/sync/:id`**. Node upserts Sender/Url/Review nodes in **Neo4j** (campaign detection may link this email to others).
+5. In the same handler, Node calls **`scheduleSearchIndex`** (Elasticsearch gets searchable subject/sender fields) and **`scheduleSnowflakeExport`** (background).
+6. **`scheduleSnowflakeExport`** reads the Mongo document again, maps it via `reviewToSnowflakeRow.js`, and POSTs rows to **`mock-snowflake`** tables `REVIEWS_ANALYTICS`, `PROCESSING_METRICS`, and optionally `OVERRIDE_EVENTS`.
+7. **Manager opens Analytics** → `GET /analytics/phishing-trends` reads from the warehouse — **not** by scanning all Mongo documents.
+
+**What if step 6 fails?** The review remains completed in Mongo; the analyst’s verdict is unchanged. Ops can run `POST /analytics/snowflake/export/:id` to backfill one review, or `POST /analytics/snowflake/export-batch` for dev backfill.
+
+**What Mongo is not used for here:** long-range BI queries across millions of rows — that is Snowflake’s role. Mongo stays optimized for document CRUD; the warehouse stays optimized for `GROUP BY` and time-range reports.
 
 ---
 
@@ -23,11 +73,11 @@ In **development**, the `mock-snowflake` Docker container stores rows **in memor
 
 ```text
 POST /reviews → MongoDB (pending)
-     → Kafka → Celery analyze_review → MongoDB (completed)
-     → POST /graph/internal/sync/:id (worker callback)
-         → scheduleSnowflakeExport(reviewId)
-             → HTTP POST mock-snowflake /v1/data/insert
-                 → REVIEWS_ANALYTICS, PROCESSING_METRICS, OVERRIDE_EVENTS tables
+     → Kafka → Celery analyze_review → MongoDB (completed)   ← source of truth
+     → POST /graph/internal/sync/:id (Celery callback)
+         → Neo4j graph sync (awaited in handler)
+         → scheduleSearchIndex(reviewId)      → Elasticsearch (background)
+         → scheduleSnowflakeExport(reviewId)  → mock-snowflake / Snowflake (background)
 ```
 
 **Technologies involved:**

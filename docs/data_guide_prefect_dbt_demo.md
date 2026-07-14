@@ -27,7 +27,11 @@ You *could* use cron plus a shell script. When step 2 fails, cron sends no struc
 | `@task` | One retriable step (query DB, call API) | A single checklist item |
 | `@flow` | Combines tasks; this is what you schedule | The whole checklist |
 
-Prefect Cloud or a self-hosted server records each run: start time, duration, logs, success/failure. Alternatives include **Apache Airflow**, **Dagster**, and **Temporal**. This repository uses Prefect because the demo stays readable in a few Python files.
+Prefect Cloud or a self-hosted server records each run: start time, duration, logs, success/failure.
+
+**Alternatives:** **Apache Airflow**, **Dagster**, and **Temporal** solve the same class of problem. Airflow is powerful but usually expects a scheduler service, DAG folders, and more boilerplate before you can run one health check. Dagster and Temporal are excellent for larger platforms but add concepts (assets, durable workflows) that are heavier than this project needs for a first teaching example.
+
+**Why this repository uses Prefect for the demo:** the entire health-check workflow lives in roughly **one Python module** (`orchestration/prefect_demo/flows.py`). You decorate two small functions (`@task` for the SQL count, `@flow` for the wrapper), call the flow from the Node API or a one-line CLI, and the Analytics panel can display the result. There is no separate DAG repository layout, no Airflow web UI to stand up, and no extra config files just to prove “orchestration + observability” alongside dbt. In other words: Prefect was chosen here because it lets newcomers **read the whole orchestration story in a few pages of Python** while still using real industry patterns (`@task`, `@flow`, named runs, retries when you add a Prefect server later).
 
 #### Concrete demo — Prefect input and output
 

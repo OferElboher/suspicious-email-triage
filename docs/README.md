@@ -30,6 +30,7 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 | **Complete list of implemented features** | [arch_guide_features_catalog.md](arch_guide_features_catalog.md) |
 | Full technical handbook | [arch_guide_system_comprehensive.md](arch_guide_system_comprehensive.md) |
 | **Build → bootstrap → sign in** (after clone or rebuild) | [stack_guide_build_and_run.md](stack_guide_build_and_run.md) |
+| **Staging / production deploy runbook** (exact phases & commands) | [stack_guide_production.md](stack_guide_production.md) |
 | **Activate all features** (workers, graph, search, simulation) | [stack_guide_full_feature_activation.md](stack_guide_full_feature_activation.md) |
 | **Dev simulation** (start/stop, find synthetic data in UI) | [stack_guide_dev_simulation.md](stack_guide_dev_simulation.md) |
 | Windows 11 + WSL after reboot | [stack_guide_windows_startup.md](stack_guide_windows_startup.md) |
@@ -96,7 +97,7 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 - [stack_guide_full_stack.md](stack_guide_full_stack.md) — bring-up narrative
 - [stack_guide_deployment.md](stack_guide_deployment.md) — containers & ports
 - [stack_guide_staging_production_services.md](stack_guide_staging_production_services.md) — dev mocks vs staging/prod paid services
-- [stack_guide_production.md](stack_guide_production.md) — production hardening
+- [stack_guide_production.md](stack_guide_production.md) — **staging/prod runbook** (build, secrets, Helm, verify)
 - [stack_guide_dev_database_credentials.md](stack_guide_dev_database_credentials.md) — connection strings
 - [stack_guide_windows_docker_databases.md](stack_guide_windows_docker_databases.md) — DB containers from Windows
 
