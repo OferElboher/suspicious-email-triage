@@ -1,5 +1,6 @@
 """Repository guardrails — always run on pre-push (no Docker required)."""
 
+import re
 from pathlib import Path
 
 
@@ -348,28 +349,76 @@ def test_flow_dashboard_wired():
 
 def test_docs_avoid_credential_uri_patterns():
     """Markdown guides must not embed Atlas/postgres URIs or API keys — GitHub secret scanning."""
-    import re
 
     mongodb_uri = re.compile(r"mongodb\+srv://[^/\s\n]+:[^@\s\n]+@", re.I)
-    postgres_bad = re.compile(
-        r"postgres://[^/\s\n]+:[^@\s\n]+@(?!postgres:5432|localhost:5432)[^\s\n]+",
-        re.I,
-    )
+    postgres_any = re.compile(r"postgres://[^/\s\n]+:[^@\s\n]+@[^\s\n]+", re.I)
     openai_key = re.compile(r"sk-[a-zA-Z0-9]{8,}")
     for path in sorted((ROOT / "docs").glob("*.md")):
         text = path.read_text(encoding="utf-8")
         assert not mongodb_uri.search(text), f"{path.name} contains mongodb+srv URI with credentials"
-        assert not postgres_bad.search(text), f"{path.name} contains remote postgres URI with credentials"
+        for match in postgres_any.finditer(text):
+            if not _postgres_uri_allowed(match.group(0)):
+                raise AssertionError(f"{path.name} contains remote postgres URI with credentials")
         assert not openai_key.search(text), f"{path.name} contains OpenAI-style sk- key prefix"
 
 
 def test_doc_secret_scan_module_wired():
-    """Node docSecretScan must exist and backend test covers real docs tree."""
+    """Node docSecretScan must exist; tests use base64 fixtures to avoid GitHub alerts."""
     scan_src = (ROOT / "backend/src/lib/docSecretScan.js").read_text(encoding="utf-8")
     assert "findForbiddenDocSecretPatterns" in scan_src
     assert "mongodb_atlas_uri_with_credentials" in scan_src
+    assert "scanTextFilesForSecrets" in scan_src
     test_src = (ROOT / "backend/__tests__/docSecretScan.test.js").read_text(encoding="utf-8")
-    assert "scanDocsDirectoryForSecrets" in test_src
+    assert "decodeDocSecretFixture" in test_src
+    assert "mongodb+srv://" not in test_src, "tests must not embed Atlas URIs as static strings"
+    fixtures = (ROOT / "backend/__tests__/helpers/docSecretScanFixtures.js").read_text(encoding="utf-8")
+    assert "FIXTURE_B64" in fixtures
+    assert "mongodb+srv://" not in fixtures
+
+
+def _postgres_uri_allowed(match: str) -> bool:
+    """Local Compose postgres URLs are documented dev defaults, not leaked secrets."""
+    trimmed = match.strip()
+    return bool(
+        re.match(r"^postgres://triage:triage@(postgres|localhost)(:\d+)?/", trimmed, re.I)
+    )
+
+
+def test_committed_text_sources_avoid_credential_uri_patterns():
+    """All committed .md/.js/.jsx/.py sources must avoid credential-like literals (incl. tests)."""
+
+    mongodb_uri = re.compile(r"mongodb\+srv://[^/\s\n]+:[^@\s\n]+@", re.I)
+    postgres_any = re.compile(r"postgres://[^/\s\n]+:[^@\s\n]+@[^\s\n]+", re.I)
+    openai_key = re.compile(r"sk-[a-zA-Z0-9]{8,}")
+    skip_dirs = {
+        "node_modules",
+        ".git",
+        "build",
+        "coverage",
+        "__pycache__",
+        ".venv",
+        "venv",
+    }
+    allowed_suffixes = {".md", ".js", ".jsx", ".py", ".sh", ".yml", ".yaml", ".example"}
+    # Guardrail sources embed regex literals that resemble URIs — skip self-scan.
+    skip_files = {"test_repo_guardrails.py", "docSecretScan.js"}
+
+    for path in ROOT.rglob("*"):
+        if not path.is_file():
+            continue
+        if path.name in skip_files:
+            continue
+        if any(part in skip_dirs for part in path.parts):
+            continue
+        if path.suffix not in allowed_suffixes:
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        rel = path.relative_to(ROOT)
+        assert not mongodb_uri.search(text), f"{rel} contains mongodb+srv URI with credentials"
+        for match in postgres_any.finditer(text):
+            if not _postgres_uri_allowed(match.group(0)):
+                raise AssertionError(f"{rel} contains remote postgres URI with credentials")
+        assert not openai_key.search(text), f"{rel} contains OpenAI-style sk- key prefix"
 
 
 def test_docs_avoid_hardcoded_private_env_values():

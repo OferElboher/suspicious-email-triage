@@ -201,10 +201,11 @@ GitHub **secret scanning** flags credential-like strings in Markdown (for exampl
 Automated guardrails:
 
 - `backend/src/lib/docSecretScan.js` — pattern scanner used in unit tests
+- `backend/__tests__/helpers/docSecretScanFixtures.js` — **base64-encoded** test payloads (GitHub scans test files too)
 - `backend/__tests__/docSecretScan.test.js` — scans the real `docs/` tree on every test run
-- `integration_tests/test_repo_guardrails.py` — `test_docs_avoid_credential_uri_patterns`
+- `integration_tests/test_repo_guardrails.py` — `test_docs_avoid_credential_uri_patterns`, `test_committed_text_sources_avoid_credential_uri_patterns`
 
-If GitHub alerts on a doc line, remove the inline URI, rotate the secret if it was ever real, then close the alert as revoked.
+If GitHub alerts on a doc or test line, remove the inline URI (tests must use base64 fixtures), rotate the secret if it was ever real, then close the alert as revoked.
 
 ---
 

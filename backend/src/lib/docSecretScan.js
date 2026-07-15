@@ -91,8 +91,36 @@ function scanDocsDirectoryForSecrets(docsDir, deps = {}) {
   return results;
 }
 
+/**
+ * Scan explicit file paths (any text extension) for forbidden secret patterns.
+ * Used by tests to validate docs and selected source files without walking node_modules.
+ * @param {string[]} filePaths absolute or relative paths
+ * @param {{ fs?: typeof import('fs'), path?: typeof import('path') }} [deps] inject for tests
+ * @returns {{ file: string, violations: { name: string, match: string }[] }[]}
+ */
+function scanTextFilesForSecrets(filePaths, deps = {}) {
+  const fs = deps.fs || require("fs");
+  const path = deps.path || require("path");
+  const results = [];
+
+  for (const filePath of filePaths || []) {
+    const resolved = path.resolve(filePath);
+    if (!fs.existsSync(resolved)) {
+      continue;
+    }
+    const text = fs.readFileSync(resolved, "utf8");
+    const violations = findForbiddenDocSecretPatterns(text);
+    if (violations.length > 0) {
+      results.push({ file: resolved, violations });
+    }
+  }
+
+  return results;
+}
+
 module.exports = {
   DOC_SECRET_PATTERNS,
   findForbiddenDocSecretPatterns,
   scanDocsDirectoryForSecrets,
+  scanTextFilesForSecrets,
 };
