@@ -30,27 +30,29 @@ MongoDB stores review request documents and analysis results. PostgreSQL stores 
 
 Staging is the soft rehearsal environment. It should feel like production, but it should not contain production data.
 
-Typical remote shapes:
+Set connection strings in **gitignored** `backend/staging.secrets` (copy from `backend/staging.secrets.example`). Profile metadata lives in `backend/.env.staging` (hostnames only).
 
-- MongoDB: `mongodb+srv://STAGING_USER:STAGING_PASS@staging.example.net/triage_staging`
-- PostgreSQL stats: `postgres://STAGING_USER:STAGING_PASS@staging-postgres.example.net:5432/triage_stats`
-- Redis: `rediss://:STAGING_PASS@staging-redis.example.net:6380/0`
-- Kafka: `staging-kafka.example.net:9092`
-- Deployment flag: `DEPLOYMENT_ENV=staging`
+| Variable | Where to set | Notes |
+|----------|--------------|-------|
+| `MONGO_URI` | `staging.secrets` | Atlas or DocumentDB connection string |
+| `STATISTICS_PG_URL` | `staging.secrets` | RDS PostgreSQL URL |
+| `CELERY_BROKER_URL` | `staging.secrets` | ElastiCache Redis (TLS) |
+| `KAFKA_BROKERS` | `.env.staging` | MSK bootstrap brokers |
+| `DEPLOYMENT_ENV` | `.env.staging` | Must be `staging` |
 
-Store real values in your secret manager or private environment file. Do not commit them.
+Store real values in AWS Secrets Manager (`triage/staging`) or your private secrets file — never commit them.
 
 ## Production (`prod`) — remote
 
 Production uses remote managed services and production-grade secrets.
 
-Typical remote shapes:
+Same pattern as staging: **`backend/prod.secrets`** (from `backend/prod.secrets.example`) + **`backend/.env.prod`** for non-secret hostnames. AWS bundle id: `triage/prod`.
 
-- MongoDB: `mongodb+srv://PROD_USER:PROD_PASS@prod.example.net/triage`
-- PostgreSQL stats: `postgres://PROD_USER:PROD_PASS@prod-postgres.example.net:5432/triage_stats`
-- Redis: `rediss://:PROD_PASS@prod-redis.example.net:6380/0`
-- Kafka: `prod-kafka.example.net:9092`
-- Deployment flag: `DEPLOYMENT_ENV=prod`
+| Variable | Where to set |
+|----------|--------------|
+| `MONGO_URI`, `STATISTICS_PG_URL`, `CELERY_*`, passwords | `prod.secrets` → Secrets Manager |
+| `KAFKA_BROKERS`, `APP_PUBLIC_URL`, flags | `.env.prod` |
+| `DEPLOYMENT_ENV` | `prod` |
 
 Production credentials should only be available to production deployment automation and approved operators.
 

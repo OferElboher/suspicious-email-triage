@@ -10,7 +10,7 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 
 **Deep links:** sections use `{#anchor-id}` where noted; link as `[text](file.md#anchor-id)`.
 
-**Security:** docs never contain real passwords or private env values — use variable names and read gitignored `backend/dev.secrets` locally (see [ops_guide_secrets_management.md](ops_guide_secrets_management.md)).
+**Security:** docs never contain real passwords, API keys, or credential-bearing connection URIs — use variable names and read gitignored `backend/*.secrets` locally ([ops_guide_secrets_management.md](ops_guide_secrets_management.md)). CI tests scan `docs/` for patterns that trigger GitHub secret alerts.
 
 ---
 

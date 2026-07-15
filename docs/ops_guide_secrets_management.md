@@ -194,6 +194,18 @@ GitHub Actions (`.github/workflows/ci.yml`) runs tests with **`backend/ci.secret
 
 To add staging integration tests later, use **ephemeral test credentials** created in the workflow job — never production bundles.
 
+### Documentation must not embed credentials
+
+GitHub **secret scanning** flags credential-like strings in Markdown (for example MongoDB Atlas connection URIs that embed a username and password). **Never paste live connection strings or API keys into `docs/`** — reference env var names and `backend/*.secrets.example` templates instead.
+
+Automated guardrails:
+
+- `backend/src/lib/docSecretScan.js` — pattern scanner used in unit tests
+- `backend/__tests__/docSecretScan.test.js` — scans the real `docs/` tree on every test run
+- `integration_tests/test_repo_guardrails.py` — `test_docs_avoid_credential_uri_patterns`
+
+If GitHub alerts on a doc line, remove the inline URI, rotate the secret if it was ever real, then close the alert as revoked.
+
 ---
 
 ## Replacing mock AWS with real AWS Secrets Manager

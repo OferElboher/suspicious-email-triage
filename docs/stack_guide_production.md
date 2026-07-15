@@ -141,14 +141,7 @@ cp backend/staging.secrets.example backend/staging.secrets
 grep -E '^[A-Z_]+=' backend/staging.secrets.example   # checklist of required keys
 ```
 
-Example snippet (values are fictional):
-
-```bash
-MONGO_URI=mongodb+srv://triage_app:SECRET@acme-staging.xxxxx.mongodb.net/triage_staging
-STATISTICS_PG_URL=postgres://triage_app:SECRET@acme-triage-staging-pg.xxxx.us-east-1.rds.amazonaws.com:5432/triage_stats
-JWT_SECRET=long-random-string-generated-with-openssl
-LLM_API_KEY=sk-...
-```
+Fill **`backend/staging.secrets`** locally — the template lists every key (`MONGO_URI`, `STATISTICS_PG_URL`, `JWT_SECRET`, `LLM_API_KEY`, …) with `REPLACE_*` placeholders. **Never paste real connection strings or API keys into Markdown or Git** — GitHub secret scanning will flag them ([ops_guide_secrets_management.md](ops_guide_secrets_management.md)).
 
 Generate a random JWT secret: `openssl rand -base64 48`
 

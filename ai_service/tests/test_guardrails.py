@@ -37,3 +37,16 @@ def test_strip_unsafe_findings_removes_jwt_like_strings():
     safe, events = strip_unsafe_findings(findings)
     assert safe == []
     assert events
+
+
+def test_strip_unsafe_findings_removes_api_key_echo():
+    """Findings must not echo api_key= assignments back to analysts or logs."""
+    findings = [
+        {
+            "explanation": "leaked config",
+            "evidence": "export api_key=not-a-real-key-value",
+        }
+    ]
+    safe, events = strip_unsafe_findings(findings)
+    assert safe == []
+    assert any(e.get("rule") == "content_safety" for e in events)

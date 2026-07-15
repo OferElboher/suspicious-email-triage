@@ -346,6 +346,32 @@ def test_flow_dashboard_wired():
     assert "ui_guide_flow_dashboard.md" in readme
 
 
+def test_docs_avoid_credential_uri_patterns():
+    """Markdown guides must not embed Atlas/postgres URIs or API keys — GitHub secret scanning."""
+    import re
+
+    mongodb_uri = re.compile(r"mongodb\+srv://[^/\s\n]+:[^@\s\n]+@", re.I)
+    postgres_bad = re.compile(
+        r"postgres://[^/\s\n]+:[^@\s\n]+@(?!postgres:5432|localhost:5432)[^\s\n]+",
+        re.I,
+    )
+    openai_key = re.compile(r"sk-[a-zA-Z0-9]{8,}")
+    for path in sorted((ROOT / "docs").glob("*.md")):
+        text = path.read_text(encoding="utf-8")
+        assert not mongodb_uri.search(text), f"{path.name} contains mongodb+srv URI with credentials"
+        assert not postgres_bad.search(text), f"{path.name} contains remote postgres URI with credentials"
+        assert not openai_key.search(text), f"{path.name} contains OpenAI-style sk- key prefix"
+
+
+def test_doc_secret_scan_module_wired():
+    """Node docSecretScan must exist and backend test covers real docs tree."""
+    scan_src = (ROOT / "backend/src/lib/docSecretScan.js").read_text(encoding="utf-8")
+    assert "findForbiddenDocSecretPatterns" in scan_src
+    assert "mongodb_atlas_uri_with_credentials" in scan_src
+    test_src = (ROOT / "backend/__tests__/docSecretScan.test.js").read_text(encoding="utf-8")
+    assert "scanDocsDirectoryForSecrets" in test_src
+
+
 def test_docs_avoid_hardcoded_private_env_values():
     """Guides must reference env var names, not copy gitignored backend/.env secrets."""
     forbidden_substrings = (

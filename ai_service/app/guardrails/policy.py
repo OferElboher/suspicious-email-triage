@@ -18,7 +18,7 @@ _INJECTION_PATTERNS = (
     re.compile(r"<\|im_start\|>", re.I),
 )
 
-# Severity ordering for verdict floor comparisons.
+# Severity ordering for verdict floor comparisons (higher rank = more severe).
 _VERDICT_RANK = {
     "benign": 0,
     "suspicious": 1,
