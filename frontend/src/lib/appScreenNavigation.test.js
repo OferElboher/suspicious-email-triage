@@ -5,9 +5,9 @@ describe("appScreenNavigation", () => {
     window.history.replaceState(null, "", "/");
   });
 
-  test("APP_SCREENS includes flow, search, logs, settings, and admin", () => {
+  test("APP_SCREENS includes flow, ingest, search, logs, settings, and admin", () => {
     expect(APP_SCREENS).toEqual(
-      expect.arrayContaining(["flow", "search", "logs", "settings", "admin"])
+      expect.arrayContaining(["flow", "ingest", "search", "logs", "settings", "admin"])
     );
   });
 

@@ -31,10 +31,10 @@ const ReviewSchema = new mongoose.Schema(
     body: { type: String, required: true },
     links: { type: [String], default: [] },
     referenceSources: { type: [ReferenceSourceSchema], default: [] },
-    /** `dev_simulation` rows are hidden from the default recent-reviews list in the UI. */
+    /** source: distinguishes manual UI, dev simulator, and Go mailbox ingest paths. */
     source: {
       type: String,
-      enum: ["user", "dev_simulation"],
+      enum: ["user", "dev_simulation", "mailbox_ingest", "mailbox_simulation"],
       default: "user",
       index: true,
     },

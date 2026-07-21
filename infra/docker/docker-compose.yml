@@ -315,6 +315,23 @@ services:
       - ../../backend/.env.${DEPLOYMENT_ENV:-dev}
     restart: unless-stopped
 
+  # ingest-gateway: Go mailbox ingest service (webhooks + dev simulation).
+  ingest-gateway:
+    build:
+      context: ../../
+      dockerfile: ingest-gateway/Dockerfile
+    container_name: triage-ingest-gateway
+    ports:
+      - "8080:8080"
+    env_file:
+      - ../../backend/.env.${DEPLOYMENT_ENV:-dev}
+    environment:
+      - INGEST_GATEWAY_LISTEN=:8080
+      - INGEST_BACKEND_URL=http://backend:3000
+    depends_on:
+      - backend
+    restart: unless-stopped
+
 volumes:
   # triage-logs: shared dev volume so API and workers append to one merged log.
   triage-logs:

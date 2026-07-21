@@ -11,6 +11,7 @@ import {
   IconAnalytics,
   IconDashboard,
   IconFlow,
+  IconIngest,
   IconGraph,
   IconLogs,
   IconSearchReviews,
@@ -28,6 +29,7 @@ export default function AppNavBar({ screen, setScreen, access }) {
     workspace,
     analytics,
     flow,
+    ingest,
     agent,
     graph,
     search,
@@ -54,6 +56,15 @@ export default function AppNavBar({ screen, setScreen, access }) {
           onClick={() => setScreen("flow")}
         >
           <IconFlow />
+        </NavIconButton>
+      )}
+      {ingest && (
+        <NavIconButton
+          label="Mailbox ingest gateway"
+          active={screen === "ingest"}
+          onClick={() => setScreen("ingest")}
+        >
+          <IconIngest />
         </NavIconButton>
       )}
       {agent && (

@@ -531,6 +531,28 @@ def test_pipeline_prefect_dbt_wired_to_analytics_ui():
     assert "does not depend on them" not in guide.lower()
 
 
+def test_mailbox_ingest_gateway_wired():
+    """Go ingest-gateway, Node internal route, React #ingest tab, and docs indexed."""
+    assert (ROOT / "ingest-gateway/go.mod").is_file()
+    assert (ROOT / "ingest-gateway/cmd/ingest-gateway/main.go").is_file()
+    assert (ROOT / "backend/src/api/ingestInternal.js").is_file()
+    assert (ROOT / "backend/src/lib/ingestGatewayClient.js").is_file()
+    assert (ROOT / "frontend/src/views/IngestDashboardView.jsx").is_file()
+    compose = (ROOT / "infra/docker/docker-compose.yml").read_text(encoding="utf-8")
+    assert "ingest-gateway:" in compose
+    nav = (ROOT / "frontend/src/lib/appScreenNavigation.js").read_text(encoding="utf-8")
+    assert '"ingest"' in nav
+    dev_env = (ROOT / "backend/.env.dev").read_text(encoding="utf-8")
+    assert "MAILBOX_INGEST_ENABLED" in dev_env
+    assert "INGEST_GATEWAY_URL" in dev_env
+    readme = (ROOT / "docs/README.md").read_text(encoding="utf-8")
+    assert "data_guide_mailbox_ingest_gateway.md" in readme
+    assert "ui_guide_mailbox_ingest.md" in readme
+    tbd = (ROOT / "docs/roadmap_tbd.md").read_text(encoding="utf-8")
+    assert "3.1 Mailbox ingest" in tbd
+    assert "ingest-gateway" in tbd
+
+
 def test_agent_triage_fsm_wired_in_ai_service():
     """Agent triage modules, mock-cloud-llm, internal API, and docs are present."""
     assert (ROOT / "ai_service/app/agent/orchestrator.py").is_file()

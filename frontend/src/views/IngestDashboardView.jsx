@@ -1,0 +1,178 @@
+/**
+ * Mailbox ingest dashboard — statistics and charts for the Go ingest-gateway service.
+ *
+ * Shows webhook vs simulation throughput, error counts, and dev simulation controls.
+ * Pattern: polls GET /metrics/mailbox-ingest (Node proxy → Go gateway).
+ */
+import { useCallback, useState } from "react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import HoverHelp from "../components/HoverHelp";
+import { useMailboxIngestPoll } from "../hooks/useMailboxIngestPoll";
+import { postJson } from "../api/client";
+
+/** Format counts for stat cards. */
+function fmt(n) {
+  return Number(n || 0).toLocaleString();
+}
+
+/**
+ * @param {object} props
+ * @param {boolean} props.canSimulate — dev mailbox simulation controls
+ * @param {number} props.maxEventsPerMin — cap from GET /dev/features
+ */
+export default function IngestDashboardView({ canSimulate, maxEventsPerMin = 30 }) {
+  const { snapshot, loading, error, refresh } = useMailboxIngestPoll({ enabled: true });
+  const [simRate, setSimRate] = useState(5);
+  const [simMessage, setSimMessage] = useState("");
+
+  const totals = snapshot?.totals || {};
+  const rates = snapshot?.rates || {};
+  const series = snapshot?.series?.perMinute || [];
+  const chartData = series.map((row) => ({
+    minute: new Date(row.minute).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    received: row.received,
+    simulation: row.simulation,
+    webhook: row.webhook,
+    errors: row.errors,
+  }));
+
+  const startSimulation = useCallback(async () => {
+    setSimMessage("");
+    try {
+      const result = await postJson("/metrics/mailbox-ingest/simulation", {
+        action: "start",
+        emailsPerMinute: simRate,
+      });
+      setSimMessage(`Simulation running at ${result.emailsPerMinute || simRate}/min`);
+      await refresh();
+    } catch (err) {
+      setSimMessage(err.message || "Failed to start simulation");
+    }
+  }, [simRate, refresh]);
+
+  const stopSimulation = useCallback(async () => {
+    setSimMessage("");
+    try {
+      await postJson("/metrics/mailbox-ingest/simulation", { action: "stop" });
+      setSimMessage("Simulation stopped");
+      await refresh();
+    } catch (err) {
+      setSimMessage(err.message || "Failed to stop simulation");
+    }
+  }, [refresh]);
+
+  if (snapshot?.enabled === false) {
+    return (
+      <main className="layout layout--single ingest-dashboard">
+        <h2>Mailbox ingest</h2>
+        <p className="muted">Mailbox ingest gateway is disabled in this environment.</p>
+      </main>
+    );
+  }
+
+  return (
+    <main className="layout layout--single ingest-dashboard" data-testid="ingest-dashboard-view">
+      <header className="ingest-dashboard__top">
+        <HoverHelp text="Go ingest-gateway receives email-shaped HTTP payloads (or dev simulation), persists reviews via Node internal API, and enqueues the same Kafka topic as manual triage.">
+          <h2 className="ingest-dashboard__title">Mailbox ingest gateway</h2>
+        </HoverHelp>
+        <div className="toolbar">
+          <button type="button" disabled={loading} onClick={() => refresh().catch(() => {})}>
+            {loading ? "…" : "Refresh"}
+          </button>
+        </div>
+      </header>
+
+      {error && <p className="error-banner">{error}</p>}
+      {snapshot?.reachable === false && (
+        <p className="warn-banner">Go ingest-gateway unreachable: {snapshot.error}</p>
+      )}
+
+      <section className="ingest-dashboard__stats card-grid">
+        <div className="stat-card">
+          <span className="stat-label">Total received</span>
+          <strong>{fmt(totals.received)}</strong>
+        </div>
+        <div className="stat-card">
+          <span className="stat-label">Webhook ingest</span>
+          <strong>{fmt(totals.webhook)}</strong>
+        </div>
+        <div className="stat-card">
+          <span className="stat-label">Simulation ingest</span>
+          <strong>{fmt(totals.simulation)}</strong>
+        </div>
+        <div className="stat-card">
+          <span className="stat-label">Errors</span>
+          <strong>{fmt(totals.errors)}</strong>
+        </div>
+        <div className="stat-card">
+          <span className="stat-label">Last minute</span>
+          <strong>{fmt(rates.lastMinuteReceived)}</strong>
+        </div>
+        <div className="stat-card">
+          <span className="stat-label">Uptime (s)</span>
+          <strong>{fmt(snapshot?.uptimeSeconds)}</strong>
+        </div>
+      </section>
+
+      {canSimulate && (
+        <section className="ingest-dashboard__sim card">
+          <h3>Dev simulation (Go gateway)</h3>
+          <p className="muted">
+            Generates synthetic mailbox emails at a configurable rate (max {maxEventsPerMin}/min).
+            Uses the same Kafka pipeline as real ingest.
+          </p>
+          <div className="toolbar">
+            <label>
+              Emails/min
+              <input
+                type="number"
+                min={1}
+                max={maxEventsPerMin}
+                value={simRate}
+                onChange={(e) => setSimRate(Number(e.target.value) || 1)}
+              />
+            </label>
+            <button type="button" onClick={startSimulation}>
+              Start simulation
+            </button>
+            <button type="button" onClick={stopSimulation}>
+              Stop
+            </button>
+          </div>
+          {rates.simulationEnabled && (
+            <p className="ok-banner">Simulation active at {rates.simulationEmailsPerMinute}/min</p>
+          )}
+          {simMessage && <p className="muted">{simMessage}</p>}
+        </section>
+      )}
+
+      <section className="ingest-dashboard__chart card">
+        <h3>Per-minute activity</h3>
+        <div style={{ width: "100%", height: 280 }}>
+          <ResponsiveContainer>
+            <BarChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="minute" />
+              <YAxis allowDecimals={false} />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="webhook" stackId="a" fill="#3b82f6" name="Webhook" />
+              <Bar dataKey="simulation" stackId="a" fill="#8b5cf6" name="Simulation" />
+              <Bar dataKey="errors" fill="#ef4444" name="Errors" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
+    </main>
+  );
+}

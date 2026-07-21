@@ -126,3 +126,15 @@ export function IconSettings({ className = "nav-icon__svg" }) {
     </svg>
   );
 }
+
+/** Mailbox ingest gateway — envelope with inbound arrow (Go service metrics tab). */
+export function IconIngest({ className = "nav-icon__svg" }) {
+  return (
+    <svg className={className} {...COMMON}>
+      <rect x="3" y="6" width="14" height="10" rx="1.5" />
+      <path d="M3 8l7 5 7-5" />
+      <path d="M19 12h2v4h-2z" />
+      <path d="M18 14h4" />
+    </svg>
+  );
+}

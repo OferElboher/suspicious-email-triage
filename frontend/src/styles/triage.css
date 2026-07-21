@@ -1939,3 +1939,53 @@ button.danger {
 .agent-activity-view__states {
   font-size: 0.8rem;
 }
+
+/* Mailbox ingest dashboard (#ingest) — Go gateway stats + Recharts */
+.ingest-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.ingest-dashboard__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.ingest-dashboard .card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+.ingest-dashboard .stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: var(--surface-elevated, #f4f6f8);
+}
+
+.ingest-dashboard .stat-label {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.ingest-dashboard .card {
+  padding: 1rem;
+  border-radius: 8px;
+  background: var(--surface-elevated, #f4f6f8);
+}
+
+.ingest-dashboard .warn-banner {
+  color: #b45309;
+}
+
+.ingest-dashboard .ok-banner {
+  color: #047857;
+}

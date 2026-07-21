@@ -263,19 +263,26 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 
 ## 3. Email triage product features
 
-### 3.1 Mailbox ingest (P1)
+### 3.1 Mailbox ingest (P1) — **implemented (Go gateway + dev simulation; free path)**
 
-**User value:** Analysts stop copy-pasting emails; system pulls from shared mailbox automatically.
+**User value:** Analysts stop copy-pasting every email; a dedicated **Go ingest-gateway** accepts mailbox-shaped HTTP payloads (and dev simulation) and feeds the same Kafka/Celery pipeline as manual triage.
 
-**Exact demand:**
+**Exact demand (implemented in this repo):**
 
-- Connect Microsoft 365 or Gmail shared mailbox.
-- New messages create `Review` documents with headers preserved.
-- Duplicate detection by Message-ID.
+- Go service `ingest-gateway/` receives `POST /v1/ingest/email` JSON payloads.
+- Persists reviews via Node `POST /ingest/internal/mailbox` (shared secret `INGEST_INTERNAL_TOKEN`).
+- Publishes through existing `enqueueAfterCreate` → `email.review.ingested` → Python dispatcher → Celery.
+- Dev simulation: configurable emails/minute from React **#ingest** tab (Go goroutine + ticker).
+- Live stats: per-minute bar chart + counters (`GET /metrics/mailbox-ingest` Node proxy → Go `/v1/stats/dashboard`).
+- Prometheus scrape on Go `:8080/metrics` (`triage_mailbox_ingest_*`).
 
-**Tech pattern:** Microsoft Graph API, Gmail API, or SMTP inbound (Postfix → webhook).
+**Guides:** [data_guide_mailbox_ingest_gateway.md](data_guide_mailbox_ingest_gateway.md), [ui_guide_mailbox_ingest.md](ui_guide_mailbox_ingest.md).
 
-**Free path:** Continue paste-in UI for dev; Gmail API free quota for small pilot (Google Cloud project, no App Password if OAuth).
+**Remaining (paid / later):** Microsoft Graph subscription webhooks, Gmail Pub/Sub push, SMTP/Postfix pipe, Message-ID dedupe store (Redis/Postgres), production TLS mTLS at edge.
+
+**Tech pattern (implemented):** Go 1.22 (`net/http` ServeMux, goroutines, `context`, Prometheus client); Node internal route; Docker Compose service `ingest-gateway`.
+
+**Free path:** Docker Compose + simulation UI — no M365/Gmail tenant required for dev demos.
 
 ---
 

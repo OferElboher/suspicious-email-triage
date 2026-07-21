@@ -14,6 +14,7 @@ import GraphView from "./views/GraphView";
 import LogsView from "./views/LogsView";
 import SearchReviewsView from "./views/SearchReviewsView";
 import FlowDashboardView from "./views/FlowDashboardView";
+import IngestDashboardView from "./views/IngestDashboardView";
 import AgentActivityView from "./views/AgentActivityView";
 import SettingsView from "./views/SettingsView";
 import AdminView from "./views/AdminView";
@@ -33,7 +34,10 @@ export default function TriageApp() {
   const [features, setFeatures] = useState(() => ({
     simulation: false,
     analytics: hasPermission("metrics.read"),
+    mailboxIngest: hasPermission("metrics.read"),
+    mailboxIngestSimulation: false,
     simulationMaxEventsPerMin: 30,
+    mailboxIngestMaxEventsPerMin: 30,
   }));
   const [featuresLoaded, setFeaturesLoaded] = useState(false);
 
@@ -51,6 +55,9 @@ export default function TriageApp() {
       }
       if (view === "flow") {
         return hasPermission("metrics.read");
+      }
+      if (view === "ingest") {
+        return features.mailboxIngest && hasPermission("metrics.read");
       }
       if (view === "agent") {
         return hasPermission("metrics.read");
@@ -81,6 +88,7 @@ export default function TriageApp() {
       canReadLogs,
       canReadReviews,
       features.analytics,
+      features.mailboxIngest,
       hasPermission,
     ]
   );
@@ -107,7 +115,10 @@ export default function TriageApp() {
         setFeatures({
           simulation: Boolean(data.simulation),
           analytics: Boolean(data.analytics),
+          mailboxIngest: Boolean(data.mailboxIngest),
+          mailboxIngestSimulation: Boolean(data.mailboxIngestSimulation),
           simulationMaxEventsPerMin: Number(data.simulationMaxEventsPerMin) || 30,
+          mailboxIngestMaxEventsPerMin: Number(data.mailboxIngestMaxEventsPerMin) || 30,
         })
       )
       .catch(() => {
@@ -257,6 +268,7 @@ export default function TriageApp() {
               analytics: features.analytics && hasPermission("metrics.read"),
               graph: canReadGraph,
               flow: hasPermission("metrics.read"),
+              ingest: features.mailboxIngest && hasPermission("metrics.read"),
               agent: hasPermission("metrics.read"),
               search: canReadReviews,
               logs: canReadLogs,
@@ -268,6 +280,13 @@ export default function TriageApp() {
       </header>
 
       {screen === "flow" && hasPermission("metrics.read") && <FlowDashboardView />}
+
+      {screen === "ingest" && features.mailboxIngest && hasPermission("metrics.read") && (
+        <IngestDashboardView
+          canSimulate={features.mailboxIngestSimulation}
+          maxEventsPerMin={features.mailboxIngestMaxEventsPerMin}
+        />
+      )}
 
       {screen === "agent" && hasPermission("metrics.read") && <AgentActivityView />}
 

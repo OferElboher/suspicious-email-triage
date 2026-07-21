@@ -90,7 +90,9 @@ router.get("/", requirePermission("reviews.read"), async (req, res) => {
       req.query.includeSimulation === "1";
     const safePage = Math.max(page, 0);
     const safeLimit = Math.min(Math.max(limit, 1), REVIEW_PAGE_SIZE);
-    const filter = includeSimulation ? {} : { source: { $ne: "dev_simulation" } };
+    const filter = includeSimulation
+      ? {}
+      : { source: { $nin: ["dev_simulation", "mailbox_simulation"] } };
     const total = await Review.countDocuments(filter);
     const reviews = await Review.find(filter)
       .sort({ updatedAt: -1 })
@@ -134,7 +136,9 @@ router.get("/page-for-date", requirePermission("reviews.read"), async (req, res)
     const includeSimulation =
       String(req.query.includeSimulation || "").toLowerCase() === "true" ||
       req.query.includeSimulation === "1";
-    const filter = includeSimulation ? {} : { source: { $ne: "dev_simulation" } };
+    const filter = includeSimulation
+      ? {}
+      : { source: { $nin: ["dev_simulation", "mailbox_simulation"] } };
     const onDayCount = await Review.countDocuments({
       ...filter,
       updatedAt: { $gte: bounds.start, $lte: bounds.end },

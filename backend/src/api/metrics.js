@@ -7,6 +7,12 @@ const logger = require("../lib/logger");
 const { getTimeseries, getStatusBreakdown } = require("../stats/statsPg");
 const { getFlowDashboardSnapshot } = require("../metrics/flowMetrics");
 const { getAgentTriageSnapshot } = require("../metrics/agentTriageMetrics");
+const {
+  getMailboxIngestDashboard,
+  postMailboxSimulation,
+  getMailboxSimulationStatus,
+  isMailboxIngestEnabled,
+} = require("../lib/ingestGatewayClient");
 const { requirePermission } = require("../http/middleware/auth");
 
 /** router: Express metrics route collection mounted at /metrics. */
@@ -100,6 +106,58 @@ router.get("/agent-triage", requirePermission("metrics.read"), async (_req, res)
   } catch (err) {
     logger.error("metrics", "agent-triage failed", { error: err.message });
     res.status(500).json({ error: "agent_triage_metrics_failed" });
+  }
+});
+
+/**
+ * GET /metrics/mailbox-ingest — proxy Go ingest-gateway dashboard JSON for the React ingest tab.
+ * Pattern: JWT-protected Node proxy so the browser never calls the Go container directly.
+ */
+router.get("/mailbox-ingest", requirePermission("metrics.read"), async (_req, res) => {
+  try {
+    const snapshot = await getMailboxIngestDashboard();
+    res.json(snapshot);
+  } catch (err) {
+    logger.error("metrics", "mailbox-ingest failed", { error: err.message });
+    res.status(500).json({ error: "mailbox_ingest_metrics_failed" });
+  }
+});
+
+/**
+ * GET /metrics/mailbox-ingest/simulation — dev simulation status from Go gateway.
+ */
+router.get("/mailbox-ingest/simulation", requirePermission("metrics.read"), async (_req, res) => {
+  try {
+    if (!isMailboxIngestEnabled()) {
+      return res.json({ available: false, enabled: false });
+    }
+    const status = await getMailboxSimulationStatus();
+    res.json(status);
+  } catch (err) {
+    logger.error("metrics", "mailbox-ingest simulation status failed", { error: err.message });
+    res.status(500).json({ error: "mailbox_ingest_simulation_failed" });
+  }
+});
+
+/**
+ * POST /metrics/mailbox-ingest/simulation — start/stop Go mailbox simulation (dev; admin/developer).
+ */
+router.post("/mailbox-ingest/simulation", requirePermission("dev.simulation"), async (req, res) => {
+  try {
+    const action = String(req.body.action || "").toLowerCase();
+    if (action === "start") {
+      const emailsPerMinute = Number(req.body.emailsPerMinute) || 1;
+      const result = await postMailboxSimulation("start", { emailsPerMinute });
+      return res.json(result);
+    }
+    if (action === "stop") {
+      const result = await postMailboxSimulation("stop");
+      return res.json(result);
+    }
+    return res.status(400).json({ error: "invalid_action" });
+  } catch (err) {
+    logger.error("metrics", "mailbox-ingest simulation control failed", { error: err.message });
+    res.status(502).json({ error: "mailbox_ingest_simulation_failed", detail: err.message });
   }
 });
 

@@ -71,12 +71,17 @@ router.get("/features", (req, res) => {
     devEnv && hasPermission(req.auth, "dev.simulation") && isAdminOrDeveloper(req);
   const canReset =
     devEnv && hasPermission(req.auth, "dev.reset") && isAdminOrDeveloper(req);
+  const mailboxIngestEnabled =
+    String(process.env.MAILBOX_INGEST_ENABLED || "true").toLowerCase() === "true";
   res.json({
     deployment: devEnv ? "dev" : "non-dev",
     simulation: canSimulate,
+    mailboxIngest: mailboxIngestEnabled && hasPermission(req.auth, "metrics.read"),
+    mailboxIngestSimulation: canSimulate && mailboxIngestEnabled,
     analytics: hasPermission(req.auth, "metrics.read"),
     resetLocalState: canReset,
     simulationMaxEventsPerMin: MAX_EVENTS_PER_MIN,
+    mailboxIngestMaxEventsPerMin: Number(process.env.MAILBOX_INGEST_MAX_EVENTS_PER_MIN) || 30,
     roles: req.auth.roles,
     permissions: req.auth.permissions,
   });

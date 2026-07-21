@@ -56,7 +56,9 @@ describe("GET /reviews", () => {
 
     const res = await request(app).get("/reviews");
     expect(res.status).toBe(200);
-    expect(Review.find).toHaveBeenCalledWith({ source: { $ne: "dev_simulation" } });
+    expect(Review.find).toHaveBeenCalledWith({
+      source: { $nin: ["dev_simulation", "mailbox_simulation"] },
+    });
     expect(res.body.data).toHaveLength(1);
   });
 

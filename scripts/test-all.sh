@@ -13,6 +13,13 @@ npm test --prefix "$ROOT/backend" -- --watchAll=false
 if [[ ! -d "$ROOT/frontend/node_modules" ]]; then npm install --prefix "$ROOT/frontend"; fi
 CI=true npm test --prefix "$ROOT/frontend" -- --watchAll=false
 
+# Go: mailbox ingest-gateway unit tests (stdlib + prometheus client only).
+if command -v go >/dev/null 2>&1; then
+  (cd "$ROOT/ingest-gateway" && go test ./...)
+else
+  echo "WARN: go not installed — skipping ingest-gateway tests"
+fi
+
 # Python: ai_service unit tests + integration_tests (see pytest.ini; legacy backend/core Django tests excluded).
 AI_SERVICE_PYTHON="$(bash "$ROOT/scripts/ensure-ai-service-venv.sh")"
 PYTHONPATH="$ROOT" "$AI_SERVICE_PYTHON" -m pytest -q

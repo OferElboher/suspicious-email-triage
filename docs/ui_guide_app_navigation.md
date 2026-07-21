@@ -18,6 +18,7 @@ Each sub-window is a full-page view rendered inside `TriageApp.jsx`. The mapping
 | `#analytics` | Analytics & graphs | `metrics.read` **and** analytics feature flag |
 | `#graph` | Phishing graph | `graph.read` |
 | `#flow` | Live flow dashboard | `metrics.read` |
+| `#ingest` | Mailbox ingest gateway | `metrics.read` and mailbox ingest enabled |
 | `#agent` | Agent activity | `metrics.read` |
 | `#search` | Search past reviews | `reviews.read` |
 | `#logs` | Search unified logs | `logs.read` |

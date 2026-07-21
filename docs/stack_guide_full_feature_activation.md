@@ -20,6 +20,7 @@ This guide lists **exact terminal commands** to rebuild Docker images, start **e
 | **Search unified logs** | `backend` (merged.log; admin `logs.read`) |
 | **Analytics & graphs** | `postgres` + completed reviews (stats events) |
 | Mock Snowflake analytics | `mock-snowflake` + completed reviews |
+| **Mailbox ingest (Go)** | `ingest-gateway` + `#ingest` UI; simulation in dev |
 | Django admin (user CRUD) | `django-admin` (optional, port 8000) |
 
 **Technology pattern:** Docker Compose (`infra/docker/docker-compose.yml`) orchestrates containers; `DEPLOYMENT_ENV=dev` selects gitignored secrets + dev-only API routes.
@@ -71,7 +72,7 @@ REACT_APP_API_URL=http://localhost:3000 PORT=3001 npm start --prefix frontend
 cd ~/suspicious-email-triage
 DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --build \
   mongo postgres redis neo4j redpanda elasticsearch mock-snowflake \
-  backend ai-celery ai-kafka-dispatch
+  ingest-gateway backend ai-celery ai-kafka-dispatch
 docker compose -f infra/docker/docker-compose.yml ps
 ```
 
