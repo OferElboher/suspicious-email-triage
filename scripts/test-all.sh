@@ -14,6 +14,8 @@ if [[ ! -d "$ROOT/frontend/node_modules" ]]; then npm install --prefix "$ROOT/fr
 CI=true npm test --prefix "$ROOT/frontend" -- --watchAll=false
 
 # Go: mailbox ingest-gateway unit tests (stdlib + prometheus client only).
+# Runs when `go` is on PATH; CI/dev machines without Go skip with a warning.
+# Alternative: docker run --rm -v "$ROOT/ingest-gateway:/src" -w /src golang:1.22-alpine go test ./...
 if command -v go >/dev/null 2>&1; then
   (cd "$ROOT/ingest-gateway" && go test ./...)
 else

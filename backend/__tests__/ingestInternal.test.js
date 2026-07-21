@@ -1,3 +1,7 @@
+/**
+ * Unit tests for POST /ingest/internal/mailbox — Go ingest-gateway → Node persistence path.
+ * Mocks Review.create and pipeline side effects so MongoDB/Kafka are not required.
+ */
 jest.mock("../src/services/reviewPipeline", () => ({
   enqueueAfterCreate: jest.fn().mockResolvedValue(undefined),
 }));

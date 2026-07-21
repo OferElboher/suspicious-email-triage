@@ -54,21 +54,24 @@ func (c *Client) CreateMailboxReview(ctx context.Context, payload EmailPayload) 
 		return CreateResult{}, fmt.Errorf("marshal payload: %w", err)
 	}
 	url := c.baseURL + "/ingest/internal/mailbox"
+	// NewRequestWithContext ties the outbound HTTP call to caller cancellation (simulation Stop).
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
 		return CreateResult{}, fmt.Errorf("build request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
+	// Shared secret — same value as INGEST_INTERNAL_TOKEN in Node and Go containers.
 	req.Header.Set("X-Ingest-Internal-Token", c.token)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return CreateResult{}, fmt.Errorf("http do: %w", err)
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() // always drain/close body so the connection can be reused
 
 	raw, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		// Include response body in error — helps debug 401 invalid token vs 400 validation.
 		return CreateResult{}, fmt.Errorf("backend status %d: %s", resp.StatusCode, string(raw))
 	}
 	var out CreateResult

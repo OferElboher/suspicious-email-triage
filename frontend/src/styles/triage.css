@@ -1989,3 +1989,46 @@ button.danger {
 .ingest-dashboard .ok-banner {
   color: #047857;
 }
+
+/* Dev simulation row — rate input and toggle share height; bottom-aligned like SimulationPanel. */
+.ingest-dashboard__sim-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: flex-end;
+}
+
+.ingest-dashboard__sim-rate {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 8rem;
+  max-width: 12rem;
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.ingest-dashboard__sim-toggle {
+  min-width: 10.5rem;
+  min-height: 2.35rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: var(--radius, 8px);
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border, #d1d5db);
+}
+
+.ingest-dashboard__sim-toggle:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.ingest-dashboard__sim-toggle--stop {
+  background: #c62828;
+  color: #fff;
+  border-color: #c62828;
+}
+
+.ingest-dashboard__sim-toggle--stop:hover:not(:disabled) {
+  background: #b71c1c;
+}

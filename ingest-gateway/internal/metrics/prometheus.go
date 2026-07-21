@@ -10,12 +10,14 @@ import (
 
 var (
 	// ReceivedTotal counts emails accepted by the Node backend after ingest.
+	// CounterVec allows a "source" label (mailbox_ingest vs mailbox_simulation).
 	ReceivedTotal = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "triage_mailbox_ingest_received_total",
 		Help: "Mailbox ingest emails successfully persisted via Node internal API",
 	}, []string{"source"})
 
 	// ErrorsTotal counts validation and backend failures at the gateway.
+	// promauto registers metrics on init — no manual Register() call needed in main.
 	ErrorsTotal = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "triage_mailbox_ingest_errors_total",
 		Help: "Mailbox ingest failures at the gateway",

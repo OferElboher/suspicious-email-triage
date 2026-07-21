@@ -272,7 +272,7 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 - Go service `ingest-gateway/` receives `POST /v1/ingest/email` JSON payloads.
 - Persists reviews via Node `POST /ingest/internal/mailbox` (shared secret `INGEST_INTERNAL_TOKEN`).
 - Publishes through existing `enqueueAfterCreate` → `email.review.ingested` → Python dispatcher → Celery.
-- Dev simulation: configurable emails/minute from React **#ingest** tab (Go goroutine + ticker).
+- Dev simulation: configurable emails/minute from React **#ingest** tab (Go goroutine + ticker; **Start simulation** / **Stop simulation** single toggle — [ui_guide_mailbox_ingest.md](ui_guide_mailbox_ingest.md)).
 - Live stats: per-minute bar chart + counters (`GET /metrics/mailbox-ingest` Node proxy → Go `/v1/stats/dashboard`).
 - Prometheus scrape on Go `:8080/metrics` (`triage_mailbox_ingest_*`).
 

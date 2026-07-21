@@ -129,6 +129,10 @@ HTTP handlers pass `r.Context()` into backend calls so requests cancel if the cl
 
 Counters like `triage_mailbox_ingest_received_total{source="mailbox_ingest"}` follow the [Prometheus naming convention](https://prometheus.io/docs/concepts/metric_types/). Ops can scrape `:8080/metrics` alongside Node `/ops/prometheus`.
 
+### React `#ingest` simulation controls
+
+The **#ingest** tab ([ui_guide_mailbox_ingest.md](ui_guide_mailbox_ingest.md)) exposes dev simulation through Node proxy routes (`POST /metrics/mailbox-ingest/simulation`), not by calling Go from the browser directly. The UI uses a **single toggle button** labeled **Start simulation** or **Stop simulation** (same wording as the Node Dev simulation card). While simulation runs, the **Emails/min** field is disabled; the toggle is grayed during the in-flight HTTP request.
+
 ---
 
 ## Docker Compose

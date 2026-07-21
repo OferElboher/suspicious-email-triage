@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const maxBuckets = 60
+const maxBuckets = 60 // keep last 60 minutes of per-minute chart data in memory
 
 // Bucket is one minute of ingest activity for frontend charts.
 type Bucket struct {
@@ -23,14 +23,14 @@ type Bucket struct {
 
 // Store aggregates gateway usage for GET /v1/stats/dashboard.
 type Store struct {
-	mu sync.Mutex
+	mu sync.Mutex // single mutex — dev dashboard; not optimized for extreme concurrency
 
 	totalReceived        int64
 	totalSimulation      int64
 	totalWebhook         int64
 	totalErrors          int64
 	totalBackendFailures int64
-	lastMinuteReceived   int64
+	lastMinuteReceived   int64 // rolling counter reset every minute by simulation loop
 	buckets              []Bucket
 	simulationEnabled    bool
 	simulationRate       int
@@ -90,6 +90,7 @@ func (s *Store) SetSimulationState(enabled bool, rate int) {
 func (s *Store) Snapshot(maxRate int, uptimeSeconds int64) map[string]interface{} {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	// Defensive copy — HTTP handler may serialize while simulation goroutine updates buckets.
 	bucketsCopy := append([]Bucket(nil), s.buckets...)
 	return map[string]interface{}{
 		"generatedAt": time.Now().UTC().Format(time.RFC3339),
@@ -122,9 +123,11 @@ func (s *Store) ResetMinuteCounter() {
 
 // touchCurrentBucket appends or updates the bucket for the current UTC minute.
 func (s *Store) touchCurrentBucket(update func(*Bucket)) {
+	// Truncate to minute boundary — aligns chart X-axis with wall-clock minutes.
 	minute := time.Now().UTC().Truncate(time.Minute)
 	if len(s.buckets) == 0 || !s.buckets[len(s.buckets)-1].Minute.Equal(minute) {
 		s.buckets = append(s.buckets, Bucket{Minute: minute})
+		// Ring buffer: drop oldest bucket when exceeding maxBuckets (60 minutes).
 		if len(s.buckets) > maxBuckets {
 			s.buckets = s.buckets[len(s.buckets)-maxBuckets:]
 		}

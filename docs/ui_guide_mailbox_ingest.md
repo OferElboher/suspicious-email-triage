@@ -25,7 +25,7 @@ This guide explains the **Mailbox ingest gateway** sub-window in the React app: 
 | Stat cards (Total received, Webhook, Simulation, Errors) | Go `/v1/stats/dashboard` via Node proxy | Lifetime counters since gateway start |
 | Last minute | Same snapshot | Rolling ingest rate |
 | Per-minute bar chart | `series.perMinute[]` | Webhook vs simulation vs errors each minute |
-| Dev simulation panel | `POST /metrics/mailbox-ingest/simulation` | Start/stop synthetic mailbox emails |
+| Dev simulation panel | `POST /metrics/mailbox-ingest/simulation` | Single **Start simulation** / **Stop simulation** toggle (same labels as the Node Dev simulation card) |
 
 The page **auto-refreshes every 3 seconds** (same polling pattern as the Live flow dashboard).
 
@@ -35,10 +35,12 @@ The page **auto-refreshes every 3 seconds** (same polling pattern as the Live fl
 
 When you have **`dev.simulation`** permission (admin/developer in dev):
 
-1. Set **Emails/min** (capped by `MAILBOX_INGEST_MAX_EVENTS_PER_MIN`, default 30).
-2. Click **Start simulation** — the Go service starts a goroutine that creates reviews with `source=mailbox_simulation`.
+1. Set **Emails/min** (capped by `MAILBOX_INGEST_MAX_EVENTS_PER_MIN`, default 30). The field is **locked while simulation runs** — stop first to change the rate.
+2. Click **Start simulation** — the Go service starts a goroutine that creates reviews with `source=mailbox_simulation`. The same button becomes **Stop simulation** (red) while running; it is **grayed out** briefly while the start/stop request is in flight.
 3. Watch the purple **Simulation** bars grow on the chart.
-4. Click **Stop** when finished.
+4. Click **Stop simulation** when finished.
+
+**UI pattern:** one toggle button (not separate Start and Stop buttons) so only the relevant action is shown — matching the Review dashboard **Dev simulation** card ([stack_guide_dev_simulation.md](stack_guide_dev_simulation.md)).
 
 Synthetic mailbox reviews are **hidden** from the default review queue (like `dev_simulation`). Enable **Include simulation** on the workspace list to inspect them.
 

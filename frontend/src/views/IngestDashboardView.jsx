@@ -33,9 +33,13 @@ export default function IngestDashboardView({ canSimulate, maxEventsPerMin = 30 
   const { snapshot, loading, error, refresh } = useMailboxIngestPoll({ enabled: true });
   const [simRate, setSimRate] = useState(5);
   const [simMessage, setSimMessage] = useState("");
+  /** simBusy: true while start/stop POST is in flight — disables toggle and rate input. */
+  const [simBusy, setSimBusy] = useState(false);
 
   const totals = snapshot?.totals || {};
   const rates = snapshot?.rates || {};
+  /** simulationEnabled: from Go gateway snapshot — drives toggle label and rate field lock. */
+  const simulationEnabled = Boolean(rates.simulationEnabled);
   const series = snapshot?.series?.perMinute || [];
   const chartData = series.map((row) => ({
     minute: new Date(row.minute).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
@@ -45,30 +49,28 @@ export default function IngestDashboardView({ canSimulate, maxEventsPerMin = 30 
     errors: row.errors,
   }));
 
-  const startSimulation = useCallback(async () => {
+  /** toggleSimulation — single Start/Stop control (same naming as Node Dev simulation card). */
+  const toggleSimulation = useCallback(async () => {
     setSimMessage("");
+    setSimBusy(true);
     try {
-      const result = await postJson("/metrics/mailbox-ingest/simulation", {
-        action: "start",
-        emailsPerMinute: simRate,
-      });
-      setSimMessage(`Simulation running at ${result.emailsPerMinute || simRate}/min`);
+      if (simulationEnabled) {
+        await postJson("/metrics/mailbox-ingest/simulation", { action: "stop" });
+        setSimMessage("Simulation stopped");
+      } else {
+        const result = await postJson("/metrics/mailbox-ingest/simulation", {
+          action: "start",
+          emailsPerMinute: simRate,
+        });
+        setSimMessage(`Simulation running at ${result.emailsPerMinute || simRate}/min`);
+      }
       await refresh();
     } catch (err) {
-      setSimMessage(err.message || "Failed to start simulation");
+      setSimMessage(err.message || (simulationEnabled ? "Failed to stop simulation" : "Failed to start simulation"));
+    } finally {
+      setSimBusy(false);
     }
-  }, [simRate, refresh]);
-
-  const stopSimulation = useCallback(async () => {
-    setSimMessage("");
-    try {
-      await postJson("/metrics/mailbox-ingest/simulation", { action: "stop" });
-      setSimMessage("Simulation stopped");
-      await refresh();
-    } catch (err) {
-      setSimMessage(err.message || "Failed to stop simulation");
-    }
-  }, [refresh]);
+  }, [simRate, refresh, simulationEnabled]);
 
   if (snapshot?.enabled === false) {
     return (
@@ -131,22 +133,29 @@ export default function IngestDashboardView({ canSimulate, maxEventsPerMin = 30 
             Generates synthetic mailbox emails at a configurable rate (max {maxEventsPerMin}/min).
             Uses the same Kafka pipeline as real ingest.
           </p>
-          <div className="toolbar">
-            <label>
+          <div className="ingest-dashboard__sim-row">
+            <label className="ingest-dashboard__sim-rate">
               Emails/min
               <input
                 type="number"
                 min={1}
                 max={maxEventsPerMin}
                 value={simRate}
+                disabled={simBusy || simulationEnabled}
                 onChange={(e) => setSimRate(Number(e.target.value) || 1)}
               />
             </label>
-            <button type="button" onClick={startSimulation}>
-              Start simulation
-            </button>
-            <button type="button" onClick={stopSimulation}>
-              Stop
+            <button
+              type="button"
+              className={
+                simulationEnabled
+                  ? "ingest-dashboard__sim-toggle ingest-dashboard__sim-toggle--stop"
+                  : "ingest-dashboard__sim-toggle primary"
+              }
+              disabled={simBusy}
+              onClick={() => toggleSimulation().catch(() => {})}
+            >
+              {simulationEnabled ? "Stop simulation" : "Start simulation"}
             </button>
           </div>
           {rates.simulationEnabled && (

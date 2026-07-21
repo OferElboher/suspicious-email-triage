@@ -315,7 +315,10 @@ services:
       - ../../backend/.env.${DEPLOYMENT_ENV:-dev}
     restart: unless-stopped
 
-  # ingest-gateway: Go mailbox ingest service (webhooks + dev simulation).
+  # ingest-gateway: Go mailbox ingest microservice (webhooks + dev simulation).
+  # Pattern: edge service in Go; persistence stays in Node (single MongoDB schema).
+  # Port 8080: health (/health/live), metrics (/metrics), dashboard (/v1/stats/dashboard).
+  # Env from backend/.env.dev: MAILBOX_INGEST_ENABLED, INGEST_INTERNAL_TOKEN, etc.
   ingest-gateway:
     build:
       context: ../../

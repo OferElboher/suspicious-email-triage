@@ -1,3 +1,4 @@
+// Package stats_test contains unit tests for the in-memory ingest statistics store.
 package stats_test
 
 import (

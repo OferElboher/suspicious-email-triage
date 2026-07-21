@@ -28,12 +28,15 @@ type Config struct {
 
 // Load reads process environment and applies safe defaults for local Docker dev.
 func Load() Config {
+	// Default simulation cap matches Node SIMULATION_MAX_EVENTS_PER_MIN convention (30/min).
 	maxRate := 30
 	if v := os.Getenv("MAILBOX_INGEST_MAX_EVENTS_PER_MIN"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
 			maxRate = n
 		}
 	}
+	// Enabled by default when unset — dev compose expects the gateway without extra env.
+	// Explicit "false" disables the HTTP server in main.go (container sleeps instead).
 	enabled := strings.EqualFold(os.Getenv("MAILBOX_INGEST_ENABLED"), "true") ||
 		os.Getenv("MAILBOX_INGEST_ENABLED") == ""
 

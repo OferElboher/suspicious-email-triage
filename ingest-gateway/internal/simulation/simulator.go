@@ -16,15 +16,15 @@ import (
 
 // Controller owns the background goroutine that emits synthetic emails.
 type Controller struct {
-	mu       sync.Mutex
-	running  bool
-	rate     int
-	maxRate  int
-	seq      int64
-	cancel   context.CancelFunc
+	mu       sync.Mutex     // protects running, rate, seq, cancel
+	running  bool           // true while loop goroutine is active
+	rate     int            // current emails per minute (after cap)
+	maxRate  int            // upper bound from MAILBOX_INGEST_MAX_EVENTS_PER_MIN
+	seq      int64          // monotonic counter for unique simulated sender addresses
+	cancel   context.CancelFunc // stops the loop goroutine via context cancellation
 	stats    *stats.Store
 	backend  *backend.Client
-	onResult func(success bool, backendFailure bool)
+	onResult func(success bool, backendFailure bool) // optional Prometheus bridge from main
 }
 
 // NewController constructs a simulation controller tied to stats and the Node client.
@@ -49,14 +49,15 @@ func (c *Controller) Start(emailsPerMinute int) error {
 		rate = 1
 	}
 	if rate > c.maxRate {
-		rate = c.maxRate
+		rate = c.maxRate // clamp to env cap — UI cannot exceed MAILBOX_INGEST_MAX_EVENTS_PER_MIN
 	}
+	// context.WithCancel: Stop() calls cancel() to exit loop without killing the process.
 	ctx, cancel := context.WithCancel(context.Background())
 	c.running = true
 	c.rate = rate
 	c.cancel = cancel
 	c.stats.SetSimulationState(true, rate)
-	go c.loop(ctx, rate)
+	go c.loop(ctx, rate) // fire-and-forget goroutine — HTTP handler returns immediately
 	return nil
 }
 
@@ -83,19 +84,21 @@ func (c *Controller) Status() (enabled bool, rate int) {
 
 // loop ticks at the requested interval until context cancellation.
 func (c *Controller) loop(ctx context.Context, rate int) {
+	// interval = 60s / rate — e.g. 10/min → one email every 6 seconds.
 	interval := time.Minute / time.Duration(rate)
 	if interval < time.Millisecond {
-		interval = time.Millisecond
+		interval = time.Millisecond // safety floor for absurdly high rates in dev
 	}
 	ticker := time.NewTicker(interval)
-	minuteReset := time.NewTicker(time.Minute)
+	minuteReset := time.NewTicker(time.Minute) // resets lastMinuteReceived for dashboard
 	defer ticker.Stop()
 	defer minuteReset.Stop()
 
+	// select multiplexes three channels — Go idiom for concurrent event loops.
 	for {
 		select {
 		case <-ctx.Done():
-			return
+			return // Stop() was called
 		case <-minuteReset.C:
 			c.stats.ResetMinuteCounter()
 		case <-ticker.C:
@@ -109,7 +112,7 @@ func (c *Controller) emitOne(ctx context.Context) {
 	c.mu.Lock()
 	c.seq++
 	n := c.seq
-	c.mu.Unlock()
+	c.mu.Unlock() // release lock before network I/O — do not hold mutex during HTTP call
 
 	payload := backend.EmailPayload{
 		SenderName:  "Mailbox Simulator",

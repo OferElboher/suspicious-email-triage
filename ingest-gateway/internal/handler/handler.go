@@ -44,9 +44,11 @@ func NewAPI(cfg config.Config, store *stats.Store, client *backend.Client, sim *
 }
 
 // Register attaches all routes to a Go 1.22 ServeMux (method-aware patterns).
+// Go 1.22+ pattern syntax "METHOD /path" avoids a separate method check in each handler.
 func (a *API) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /health/live", a.handleLive)
 	mux.HandleFunc("GET /health/ready", a.handleReady)
+	// promhttp.Handler() exposes Prometheus scrape format at /metrics.
 	mux.Handle("GET /metrics", promhttp.Handler())
 	mux.HandleFunc("GET /v1/stats/dashboard", a.handleDashboard)
 	mux.HandleFunc("POST /v1/ingest/email", a.handleIngestEmail)
@@ -179,8 +181,10 @@ func validateIngest(body ingestBody) error {
 	return nil
 }
 
+// errString is a tiny error type for validation messages without defining sentinel vars.
 type errString string
 
+// Error implements the error interface for errString.
 func (e errString) Error() string { return string(e) }
 
 // fallbackSenderName supplies a default display name when webhooks omit senderName.
@@ -194,6 +198,7 @@ func fallbackSenderName(name string) string {
 // decodeJSON reads and unmarshals a JSON request body.
 func decodeJSON(r *http.Request, dest interface{}) error {
 	defer r.Body.Close()
+	// LimitReader caps body at 1 MiB — prevents memory exhaustion from huge webhook payloads.
 	raw, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
 	if err != nil {
 		return err
