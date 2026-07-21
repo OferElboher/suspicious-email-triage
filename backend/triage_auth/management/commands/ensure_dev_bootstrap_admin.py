@@ -1,12 +1,11 @@
-/**
- * Django management command — ensure bootstrap admin exists for dev Django admin login.
- *
- * Problem: postgres-data volume persists password hashes across rebuilds, but bootstrap only
- * runs when auth_users is empty. This command mirrors Node resetBootstrapAdminForDev so
- * http://localhost:8000/admin/ accepts AUTH_BOOTSTRAP_* credentials after every django-admin start.
- *
- * Technology: bcrypt (same as Node bcryptjs), PostgreSQL via Django ORM unmanaged models.
- */
+"""Django management command — ensure bootstrap admin exists for dev Django admin login.
+
+Problem: postgres-data volume persists password hashes across rebuilds, but bootstrap only
+runs when auth_users is empty. This command mirrors Node resetBootstrapAdminForDev so
+http://localhost:8000/admin/ accepts AUTH_BOOTSTRAP_* credentials after every django-admin start.
+
+Technology: bcrypt (same as Node bcryptjs), PostgreSQL via Django ORM unmanaged models.
+"""
 import os
 
 import bcrypt
