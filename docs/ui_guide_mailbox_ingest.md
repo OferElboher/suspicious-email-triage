@@ -46,14 +46,16 @@ Synthetic mailbox reviews are **hidden** from the default review queue (like `de
 
 ---
 
-## Webhook vs Node manual submit
+## How ingest paths compare
 
-| Path | Source field | Who triggers |
-|------|--------------|--------------|
-| Analyst paste form | `user` | Human in UI |
-| Node dev simulation card | `dev_simulation` | Node timer |
-| Go gateway webhook | `mailbox_ingest` | HTTP POST to Go `:8080` |
-| Go gateway simulation | `mailbox_simulation` | Go ticker in dev |
+| Path | Source field | Endpoint | Who triggers |
+|------|--------------|----------|--------------|
+| Manual UI or `POST /reviews` | `user` | Node `POST /reviews` (JWT) | Analyst or trusted script with analyst token |
+| Node dev simulation card | `dev_simulation` | Node `/dev/simulation` timer | Node timer in dev |
+| Go gateway webhook | `mailbox_ingest` | Go `POST /v1/ingest/email` → Node internal | Mailbox platform HTTP webhook |
+| Go gateway simulation | `mailbox_simulation` | Go ticker in dev | **#ingest** tab toggle |
+
+Full comparison: [data_guide_mailbox_ingest_gateway.md — Three ways to get email into triage](data_guide_mailbox_ingest_gateway.md#three-ways-to-get-email-into-triage).
 
 All paths enqueue **`email.review.ingested`** when `USE_KAFKA_INGEST=true`.
 

@@ -17,7 +17,7 @@ This guide explains **how the same application code runs in three deployment sli
 | **URL switching** | Each integration reads a base URL from env (`LLM_BASE_URL`, `SNOWFLAKE_URL`, …) — dev points at Docker mocks; staging/prod point at vendors |
 | **Runtime helpers** | `backend/src/config/runtime.js` exposes `usesMockExternalServices()` — `true` only in **dev** |
 
-**Novice tip:** “Mock” does not mean fake business logic. The **mock HTTP servers** return the same JSON shapes as real vendors so Celery, Express, and the React UI behave identically — you only pay when URLs aim at cloud endpoints.
+**Note:** “Mock” does not mean fake business logic. The **mock HTTP servers** return the same JSON shapes as real vendors so Celery, Express, and the React UI behave identically — you only pay when URLs aim at cloud endpoints.
 
 ---
 

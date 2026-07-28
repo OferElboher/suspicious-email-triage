@@ -35,7 +35,7 @@ This guide is for developers **new to AWS, OpenAI, or Snowflake** who run the lo
 
 **Data source:** gitignored `backend/dev.secrets` (never committed). The mock reads that file and returns its text as `SecretString`.
 
-**Novice tip:** if login fails after clone, you still need `bash scripts/ensure-dev-secrets.sh` — the mock only **serves** secrets, it does not invent them.
+**Note:** if login fails after clone, you still need `bash scripts/ensure-dev-secrets.sh` — the mock only **serves** secrets, it does not invent them.
 
 Deep dive: [ops_guide_secrets_management.md](ops_guide_secrets_management.md).
 
@@ -87,7 +87,7 @@ Deep dive: [data_guide_snowflake_analytics.md](data_guide_snowflake_analytics.md
 
 **Application code:** `backend/src/backups/s3BackupProvider.js` + `POST /ops/backups/run` — see [ops_guide_s3_backups.md](ops_guide_s3_backups.md).
 
-**Novice tip:** `BACKUP_PROVIDER=mock-aws` in `.env.dev` tells the backend to use the mock endpoint; staging/prod set `BACKUP_PROVIDER=aws` and a real bucket name.
+**Note:** `BACKUP_PROVIDER=mock-aws` in `.env.dev` tells the backend to use the mock endpoint; staging/prod set `BACKUP_PROVIDER=aws` and a real bucket name.
 
 ---
 

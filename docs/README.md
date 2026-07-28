@@ -23,12 +23,11 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 | **S3 database backups** (dev mock / AWS stg/prod) | [ops_guide_s3_backups.md](ops_guide_s3_backups.md) |
 | **S3 backups Admin UI** (usage stats + run backup) | [ui_guide_s3_backups.md](ui_guide_s3_backups.md) |
 | **Agent activity UI** (per-review trace + `#agent` fleet view) | [ui_guide_agent_activity.md](ui_guide_agent_activity.md) |
-| **Mailbox ingest gateway** (Go service + `#ingest` dashboard) | [data_guide_mailbox_ingest_gateway.md](data_guide_mailbox_ingest_gateway.md), [ui_guide_mailbox_ingest.md](ui_guide_mailbox_ingest.md) |
+| **Mailbox ingest gateway** (Go + `#ingest`; manual UI / `POST /reviews` vs mailbox webhooks) | [data_guide_mailbox_ingest_gateway.md](data_guide_mailbox_ingest_gateway.md), [ui_guide_mailbox_ingest.md](ui_guide_mailbox_ingest.md) |
 | **Dev mocks vs staging/prod real cloud services** | [stack_guide_staging_production_services.md](stack_guide_staging_production_services.md) |
 | **Review dashboard UI** (queue, detail, modal submit, HoverHelp) | [ui_guide_review_dashboard.md](ui_guide_review_dashboard.md) |
 | **App navigation** (icon tabs, Live flow, Search, Logs, Settings, Admin) | [ui_guide_app_navigation.md](ui_guide_app_navigation.md) |
 | **Live flow dashboard** (gauges + clocks, simulation-friendly) | [ui_guide_flow_dashboard.md](ui_guide_flow_dashboard.md) |
-| **Mailbox ingest gateway** (Go `#ingest` tab, simulation + charts) | [ui_guide_mailbox_ingest.md](ui_guide_mailbox_ingest.md) |
 | **Complete list of implemented features** | [arch_guide_features_catalog.md](arch_guide_features_catalog.md) |
 | Full technical handbook | [arch_guide_system_comprehensive.md](arch_guide_system_comprehensive.md) |
 | **Build → bootstrap → sign in** (after clone or rebuild) | [stack_guide_build_and_run.md](stack_guide_build_and_run.md) |
@@ -70,7 +69,7 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 - [data_guide_agent_triage.md](data_guide_agent_triage.md) — agent FSM (orchestration, tools, workflows, guardrails)
 - [data_guide_dev_mock_services.md](data_guide_dev_mock_services.md) — all dev mocks vs real cloud APIs
 - [data_guide_kafka_events.md](data_guide_kafka_events.md) — Kafka topics & consumers
-- [data_guide_mailbox_ingest_gateway.md](data_guide_mailbox_ingest_gateway.md) — Go mailbox ingest service
+- [data_guide_mailbox_ingest_gateway.md](data_guide_mailbox_ingest_gateway.md) — Go mailbox ingest; three entry paths (UI, POST /reviews, webhooks)
 - [data_guide_prefect_dbt_demo.md](data_guide_prefect_dbt_demo.md) — Prefect / dbt integrated in Analytics pipeline panel
 
 ### Graph (Neo4j phishing)

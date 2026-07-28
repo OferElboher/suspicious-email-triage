@@ -70,6 +70,12 @@ If you are new to a topic (Kafka, Neo4j, JWT, etc.), follow the linked guides in
   - **Submit email** toolbar button opens modal (`ManualReviewSubmitModal.jsx`) — keeps dashboard focused on tracking inbound requests.
   - React modal overlay, `POST /reviews`, RBAC `reviews.write`.
 
+- **Three ingest entry paths**
+  - **Manual UI / `POST /reviews`** — analyst or JWT-authenticated script; MongoDB `source: user`.
+  - **Go mailbox ingest-gateway** — `ingest-gateway/` service; webhooks `POST :8080/v1/ingest/email` → Node `POST /ingest/internal/mailbox`; `source: mailbox_ingest` or `mailbox_simulation`.
+  - All paths enqueue Kafka `email.review.ingested` and share Celery scoring — see [data_guide_mailbox_ingest_gateway.md](data_guide_mailbox_ingest_gateway.md#three-ways-to-get-email-into-triage).
+  - Go 1.22, `net/http`, goroutines, Prometheus; React **#ingest** tab polls `GET /metrics/mailbox-ingest`.
+
 - **Contextual hover help**
   - `HoverHelp.jsx` dark tooltip on headings/controls across dashboard, simulation, and search panels.
   - CSS `position: absolute` tooltip; replaces long static intro paragraphs.

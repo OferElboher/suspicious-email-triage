@@ -2,16 +2,26 @@
 
 Email analysis is intentionally slower than saving a web form, so the system **separates accepting a request from processing it**. When an analyst clicks **Queue analysis**, the browser receives a fast HTTP response while scoring runs in background workers. That pattern keeps the UI responsive and lets operators scale workers independently of the API.
 
-**Related:** [data_guide_kafka_events.md](data_guide_kafka_events.md), [arch_guide_system_comprehensive.md](arch_guide_system_comprehensive.md), [roadmap_tbd.md](roadmap_tbd.md).
+**Related:** [data_guide_kafka_events.md](data_guide_kafka_events.md), [arch_guide_system_comprehensive.md](arch_guide_system_comprehensive.md), [data_guide_mailbox_ingest_gateway.md](data_guide_mailbox_ingest_gateway.md), [roadmap_tbd.md](roadmap_tbd.md).
 
 ---
 
 ## Default production-style path (email reviews)
 
-This is the path used for **every suspicious email** submitted through the React triage UI or `POST /reviews`:
+Reviews enter the pipeline through **one of three paths** (same Kafka/Celery steps after MongoDB create):
+
+| Path | Entry | Auth |
+|------|-------|------|
+| Manual UI or **`POST /reviews`** | Node `:3000` | JWT (`reviews.write`) |
+| **Mailbox ingest** | Go `:8080` → Node `/ingest/internal/mailbox` | `X-Ingest-Internal-Token` |
+| Dev simulation | Node `/dev/simulation` or Go **#ingest** ticker | Dev permissions |
+
+Details: [data_guide_mailbox_ingest_gateway.md — Three ways to get email into triage](data_guide_mailbox_ingest_gateway.md#three-ways-to-get-email-into-triage).
+
+Typical flow after a review document exists (`status=pending`):
 
 ```text
-React UI → Node Express API → MongoDB (Review document, status=pending)
+MongoDB Review (pending)
          → Kafka topic email.review.ingested
          → Python ai-kafka-dispatch (consumer)
          → Celery task analyze_review (Redis broker)
@@ -21,6 +31,13 @@ React UI → Node Express API → MongoDB (Review document, status=pending)
          → Node internal graph sync → Neo4j (verdict + campaigns)
          → Elasticsearch re-index (background, full-text search)
          → Snowflake export (background, analytics warehouse)
+```
+
+Analyst **`POST /reviews`** (or the UI modal) follows the same async path from Kafka onward:
+
+```text
+React UI or curl → Node Express API → MongoDB (Review document, status=pending)
+                 → (continues as above)
 ```
 
 | Step | Technology | What it does |
@@ -45,7 +62,7 @@ After step 5, **MongoDB remains the source of truth** for case work. Steps 7–9
 
 | Task name | Module | Trigger | Purpose |
 |-----------|--------|---------|---------|
-| **`analyze_review`** | `ai_service/app/tasks.py` | Kafka dispatcher after `POST /reviews` | **Production email scoring** — rule engine, LLM, merge, Mongo update, stats, Neo4j sync |
+| **`analyze_review`** | `ai_service/app/tasks.py` | Kafka dispatcher after review create (`POST /reviews`, mailbox ingest, etc.) | **Production email scoring** — rule engine, LLM/agent, merge, Mongo update, stats, Neo4j sync |
 | `ping` | `backend/core/tasks.py` | Manual / health demos | Django legacy smoke test |
 | `add` | `backend/core/tasks.py` | Django Kafka consumer on topic `ai_tasks` | Demo arithmetic task for the Django `/api/submit` pipeline |
 

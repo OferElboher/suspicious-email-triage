@@ -70,7 +70,7 @@ Below the main charts, **Data pipeline (Prefect & dbt)** shows orchestration too
 | Prefect health card | `GET /pipeline/prefect-health` | Event count in last 24h, flow name, execution source |
 | dbt daily bar chart | `GET /pipeline/dbt-daily` | Last 14 days from model `review_stats_daily` |
 
-Deep dive for newcomers to Prefect/dbt: [data_guide_prefect_dbt_demo.md](data_guide_prefect_dbt_demo.md).
+Deep dive: [data_guide_prefect_dbt_demo.md](data_guide_prefect_dbt_demo.md).
 
 ---
 

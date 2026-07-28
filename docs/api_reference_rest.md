@@ -1,6 +1,8 @@
 # REST API Reference
 
-A beginner-friendly guide to every HTTP route exposed by the **Suspicious Email Triage** backend. Use this document when integrating tools, writing scripts, or debugging the React UI.
+A guide to every HTTP route exposed by the **Suspicious Email Triage** backend. Use this document when integrating tools, writing scripts, or debugging the React UI.
+
+**Ingest paths:** analyst **`POST /reviews`** (JWT) vs automated **mailbox ingest** (Go gateway → internal Node route) — see [data_guide_mailbox_ingest_gateway.md — Three ways to get email into triage](data_guide_mailbox_ingest_gateway.md#three-ways-to-get-email-into-triage).
 
 ---
 
@@ -60,7 +62,27 @@ This header must match the `GRAPH_INTERNAL_TOKEN` environment variable on the se
 | **Expires** | Yes (hours) | No (until rotated in env) |
 | **Routes** | Most `/reviews`, `/metrics`, `/graph`, etc. | `/graph/internal/sync/:id` only |
 
-Never expose either token in client-side code committed to git or in public documentation — use placeholders like `YOUR_JWT_TOKEN`.
+### INGEST_INTERNAL_TOKEN (Go gateway → Node)
+
+The **ingest-gateway** Go service persists mailbox webhooks by calling:
+
+```http
+POST /ingest/internal/mailbox
+X-Ingest-Internal-Token: YOUR_INGEST_INTERNAL_TOKEN
+```
+
+This header must match `INGEST_INTERNAL_TOKEN` in gitignored secrets (see `backend/dev.secrets.example`). It is **not** a JWT. External mailbox platforms typically POST to **Go** `:8080/v1/ingest/email`; Go forwards to this Node route.
+
+| | JWT | INGEST_INTERNAL_TOKEN |
+|---|-----|------------------------|
+| **Who uses it** | Analysts, scripts with user login | Go `ingest-gateway` container only |
+| **How sent** | `Authorization: Bearer …` | `X-Ingest-Internal-Token: …` |
+| **Typical route** | `POST /reviews` | `POST /ingest/internal/mailbox` |
+| **MongoDB `source`** | `user` | `mailbox_ingest` or `mailbox_simulation` |
+
+**Guide:** [data_guide_mailbox_ingest_gateway.md](data_guide_mailbox_ingest_gateway.md)
+
+Never expose JWT or internal tokens in client-side code committed to git or in public documentation — use placeholders like `YOUR_JWT_TOKEN`.
 
 ---
 
@@ -116,6 +138,7 @@ Public (no JWT)
 ├── POST /auth/forgot-password
 ├── POST /auth/reset-password
 └── POST /graph/internal/sync/:id   (X-Graph-Internal-Token)
+└── POST /ingest/internal/mailbox   (X-Ingest-Internal-Token — Go gateway only)
 
 Protected (JWT + permission where noted)
 ├── GET  /ops/alerts                    (metrics.read)
@@ -135,6 +158,9 @@ Protected (JWT + permission where noted)
 ├── GET  /metrics/status-breakdown      (metrics.read)
 ├── GET  /metrics/flow-dashboard        (metrics.read)
 ├── GET  /metrics/agent-triage          (metrics.read)
+├── GET  /metrics/mailbox-ingest        (metrics.read)
+├── POST /metrics/mailbox-ingest/simulation (dev.simulation + admin or developer)
+├── GET  /metrics/mailbox-ingest/simulation (metrics.read)
 ├── GET  /graph/status                  (graph.read)
 ├── GET  /graph/campaigns               (graph.read)
 ├── GET  /graph/review/:id/neighborhood (graph.read)
@@ -889,6 +915,8 @@ curl -s -X POST http://localhost:3000/reviews \
   }'
 ```
 
+**Guide:** [ui_guide_review_dashboard.md](ui_guide_review_dashboard.md). Same endpoint as the manual submit modal in the UI (`source: user`). For high-volume **mailbox webhooks**, use the Go ingest-gateway instead — [data_guide_mailbox_ingest_gateway.md](data_guide_mailbox_ingest_gateway.md).
+
 ---
 
 ### GET /reviews/:id
@@ -1118,6 +1146,86 @@ curl -s "http://localhost:3000/metrics/agent-triage" \
 ```
 
 **Guide:** [ui_guide_agent_activity.md](ui_guide_agent_activity.md)
+
+---
+
+### GET /metrics/mailbox-ingest
+
+**Auth:** JWT required
+
+**Permission:** `metrics.read`
+
+**Purpose:** Proxy to Go ingest-gateway `/v1/stats/dashboard` — counters, per-minute series, simulation state for the **#ingest** tab.
+
+**Response (200):** JSON with `totals`, `rates`, `series.perMinute`, `uptimeSeconds`. When gateway is disabled or unreachable, includes `enabled: false` or `reachable: false`.
+
+**Guide:** [ui_guide_mailbox_ingest.md](ui_guide_mailbox_ingest.md), [data_guide_mailbox_ingest_gateway.md](data_guide_mailbox_ingest_gateway.md)
+
+---
+
+### GET /metrics/mailbox-ingest/simulation
+
+**Auth:** JWT required
+
+**Permission:** `metrics.read`
+
+**Purpose:** Proxy to Go `/v1/simulation/status` — whether mailbox simulation is running and at what rate.
+
+---
+
+### POST /metrics/mailbox-ingest/simulation
+
+**Auth:** JWT required
+
+**Permission:** `dev.simulation` **and** (`admin` **or** `developer` role)
+
+**Purpose:** Start or stop Go mailbox simulation (dev only).
+
+**Request body:**
+
+```json
+{ "action": "start", "emailsPerMinute": 5 }
+```
+
+or `{ "action": "stop" }`.
+
+**Response (200):** Simulation state from Go gateway.
+
+---
+
+## Internal ingest (`/ingest/internal`)
+
+Mounted **before** JWT middleware. **Not** for browser or analyst scripts — Go `ingest-gateway` only.
+
+### POST /ingest/internal/mailbox
+
+**Auth:** `X-Ingest-Internal-Token` header (matches `INGEST_INTERNAL_TOKEN` in secrets)
+
+**Request body:**
+
+```json
+{
+  "senderName": "Alice",
+  "senderEmail": "alice@example.com",
+  "subject": "Invoice",
+  "body": "Please review",
+  "source": "mailbox_ingest"
+}
+```
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `senderName` | No | Defaults to `"Unknown Sender"` |
+| `senderEmail` | Yes | Sender address |
+| `subject` | Yes | Subject line |
+| `body` | Yes | Body text (links extracted) |
+| `source` | No | `mailbox_ingest` or `mailbox_simulation` (default `mailbox_ingest`) |
+
+**Response (201):** `{ "id": "…", "status": "pending" }` — same Kafka enqueue as `POST /reviews`.
+
+**Errors:** **401** invalid token; **400** missing fields or invalid `source`.
+
+**Note:** Production mailbox webhooks should call Go `POST /v1/ingest/email` on port **8080**, which forwards here. Do not expose this route to the public internet without network policy.
 
 ---
 

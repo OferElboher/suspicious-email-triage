@@ -2,13 +2,13 @@
 
 This guide tells your team **exactly what to do** to build, configure, deploy, and verify the Suspicious Email Triage application in **staging** and **production**. Background concepts and the dev-vs-cloud service matrix live in companion docs — this file is the **ordered checklist with commands**.
 
-**Audience:** platform engineers **and newcomers** preparing a first staging deploy. If AWS terms like Secrets Manager or MSK are new, read [Novice primer — example on AWS](#novice-primer--example-on-aws) first.
+**Audience:** platform engineers preparing a first staging deploy. If AWS terms like Secrets Manager or MSK are new, read [AWS primer — example deployment](#aws-primer--example-deployment) first.
 
 **Related:** [stack_guide_staging_production_services.md](stack_guide_staging_production_services.md) (mock vs real services), [ops_guide_secrets_management.md](ops_guide_secrets_management.md), [ops_guide_kubernetes_helm.md](ops_guide_kubernetes_helm.md), [tech_env_configuration.md](tech_env_configuration.md).
 
 ---
 
-## Novice primer — example on AWS
+## AWS primer — example deployment
 
 This section assumes your company hosts the triage app on **Amazon Web Services (AWS)** in region **`us-east-1` (N. Virginia)**. Names below are **illustrative** — replace `acme.com` and IDs with your org’s values.
 
@@ -48,7 +48,7 @@ Acme deploys **staging** at `https://staging-triage.acme.com`. Production later 
 | App runtime | **Amazon EKS** cluster `acme-triage-staging` | Kubernetes for Helm chart — [EKS getting started](https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html) |
 | Public URL + TLS | **Route 53** DNS + **ACM** certificate + **ALB** Ingress | HTTPS for `staging-triage.acme.com` |
 
-**Phase 1 in plain language:** log into the AWS Console (or use Infrastructure-as-Code) and **create each row’s service**. Note every **hostname**, **port**, and **username** — you will paste them into `backend/.env.staging` (non-secret) and into a secrets file (passwords). Production repeats the same list with **separate** RDS/MSK/S3 resources so a staging mistake cannot wipe prod data.
+**Phase 1 overview:** log into the AWS Console (or use Infrastructure-as-Code) and **create each row’s service**. Note every **hostname**, **port**, and **username** — you will paste them into `backend/.env.staging` (non-secret) and into a secrets file (passwords). Production repeats the same list with **separate** RDS/MSK/S3 resources so a staging mistake cannot wipe prod data.
 
 ### What is `aws secretsmanager create-secret`?
 
@@ -97,7 +97,7 @@ Complete phases **in order**. Replace `example.net` hostnames and `REPLACE_*` pl
 
 Create (or designate) these **before** building images. Staging and production should use **separate** instances/buckets/accounts.
 
-**How to accomplish Phase 1 (novice path):**
+**How to accomplish Phase 1 (step-by-step):**
 
 1. Sign in to the [AWS Management Console](https://console.aws.amazon.com/).
 2. For each service in the table below, use the **Acme example** column as a template — create the resource in **`us-east-1`**, write down endpoints, and restrict **security groups** so only the EKS worker subnets can reach databases (not `0.0.0.0/0`).

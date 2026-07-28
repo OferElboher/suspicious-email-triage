@@ -1,10 +1,10 @@
 # Kafka event stream guide — topics, consumer groups, offsets, and reliability
 
-This document explains how the Suspicious Email Triage project uses **Apache Kafka APIs** through **Redpanda** (a Kafka-compatible broker) to decouple the Node API from Python background scoring. No prior Kafka experience required — we define terms, show which files implement each pattern, and describe trade-offs in plain language.
+This document explains how the Suspicious Email Triage project uses **Apache Kafka APIs** through **Redpanda** (a Kafka-compatible broker) to decouple the Node API from Python background scoring. We define terms, show which files implement each pattern, and describe trade-offs.
 
 **Technologies:** Redpanda (broker), kafka-python (Python consumer/producer), Node producer (`backend/src/kafka/`), Celery + Redis (task queue after dispatch).
 
-**Related:** [arch_guide_worker_pipeline.md](arch_guide_worker_pipeline.md), [stack_guide_versions_builds.md](stack_guide_versions_builds.md), [stack_guide_pre_push_verification.md](stack_guide_pre_push_verification.md).
+**Related:** [arch_guide_worker_pipeline.md](arch_guide_worker_pipeline.md), [data_guide_mailbox_ingest_gateway.md](data_guide_mailbox_ingest_gateway.md), [stack_guide_versions_builds.md](stack_guide_versions_builds.md), [stack_guide_pre_push_verification.md](stack_guide_pre_push_verification.md).
 
 **Code package:** `ai_service/kafka_patterns/` — topic names, offset commits, validation, DLQ helpers.
 
@@ -14,7 +14,7 @@ This document explains how the Suspicious Email Triage project uses **Apache Kaf
 
 ## Why a message broker sits between API and workers
 
-When an analyst submits a review:
+When a review is created — via **`POST /reviews`**, the manual UI modal, or **mailbox ingest** (Go gateway → Node internal API) — the API path is the same after MongoDB insert:
 
 1. The **HTTP request** must finish quickly — save to MongoDB/Postgres and return to the UI.
 2. **Scoring** (LLM, rules, enrichment) can take seconds and should not block the browser.

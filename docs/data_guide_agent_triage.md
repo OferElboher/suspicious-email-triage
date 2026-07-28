@@ -2,7 +2,7 @@
 
 This guide explains the **Agent Triage** backend enhancement: a bounded **finite-state machine (FSM)** that replaces the single-shot LLM call when `AGENT_TRIAGE_ENABLED=true`. It demonstrates four foundational LLM-application pillars — **orchestration**, **tools/actions**, **workflows**, and **guardrails** — using **Amazon Bedrock** or **Google Vertex AI** in staging/production, and a **free mock** (`mock-cloud-llm`) in local Docker.
 
-No prior experience with AI agents, Bedrock, or Vertex is required. If a term is unfamiliar, start with the [Glossary](#glossary) below, then read the [workflow examples](#workflow-examples-for-novices).
+If a term is unfamiliar, start with the [Glossary](#glossary) below, then read the [workflow examples](#workflow-examples).
 
 **Related:** [data_guide_mock_llm.md](data_guide_mock_llm.md) (legacy single-shot LLM path), [arch_guide_worker_pipeline.md](arch_guide_worker_pipeline.md) (Kafka → Celery), [ui_guide_agent_activity.md](ui_guide_agent_activity.md) (per-review trace + `#agent` fleet view), [ops_guide_secrets_management.md](ops_guide_secrets_management.md) (tokens in gitignored secrets only).
 
@@ -12,7 +12,7 @@ No prior experience with AI agents, Bedrock, or Vertex is required. If a term is
 
 ## Glossary
 
-These terms appear throughout the agent triage stack. Each is explained in plain language before we use it in architecture diagrams and examples.
+These terms appear throughout the agent triage stack. Each is explained before we use it in architecture diagrams and examples.
 
 | Term | What it means in this project |
 |------|-------------------------------|
@@ -91,7 +91,7 @@ flowchart TB
 
 ## Mock vs real LLM — two different paths
 
-Many newcomers confuse **mock-llm** and **mock-cloud-llm**. They serve different code paths:
+Many deployments confuse **mock-llm** and **mock-cloud-llm**. They serve different code paths:
 
 | Container | Port | Used when | API shape |
 |-----------|------|-----------|-----------|
@@ -229,7 +229,7 @@ Structured synthesis schema (enforced in `post_llm.py` via **jsonschema**):
 
 ---
 
-## Workflow examples for novices
+## Workflow examples
 
 The following stories walk through **realistic** end-to-end paths. State names match what you will see in `agentTrace.statesVisited` in MongoDB Compass or the UI **Agent activity** panel.
 

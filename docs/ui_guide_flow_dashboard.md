@@ -1,6 +1,6 @@
 # Live flow dashboard — single-screen SOC wall (gauges, clocks, live pipeline)
 
-This guide explains the **Live flow dashboard** tab (`#flow`) in plain language: why it fits **one screen without scrolling**, how the layout balances compact gauges against a readable info column, configurable auto-refresh, nine dials (semicircle, vertical tank, traffic-light ranges, volatility jitter), clocks, and how the backend builds the numbers. No prior experience with SVG, CSS Grid, or security operations center (SOC) wall displays is required.
+This guide explains the **Live flow dashboard** tab (`#flow`): why it fits **one screen without scrolling**, how the layout balances compact gauges against a readable info column, configurable auto-refresh, nine dials (semicircle, vertical tank, traffic-light ranges, volatility jitter), clocks, and how the backend builds the numbers.
 
 **Related:** [ui_guide_app_navigation.md](ui_guide_app_navigation.md), [stack_guide_dev_simulation.md](stack_guide_dev_simulation.md), [ops_guide_metrics_alerting.md](ops_guide_metrics_alerting.md), [ui_guide_color_themes.md](ui_guide_color_themes.md) (Appearance themes and the range warning badge).
 
