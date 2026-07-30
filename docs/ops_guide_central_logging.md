@@ -1,54 +1,74 @@
 # Central logging and search guide
 
-This guide describes the **free-path central logging** implemented for [TBD §1.3](roadmap_tbd.md#13-central-logging-and-search-p0p1): one **JSON-lines** file shared by Node and Python services, searchable via the API or local tools (**lnav**, **grep**). No OpenSearch or Datadog is required for dev and demos.
+This guide describes the **free-path central logging** implemented for [TBD §1.3](roadmap_tbd.md#13-central-logging-and-search-p0p1): one **JSON-lines** file shared by **every application container** in dev, searchable via the REST API, the React **#logs** tab, or local tools (**lnav**, **grep**). You do not need OpenSearch or Datadog to debug cross-service flows locally.
 
 **Hands-on viewing (lnav, copy from Docker, curl examples):** [tech_postgresql_dbeaver_auth_logs.md](tech_postgresql_dbeaver_auth_logs.md) — Part 2 and Options A–D.
 
-**Related:** [tech_env_configuration.md](tech_env_configuration.md), [auth_guide_rbac.md](auth_guide_rbac.md).
+**Related:** [tech_env_configuration.md](tech_env_configuration.md), [auth_guide_rbac.md](auth_guide_rbac.md), [data_guide_mailbox_ingest_gateway.md](data_guide_mailbox_ingest_gateway.md) (Go `service=ingest-gateway` filter).
+
+---
+
+## What problem does this solve?
+
+In a microservice-style stack, each container normally logs only to its own stdout. When a mailbox webhook fails halfway through the pipeline, you might grep `docker compose logs backend` and `docker compose logs ingest-gateway` separately and still miss the Celery task that retried. **Central logging** means every service writes the same JSON shape into **one append-only file** on a **shared Docker volume**, so a SOC lead can ask: “show me all `error` lines mentioning `graph` in the last hour” without knowing which container emitted them.
 
 ---
 
 ## What is `merged.log`?
 
-Every participating service appends **one JSON object per line** (newline-delimited JSON, NDJSON):
+Every participating service appends **one JSON object per line** (NDJSON — newline-delimited JSON):
 
 ```json
-{"ts":"2026-06-01T10:15:00.000Z","level":"info","topic":"reviews","message":"created","id":"..."}
+{"ts":"2026-06-01T10:15:00.000Z","level":"info","topic":"ingest","message":"internal mailbox review created","service":"backend","reviewId":"507f..."}
 ```
 
 | Field | Meaning |
 |-------|---------|
-| `ts` | ISO-8601 timestamp |
-| `level` | `info`, `warn`, `error`, or `critical` |
-| `topic` | Logical area (`reviews`, `auth`, `graph`, `ops`, …) |
-| `message` | Human-readable summary |
-| *(extra keys)* | Structured metadata (ids, errors, hints in non-prod) |
+| `ts` | ISO-8601 timestamp in UTC — used for `from` / `to` filters in `/logs/search`. |
+| `level` | Severity: `info`, `warn`, `error`, or `critical` (Node also uses these; Go uses info/warn/error). |
+| `topic` | Logical area inside the service — e.g. `reviews`, `auth`, `ingest`, `celery`, `mock-llm`. |
+| `message` | Short human-readable summary (what happened). |
+| `service` | **Which container wrote the line** — use this to isolate one component (see table below). |
+| *(extra keys)* | Structured metadata: `reviewId`, `source`, `error`, `model`, etc. |
 
-**Implementation:** `backend/src/lib/logger.js` (Node). Python workers use the same path via `ai_service/app/logutil.py` and env alignment.
+### Which `service` values exist in dev Compose?
 
-**Paths:**
+| `service` value | Container | Implementation module |
+|-----------------|-----------|------------------------|
+| `backend` | `triage-backend` | `backend/src/lib/logger.js` |
+| `ai-celery` | `triage-ai-celery` | `ai_service/app/logutil.py` |
+| `ai-kafka-dispatch` | `triage-ai-kafka-dispatch` | `ai_service/app/logutil.py` |
+| `ingest-gateway` | `triage-ingest-gateway` | `ingest-gateway/internal/logger/logger.go` |
+| `mock-llm` | `triage-mock-llm` | `ai_service/mock_commercial_llm/server.py` → `logutil` |
+| `mock-cloud-llm` | `triage-mock-cloud-llm` | `ai_service/mock_cloud_llm/server.py` → `logutil` |
+| `django-admin` | `triage-django-admin` | `ensure_dev_bootstrap_admin` → `app.logutil` |
+| `legacy-bullmq-worker` | `triage-worker` (optional profile) | same Node logger as backend |
 
-| Environment | Typical path |
-|-------------|--------------|
-| Docker Compose | `/var/log/triage/merged.log` on volume `triage-logs` |
-| Local Node (no volume) | `backend/logs/merged.log` (or `MERGED_LOG_PATH` / `LOG_DIR`) |
+**Pattern:** Twelve-factor app configuration — `MERGED_LOG_PATH` and `SERVICE_NAME` are **environment variables** set in `infra/docker/docker-compose.yml`, not hard-coded paths. Locally (without Docker), services fall back to `backend/logs/merged.log` or `ai_service/logs/merged.log` unless you export `MERGED_LOG_PATH`.
 
-Configure in `backend/.env.dev` (example):
-
-```bash
-MERGED_LOG_PATH=./logs/merged.log
-# In containers: MERGED_LOG_PATH=/var/log/triage/merged.log
-```
-
-The logger also mirrors lines to **container stdout** for `docker compose logs`; the **authoritative searchable file** for cross-service history is `merged.log`.
+**Technology:** append-only file I/O (`fs.appendFileSync` in Node, `open(O_APPEND)` in Go, Python `open(..., "a")`). Concurrent writers on the shared volume are safe because each write is one atomic line; in-process mutexes (Go) prevent torn lines from a single process.
 
 ---
 
-## Docker volume pattern
+## Paths and Docker volume
 
-`infra/docker/docker-compose.yml` mounts `triage-logs:/var/log/triage` on **backend**, **dispatcher**, **celery-worker**, and related services so all writers share one file.
+| Environment | Typical path |
+|-------------|--------------|
+| Docker Compose | `/var/log/triage/merged.log` on named volume `triage-logs` |
+| Local Node (no volume) | `backend/logs/merged.log` (override with `MERGED_LOG_PATH` or `LOG_DIR`) |
 
-To browse on the host without API access, copy the file out or bind-mount — see [tech_postgresql_dbeaver_auth_logs.md](tech_postgresql_dbeaver_auth_logs.md#option-b--copy-log-to-wsl-open-in-vs-code--cursor-simple-gui-search).
+`backend/.env.dev` documents the variable name (not secret values):
+
+```bash
+MERGED_LOG_PATH=/var/log/triage/merged.log
+# Host-only dev without volume: MERGED_LOG_PATH=./logs/merged.log
+```
+
+Each service **also mirrors** lines to container stdout for `docker compose logs <service>`. The **authoritative cross-service timeline** for search APIs is `merged.log`.
+
+`infra/docker/docker-compose.yml` mounts `triage-logs:/var/log/triage` on **backend**, **ai-celery**, **ai-kafka-dispatch**, **ingest-gateway**, **mock-llm**, **mock-cloud-llm**, **django-admin**, and the optional **worker** profile.
+
+To browse on the host without the API, copy the file out — see [tech_postgresql_dbeaver_auth_logs.md](tech_postgresql_dbeaver_auth_logs.md#option-b--copy-log-to-wsl-open-in-vs-code--cursor-simple-gui-search).
 
 ---
 
@@ -58,7 +78,7 @@ To browse on the host without API access, copy the file out or bind-mount — se
 **Permission:** `logs.read` (typically **admin** role)  
 **Implementation:** `backend/src/lib/logSearch.js`, registered in `backend/src/http/createApp.js`.
 
-Requires `Authorization: Bearer <JWT>` after login.
+Requires `Authorization: Bearer <JWT>` after login. Only the **backend** reads the file; other services **write** to it. That keeps RBAC in one place.
 
 ### Query parameters
 
@@ -69,21 +89,30 @@ Requires `Authorization: Bearer <JWT>` after login.
 | `messagePattern` | Regex applied to the `message` field only |
 | `topic` | Substring match on `topic` |
 | `level` | Exact match on `level` (`info`, `warn`, `error`, …) |
-| `service` | Exact match on optional `service` field |
+| `service` | **Exact match** on `service` — e.g. `ingest-gateway` for Go mailbox logs only |
 | `from`, `to` | ISO timestamps filtering `ts` |
 | `limit` | Max rows (default 200, maximum 2000) |
 | `offset` | Skip first N matching rows (pagination) |
 
 ### React UI
 
-Signed-in users with **`logs.read`** (typically admin) open the **Search unified logs** sub-window (`#logs` icon in the navigation bar). The panel mirrors these query parameters and renders matching NDJSON lines. See [ui_guide_app_navigation.md](ui_guide_app_navigation.md).
+Signed-in users with **`logs.read`** open **Search unified logs** (`#logs` in the navigation bar). The panel exposes the same filters, including **Service**. See [ui_guide_app_navigation.md](ui_guide_app_navigation.md).
 
-### Example
+### Examples
 
 ```bash
 TOKEN="<your-jwt-from-POST-/auth/login>"
 
-curl -sS "http://localhost:3000/logs/search?keyword=simulation&limit=50" \
+# Go mailbox ingest-gateway only
+curl -sS "http://localhost:3000/logs/search?service=ingest-gateway&limit=100" \
+  -H "Authorization: Bearer ${TOKEN}"
+
+# Mock commercial LLM completions
+curl -sS "http://localhost:3000/logs/search?service=mock-llm&topic=mock-llm&limit=50" \
+  -H "Authorization: Bearer ${TOKEN}"
+
+# All services — simulation errors
+curl -sS "http://localhost:3000/logs/search?keyword=simulation&level=error&limit=50" \
   -H "Authorization: Bearer ${TOKEN}"
 
 curl -sS "http://localhost:3000/logs/search?topic=reviews&from=2026-06-01T00:00:00Z&limit=100" \
@@ -95,7 +124,15 @@ Response shape:
 ```json
 {
   "path": "/var/log/triage/merged.log",
-  "entries": [ { "ts": "...", "level": "info", "topic": "...", "message": "..." } ],
+  "entries": [
+    {
+      "ts": "...",
+      "level": "info",
+      "topic": "ingest",
+      "message": "...",
+      "service": "ingest-gateway"
+    }
+  ],
   "truncated": false
 }
 ```
@@ -123,7 +160,7 @@ Example response:
 {
   "path": "/var/log/triage/merged.log",
   "exists": true,
-  "topics": { "reviews": 120, "auth": 45 },
+  "topics": { "reviews": 120, "auth": 45, "ingest": 30 },
   "levels": { "info": 150, "warn": 10, "error": 5 },
   "totalLinesScanned": 5000
 }
@@ -140,7 +177,7 @@ You do **not** need a log SaaS to debug locally.
 | Tool | Best for |
 |------|----------|
 | **lnav** | Interactive filtering, timestamps, JSON pretty-print on WSL |
-| **grep** / **rg** | Quick one-off searches in CI or scripts |
+| **grep** / **rg** | Quick one-off searches — e.g. `grep '"service":"ingest-gateway"' merged.log` |
 | **VS Code / Cursor** | Open copied `backend/logs/merged.log`, Ctrl+F |
 
 Workflow summary:
@@ -168,22 +205,30 @@ The same **JSON-lines** format can be shipped to OpenSearch, Grafana Loki, Datad
 
 - Log search routes require JWT and **`logs.read`** — do not expose admin tokens in tickets or screenshots.
 - Dev logs may include non-production hints in console output; production should set `DEPLOYMENT_ENV=prod` so sensitive hints stay out of console formatting (file JSON still contains structured fields you choose to log).
-- Use placeholder emails/passwords in docs and examples — never commit real credentials.
+- Documentation and examples use **placeholder** tokens and emails — never copy values from `backend/dev.secrets` (gitignored) into markdown.
 
 ---
 
 ## Tests
 
-- `backend/__tests__/opsApi.test.js` — `/ops/logs/summary` permission and shape.
+Automated coverage verifies the `service` field and Compose wiring:
+
+- `backend/__tests__/logger.test.js` — Node `SERVICE_NAME` in NDJSON
+- `backend/__tests__/logSearch.test.js` — `?service=` filter
+- `ingest-gateway/internal/logger/logger_test.go` — Go NDJSON shape
+- `ai_service/tests/test_logutil.py`, `test_mock_unified_log.py` — Python mocks
+- `integration_tests/test_repo_guardrails.py` — Compose volume + env guardrails
+- `backend/__tests__/opsApi.test.js` — `/ops/logs/summary` permission and shape
 
 <div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
 
 <p><strong>Run in terminal</strong></p>
 
 ```bash
-cd ~/suspicious-email-triage/backend
-npm test -- --watchAll=false --testPathPattern=opsApi
+cd ~/suspicious-email-triage
+bash scripts/test-all.sh
 ```
 
 </div>
-- Broader stack checks: [stack_guide_pre_push_verification.md](stack_guide_pre_push_verification.md).
+
+Broader stack checks: [stack_guide_pre_push_verification.md](stack_guide_pre_push_verification.md).

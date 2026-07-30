@@ -147,6 +147,43 @@ DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d elast
 
 ---
 
+### Option C — All capabilities and mocks (mailbox ingest, agent triage, unified logs)
+
+Use this when you want **every dev feature**: Go mailbox ingest (`#ingest`), agent triage (mock cloud LLM), Django admin, Mailpit, and **central logging** (`merged.log` on volume `triage-logs` — filter in `#logs` or `GET /logs/search?service=ingest-gateway`). See [ops_guide_central_logging.md](ops_guide_central_logging.md).
+
+**One-time secrets (gitignored):**
+
+```bash
+cd ~/suspicious-email-triage
+cp backend/dev.secrets.example backend/dev.secrets
+# Edit dev.secrets: set INGEST_INTERNAL_TOKEN to a long random string (same value Go and Node read at runtime).
+bash scripts/configure-dev-bootstrap-admin.sh YOUR_EMAIL@example.com
+```
+
+**Run in terminal** — full dev stack with mocks
+
+```bash
+cd ~/suspicious-email-triage
+DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --build \
+  mongo postgres redis neo4j redpanda elasticsearch \
+  mock-snowflake mock-secrets-manager mock-s3 mailpit \
+  ingest-gateway backend django-admin \
+  ai-celery ai-kafka-dispatch mock-llm mock-cloud-llm
+docker compose -f infra/docker/docker-compose.yml ps
+```
+
+| Service | Technology | What it unlocks |
+|---------|------------|-----------------|
+| `ingest-gateway` | Go HTTP on **8080** | Mailbox webhooks + dev simulation → Node internal ingest |
+| `mock-cloud-llm` | Python HTTP on **8091** | Agent triage without Bedrock/Vertex billing |
+| `mock-llm` | Python HTTP on **8090** | Commercial LLM mock (`LLM_PROVIDER=mock_commercial`) |
+| `django-admin` | Django on **8000** | User/role CRUD; bootstrap logs to `merged.log` with `service=django-admin` |
+| *(all app containers)* | Shared volume `triage-logs` | NDJSON `merged.log` — search via API `#logs` tab |
+
+Set `MAILBOX_INGEST_ENABLED=true` in `backend/.env.dev` (default in repo) and ensure `INGEST_INTERNAL_TOKEN` in `dev.secrets` matches what the Go container loads.
+
+---
+
 ### Recreate backend after `.env` changes
 
 If you changed `backend/.env` after the container was created, recreate the backend so env vars reload:

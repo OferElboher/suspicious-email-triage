@@ -17,6 +17,7 @@ import (
 
 	"github.com/oferelboher/suspicious-email-triage/ingest-gateway/internal/backend"
 	"github.com/oferelboher/suspicious-email-triage/ingest-gateway/internal/config"
+	gwlogger "github.com/oferelboher/suspicious-email-triage/ingest-gateway/internal/logger"
 	gwmetrics "github.com/oferelboher/suspicious-email-triage/ingest-gateway/internal/metrics"
 	"github.com/oferelboher/suspicious-email-triage/ingest-gateway/internal/simulation"
 	"github.com/oferelboher/suspicious-email-triage/ingest-gateway/internal/stats"
@@ -91,12 +92,14 @@ func (a *API) handleIngestEmail(w http.ResponseWriter, r *http.Request) {
 	if err := decodeJSON(r, &body); err != nil {
 		a.stats.RecordError(false)
 		gwmetrics.RecordError("invalid_json")
+		gwlogger.Warn("ingest", "invalid webhook JSON", map[string]interface{}{"error": err.Error()})
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid_json"})
 		return
 	}
 	if err := validateIngest(body); err != nil {
 		a.stats.RecordError(false)
 		gwmetrics.RecordError("validation")
+		gwlogger.Warn("ingest", "webhook validation failed", map[string]interface{}{"error": err.Error()})
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
@@ -110,11 +113,17 @@ func (a *API) handleIngestEmail(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		a.stats.RecordError(true)
 		gwmetrics.RecordError("backend")
+		gwlogger.Error("ingest", "Node internal mailbox create failed", map[string]interface{}{
+			"error": err.Error(), "senderEmail": body.SenderEmail,
+		})
 		writeJSON(w, http.StatusBadGateway, map[string]string{"error": "backend_failed", "detail": err.Error()})
 		return
 	}
 	a.stats.RecordSuccess("webhook", false)
 	gwmetrics.RecordSuccess("mailbox_ingest")
+	gwlogger.Info("ingest", "mailbox webhook persisted", map[string]interface{}{
+		"reviewId": result.ID, "source": "mailbox_ingest", "senderEmail": body.SenderEmail,
+	})
 	writeJSON(w, http.StatusCreated, result)
 }
 
@@ -135,10 +144,12 @@ func (a *API) handleSimulationStart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := a.simulation.Start(body.EmailsPerMinute); err != nil {
+		gwlogger.Warn("simulation", "simulation start rejected", map[string]interface{}{"error": err.Error()})
 		writeJSON(w, http.StatusConflict, map[string]string{"error": err.Error()})
 		return
 	}
 	enabled, rate := a.simulation.Status()
+	gwlogger.Info("simulation", "simulation started", map[string]interface{}{"emailsPerMinute": rate})
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"enabled":         enabled,
 		"emailsPerMinute": rate,
@@ -153,6 +164,7 @@ func (a *API) handleSimulationStop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.simulation.Stop()
+	gwlogger.Info("simulation", "simulation stopped", nil)
 	writeJSON(w, http.StatusOK, map[string]string{"status": "stopped"})
 }
 

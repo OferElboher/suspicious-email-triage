@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/oferelboher/suspicious-email-triage/ingest-gateway/internal/backend"
+	gwlogger "github.com/oferelboher/suspicious-email-triage/ingest-gateway/internal/logger"
 	"github.com/oferelboher/suspicious-email-triage/ingest-gateway/internal/stats"
 )
 
@@ -124,6 +125,9 @@ func (c *Controller) emitOne(ctx context.Context) {
 	_, err := c.backend.CreateMailboxReview(ctx, payload)
 	if err != nil {
 		c.stats.RecordError(true)
+		gwlogger.Warn("simulation", "synthetic mailbox emit failed", map[string]interface{}{
+			"seq": n, "error": err.Error(),
+		})
 		if c.onResult != nil {
 			c.onResult(false, true)
 		}

@@ -531,6 +531,35 @@ def test_pipeline_prefect_dbt_wired_to_analytics_ui():
     assert "does not depend on them" not in guide.lower()
 
 
+def test_unified_logging_all_services_wired():
+    """Every app container appends NDJSON to triage-logs with SERVICE_NAME for /logs/search."""
+    compose = (ROOT / "infra/docker/docker-compose.yml").read_text(encoding="utf-8")
+    for svc in (
+        "backend:",
+        "ai-celery:",
+        "ai-kafka-dispatch:",
+        "ingest-gateway:",
+        "mock-llm:",
+        "mock-cloud-llm:",
+        "django-admin:",
+    ):
+        assert svc in compose
+    assert (ROOT / "ingest-gateway/internal/logger/logger.go").is_file()
+    assert "SERVICE_NAME=ingest-gateway" in compose
+    assert "MERGED_LOG_PATH=/var/log/triage/merged.log" in compose
+    assert "triage-logs:/var/log/triage" in compose
+    logger_js = (ROOT / "backend/src/lib/logger.js").read_text(encoding="utf-8")
+    assert "SERVICE_NAME" in logger_js
+    logutil = (ROOT / "ai_service/app/logutil.py").read_text(encoding="utf-8")
+    assert "SERVICE_NAME" in logutil
+    mock_src = (ROOT / "ai_service/mock_commercial_llm/server.py").read_text(encoding="utf-8")
+    assert "_log_unified" in mock_src
+    bootstrap = (
+        ROOT / "backend/triage_auth/management/commands/ensure_dev_bootstrap_admin.py"
+    ).read_text(encoding="utf-8")
+    assert "log_line" in bootstrap
+
+
 def test_mailbox_ingest_gateway_wired():
     """Go ingest-gateway, Node internal route, React #ingest tab, and docs indexed."""
     assert (ROOT / "ingest-gateway/go.mod").is_file()

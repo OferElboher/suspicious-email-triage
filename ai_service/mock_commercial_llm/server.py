@@ -14,6 +14,16 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from mock_commercial_llm.responses import build_chat_completion_response
 
 
+def _log_unified(level: str, message: str, meta: dict | None = None) -> None:
+    """Append one line to merged.log when MERGED_LOG_PATH is configured (Docker volume)."""
+    try:
+        from app.logutil import log_line
+
+        log_line(level, "mock-llm", message, **(meta or {}))
+    except OSError:
+        pass
+
+
 def expected_api_key() -> str:
     """API key clients must send as Authorization: Bearer <key>."""
     return os.environ.get("LLM_API_KEY", "dev-mock-key")
@@ -40,6 +50,7 @@ class MockOpenAIHandler(BaseHTTPRequestHandler):
 
         auth = self.headers.get("Authorization", "")
         if auth != f"Bearer {expected_api_key()}":
+            _log_unified("warn", "mock-llm auth rejected", {"status": 401})
             self._json_response(
                 401,
                 {"error": {"message": "Invalid API key", "type": "auth_error"}},
@@ -70,6 +81,7 @@ class MockOpenAIHandler(BaseHTTPRequestHandler):
             temperature=temperature,
             max_tokens=max_tokens,
         )
+        _log_unified("info", "mock-llm request completed", {"model": model, "status": 200})
         self._json_response(200, response)
 
     def _json_response(self, status: int, payload: dict) -> None:

@@ -14,7 +14,7 @@ COPY scripts /app/scripts
 COPY ai_service /app/ai_service
 
 # triage_auth lives under /app/backend — required for DJANGO_SETTINGS_MODULE import in CI scripts.
-ENV PYTHONPATH=/app/backend
+ENV PYTHONPATH=/app/backend:/app/ai_service
 ENV DJANGO_SETTINGS_MODULE=triage_auth.django_admin_settings
 ENV ENVIRONMENT=dev
 ENV DJANGO_ADMIN_SQLITE_PATH=/app/backend/data/django_admin.sqlite3

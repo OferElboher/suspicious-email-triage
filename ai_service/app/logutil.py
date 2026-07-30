@@ -31,6 +31,7 @@ def log_line(level: str, topic: str, message: str, **meta):
         "level": level,
         "topic": topic,
         "message": message,
+        "service": os.environ.get("SERVICE_NAME", "ai-celery"),
         **meta,
     }
     # path is resolved once per call so env changes in tests are respected.

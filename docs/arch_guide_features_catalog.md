@@ -271,12 +271,12 @@ If you are new to a topic (Kafka, Neo4j, JWT, etc.), follow the linked guides in
   - Guide: [ui_guide_flow_dashboard.md](ui_guide_flow_dashboard.md).
 
 - **Central merged logging**
-  - JSON-lines `merged.log` shared across containers via Docker volume.
-  - Node logger, Python logutil, append-only file I/O.
-
-- **Log search and summary APIs**
-  - Keyword/topic/time filter and aggregated counts for SOC-style triage.
-  - Node readline, Express, RBAC `logs.read`.
+  - **Pattern:** NDJSON (newline-delimited JSON) — one JSON object per line in a single append-only file so many containers can write concurrently without corrupting the file.
+  - **Docker volume:** `triage-logs:/var/log/triage` mounted on every application container; `MERGED_LOG_PATH=/var/log/triage/merged.log`.
+  - **Service filter:** each line includes `"service": "<name>"` so `GET /logs/search?service=ingest-gateway` isolates Go mailbox logs.
+  - **Writers:** Node `backend/src/lib/logger.js`, Python `ai_service/app/logutil.py`, Go `ingest-gateway/internal/logger`, mock LLM HTTP servers, Django bootstrap command.
+  - **Search:** `GET /logs/search`, React `#logs` tab (`LogsView.jsx`), RBAC `logs.read`.
+  - Guide: [ops_guide_central_logging.md](ops_guide_central_logging.md).
 
 - **S3 PostgreSQL logical backups**
   - `POST /ops/backups/run` uploads JSON snapshot via `@aws-sdk/client-s3`; mock-s3 in dev, real bucket in staging/prod.

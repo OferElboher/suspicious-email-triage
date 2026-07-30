@@ -150,6 +150,9 @@ services:
     env_file:
       # Profile env: defaults to backend/.env.dev; set DEPLOYMENT_ENV=staging|prod to switch.
       - ../../backend/.env.${DEPLOYMENT_ENV:-dev}
+    environment:
+      - SERVICE_NAME=backend
+      - MERGED_LOG_PATH=/var/log/triage/merged.log
     volumes:
       - triage-logs:/var/log/triage
     depends_on:
@@ -211,8 +214,11 @@ services:
       - DJANGO_SETTINGS_MODULE=triage_auth.django_admin_settings
       - DJANGO_ADMIN_SQLITE_PATH=/app/backend/data/django_admin.sqlite3
       - AI_SERVICE_ROOT=/app/ai_service
+      - SERVICE_NAME=django-admin
+      - MERGED_LOG_PATH=/var/log/triage/merged.log
     volumes:
       - django-admin-state:/app/backend/data
+      - triage-logs:/var/log/triage
     depends_on:
       - mock-secrets-manager
       - postgres
@@ -227,6 +233,9 @@ services:
     env_file:
       # Profile env: defaults to backend/.env.dev; set DEPLOYMENT_ENV=staging|prod to switch.
       - ../../backend/.env.${DEPLOYMENT_ENV:-dev}
+    environment:
+      - SERVICE_NAME=legacy-bullmq-worker
+      - MERGED_LOG_PATH=/var/log/triage/merged.log
     volumes:
       - triage-logs:/var/log/triage
     depends_on:
@@ -249,6 +258,8 @@ services:
       - ../../backend/.env.${DEPLOYMENT_ENV:-dev}
     environment:
       - AI_SERVICE_ROOT=/app
+      - SERVICE_NAME=ai-celery
+      - MERGED_LOG_PATH=/var/log/triage/merged.log
     volumes:
       - triage-logs:/var/log/triage
     extra_hosts:
@@ -277,13 +288,13 @@ services:
       - ../../backend/.env.${DEPLOYMENT_ENV:-dev}
     environment:
       - AI_SERVICE_ROOT=/app
+      - SERVICE_NAME=ai-kafka-dispatch
+      - MERGED_LOG_PATH=/var/log/triage/merged.log
     volumes:
       - triage-logs:/var/log/triage
     depends_on:
       - mock-secrets-manager
       - redpanda
-      - redis
-      - mock-llm
     restart: unless-stopped
 
   # mock-cloud-llm: Bedrock/Vertex Converse-shaped mock for agent triage (zero API cost).
@@ -297,6 +308,10 @@ services:
       - "8091:8091"
     environment:
       - MOCK_CLOUD_LLM_PORT=8091
+      - SERVICE_NAME=mock-cloud-llm
+      - MERGED_LOG_PATH=/var/log/triage/merged.log
+    volumes:
+      - triage-logs:/var/log/triage
     restart: unless-stopped
 
   # mock-llm: OpenAI-compatible mock API (zero cost) for LLM_PROVIDER=mock_commercial demos.
@@ -311,8 +326,12 @@ services:
     environment:
       - MOCK_LLM_PORT=8090
       - LLM_API_KEY=dev-mock-key
+      - SERVICE_NAME=mock-llm
+      - MERGED_LOG_PATH=/var/log/triage/merged.log
     env_file:
       - ../../backend/.env.${DEPLOYMENT_ENV:-dev}
+    volumes:
+      - triage-logs:/var/log/triage
     restart: unless-stopped
 
   # ingest-gateway: Go mailbox ingest microservice (webhooks + dev simulation).
@@ -331,6 +350,10 @@ services:
     environment:
       - INGEST_GATEWAY_LISTEN=:8080
       - INGEST_BACKEND_URL=http://backend:3000
+      - MERGED_LOG_PATH=/var/log/triage/merged.log
+      - SERVICE_NAME=ingest-gateway
+    volumes:
+      - triage-logs:/var/log/triage
     depends_on:
       - backend
     restart: unless-stopped

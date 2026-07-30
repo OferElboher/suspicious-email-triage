@@ -64,6 +64,11 @@ router.post("/mailbox", async (req, res) => {
     scheduleSearchIndex(review._id);
     incrementReviewsCreated();
 
+    logger.info("ingest", "internal mailbox review created", {
+      reviewId: review._id.toString(),
+      source,
+    });
+
     return res.status(201).json({ id: review._id.toString(), status: review.status });
   } catch (err) {
     logger.error("ingest", "internal mailbox create failed", { error: err.message });

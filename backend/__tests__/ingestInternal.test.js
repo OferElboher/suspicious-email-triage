@@ -14,12 +14,17 @@ jest.mock("../src/services/reviewSearchSync", () => ({
 jest.mock("../src/lib/appMetrics", () => ({
   incrementReviewsCreated: jest.fn(),
 }));
+jest.mock("../src/lib/logger", () => ({
+  info: jest.fn(),
+  error: jest.fn(),
+}));
 
 const request = require("supertest");
 const express = require("express");
 const ingestInternalRoutes = require("../src/api/ingestInternal");
 const Review = require("../src/models/Review");
 const { enqueueAfterCreate } = require("../src/services/reviewPipeline");
+const logger = require("../src/lib/logger");
 
 /** Build minimal Express app mounting only internal ingest routes (no JWT). */
 function buildApp() {
@@ -66,6 +71,11 @@ describe("ingest internal mailbox API", () => {
     expect(res.body.status).toBe("pending");
     expect(Review.create).toHaveBeenCalled();
     expect(enqueueAfterCreate).toHaveBeenCalled();
+    expect(logger.info).toHaveBeenCalledWith(
+      "ingest",
+      "internal mailbox review created",
+      expect.objectContaining({ source: "mailbox_ingest" })
+    );
   });
 
   it("rejects invalid source value", async () => {

@@ -11,7 +11,6 @@
 package main
 
 import (
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -19,6 +18,7 @@ import (
 	"github.com/oferelboher/suspicious-email-triage/ingest-gateway/internal/backend"
 	"github.com/oferelboher/suspicious-email-triage/ingest-gateway/internal/config"
 	"github.com/oferelboher/suspicious-email-triage/ingest-gateway/internal/handler"
+	gwlogger "github.com/oferelboher/suspicious-email-triage/ingest-gateway/internal/logger"
 	gwmetrics "github.com/oferelboher/suspicious-email-triage/ingest-gateway/internal/metrics"
 	"github.com/oferelboher/suspicious-email-triage/ingest-gateway/internal/simulation"
 	"github.com/oferelboher/suspicious-email-triage/ingest-gateway/internal/stats"
@@ -32,7 +32,7 @@ func main() {
 	// When MAILBOX_INGEST_ENABLED=false, keep the container alive but idle so
 	// Docker Compose does not restart-loop; operators can enable via env + recreate.
 	if !cfg.GatewayEnabled {
-		log.Println("ingest-gateway disabled (MAILBOX_INGEST_ENABLED=false); sleeping")
+		gwlogger.Warn("startup", "ingest-gateway disabled (MAILBOX_INGEST_ENABLED=false); sleeping", nil)
 		select {} // block forever — no HTTP listener
 	}
 
@@ -69,12 +69,16 @@ func main() {
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
-	log.Printf("ingest-gateway listening on %s env=%s backend=%s max_sim_rate=%d",
-		cfg.ListenAddr, cfg.DeploymentEnv, cfg.BackendURL, cfg.MaxEventsPerMinute)
+	gwlogger.Info("startup", "ingest-gateway listening", map[string]interface{}{
+		"listenAddr":    cfg.ListenAddr,
+		"deploymentEnv": cfg.DeploymentEnv,
+		"backendUrl":    cfg.BackendURL,
+		"maxSimRate":    cfg.MaxEventsPerMinute,
+	})
 
 	// ListenAndServe blocks; returns http.ErrServerClosed on graceful Shutdown (not wired yet).
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		log.Printf("fatal: %v", err)
+		gwlogger.Error("startup", "fatal server error", map[string]interface{}{"error": err.Error()})
 		os.Exit(1)
 	}
 }

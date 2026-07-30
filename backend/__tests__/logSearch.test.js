@@ -79,4 +79,32 @@ describe("logSearch", () => {
     expect(result.entries[0].message).toBe("boom");
     expect(result.totalMatched).toBe(1);
   });
+
+  it("searchLogs filters by service exact match", async () => {
+    fs.writeFileSync(
+      logPath,
+      [
+        JSON.stringify({
+          ts: "2026-06-01T10:00:00Z",
+          level: "info",
+          topic: "ingest",
+          message: "webhook ok",
+          service: "ingest-gateway",
+        }),
+        JSON.stringify({
+          ts: "2026-06-01T10:01:00Z",
+          level: "info",
+          topic: "reviews",
+          message: "created",
+          service: "backend",
+        }),
+      ].join("\n")
+    );
+
+    const { searchLogs } = require("../src/lib/logSearch");
+    const result = await searchLogs({ service: "ingest-gateway", limit: 10 });
+    expect(result.entries).toHaveLength(1);
+    expect(result.entries[0].service).toBe("ingest-gateway");
+    expect(result.entries[0].message).toBe("webhook ok");
+  });
 });

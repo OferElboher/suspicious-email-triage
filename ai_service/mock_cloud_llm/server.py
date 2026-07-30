@@ -15,6 +15,16 @@ from typing import Any
 from mock_cloud_llm.responses import build_plan, build_synthesis, tool_loop_ack
 
 
+def _log_unified(level: str, message: str, meta: dict | None = None) -> None:
+    """Append one line to merged.log when MERGED_LOG_PATH is configured (Docker volume)."""
+    try:
+        from app.logutil import log_line
+
+        log_line(level, "mock-cloud-llm", message, **(meta or {}))
+    except OSError:
+        pass
+
+
 class MockCloudLlmHandler(BaseHTTPRequestHandler):
     """Serve POST /v1/converse with stage-specific JSON payloads."""
 
@@ -56,12 +66,14 @@ class MockCloudLlmHandler(BaseHTTPRequestHandler):
             review = body.get("review") or {}
             rule_verdict = str(body.get("ruleVerdict") or "benign")
             plan = build_plan(rule_verdict, review)
+            _log_unified("info", "mock-cloud-llm plan stage", {"stage": stage})
             self._json_response(200, {"plan": plan, "stopReason": "end_turn"})
             return
 
         if stage == "tool_loop":
             results = body.get("toolResults") or []
             payload = tool_loop_ack(results)
+            _log_unified("info", "mock-cloud-llm tool_loop stage", {"stage": stage})
             self._json_response(200, payload)
             return
 
@@ -69,9 +81,11 @@ class MockCloudLlmHandler(BaseHTTPRequestHandler):
             review = body.get("review") or {}
             context = body.get("context") or {}
             synthesis = build_synthesis(review, context)
+            _log_unified("info", "mock-cloud-llm synthesize stage", {"stage": stage})
             self._json_response(200, {"synthesis": synthesis, "stopReason": "end_turn"})
             return
 
+        _log_unified("warn", "mock-cloud-llm unknown stage", {"stage": stage})
         self._json_response(400, {"error": "unknown_stage", "stage": stage})
 
 

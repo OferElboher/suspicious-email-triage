@@ -65,3 +65,11 @@ class Command(BaseCommand):
 
         action = "created" if created else "password synced"
         self.stdout.write(self.style.SUCCESS(f"Bootstrap admin {action}: {email}"))
+
+        # Unified NDJSON log (same merged.log as Node/Go) — filter: GET /logs/search?service=django-admin
+        try:
+            from app.logutil import log_line
+
+            log_line("info", "django-admin", f"bootstrap admin {action}", email=email)
+        except OSError as err:
+            self.stdout.write(self.style.WARNING(f"Unified log append skipped: {err}"))

@@ -91,8 +91,13 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 
 **Implemented (dev free path):**
 
-- Unified JSON-lines `merged.log` (see logger module)
-- `GET /logs/search` — keyword/topic/time/**level**/service/**regex** filters (`logs.read` permission)
+- Unified JSON-lines `merged.log` on Docker volume `triage-logs` — **all** application services append NDJSON with a `service` field:
+  - `backend` (Node API), `ai-celery`, `ai-kafka-dispatch` (Python workers)
+  - `ingest-gateway` (Go mailbox ingest — filter with `?service=ingest-gateway`)
+  - `mock-llm`, `mock-cloud-llm` (dev LLM mocks)
+  - `django-admin` (bootstrap events)
+  - optional `legacy-bullmq-worker` profile
+- `GET /logs/search` — keyword/topic/time/**level**/**service**/regex filters (`logs.read` permission)
 - `GET /ops/logs/summary` — topic/level counts for dashboards
 - React **Search unified logs** sub-window (`#logs`, `LogsView.jsx`) — requires `logs.read`; moved off Review dashboard — [ui_guide_app_navigation.md](ui_guide_app_navigation.md)
 

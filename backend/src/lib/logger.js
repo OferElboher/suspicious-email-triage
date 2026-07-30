@@ -28,6 +28,7 @@ function writeLine(level, topic, message, meta = {}) {
     level,
     topic: String(topic || "app"),
     message: String(message || ""),
+    service: process.env.SERVICE_NAME || "backend",
     ...meta,
   };
   const line = `${JSON.stringify(entry)}\n`;
