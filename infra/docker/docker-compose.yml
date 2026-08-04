@@ -334,6 +334,19 @@ services:
       - triage-logs:/var/log/triage
     restart: unless-stopped
 
+  # mock-verdict-callback: dev HTTP receiver for outbound verdict webhooks (HMAC-validated POST).
+  mock-verdict-callback:
+    build:
+      context: ../../
+      dockerfile: infra/mock-verdict-callback/Dockerfile
+    container_name: triage-mock-verdict-callback
+    ports:
+      - "4569:4569"
+    environment:
+      - MOCK_VERDICT_CALLBACK_PORT=4569
+      - VERDICT_CALLBACK_HMAC_SECRET=dev-verdict-callback-hmac
+    restart: unless-stopped
+
   # ingest-gateway: Go mailbox ingest microservice (webhooks + dev simulation).
   # Pattern: edge service in Go; persistence stays in Node (single MongoDB schema).
   # Port 8080: health (/health/live), metrics (/metrics), dashboard (/v1/stats/dashboard).

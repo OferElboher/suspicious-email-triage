@@ -16,6 +16,7 @@ This guide explains **dev simulation** end to end: what it does, who can use it,
 | **Technology (timer)** | Node.js `setInterval` inside the **backend API process** (`backend/src/dev/simulationLoop.js`) — not a separate container. |
 | **Technology (state)** | Redis key stores `{ enabled, eventsPerMinute }` via `simulationStore.js`; `POST /dev/simulation` updates it and restarts the timer. |
 | **Technology (data tag)** | Each synthetic Mongo document has `source: "dev_simulation"` (`backend/src/models/Review.js`) so the UI can hide it by default. |
+| **Phishing demo templates** | Node and Go simulators rotate scenarios from `shared/phishing_simulation_templates.json` (URL phish, credential keywords, urgent link, benign) so **rule_engine** produces varied verdicts — see [data_guide_verdict_webhooks.md](data_guide_verdict_webhooks.md). |
 | **Pipeline** | Same as real triage: Mongo insert → Kafka `email.review.ingested` → `ai-kafka-dispatch` → Celery `analyze_review` → Mongo `completed` → optional graph sync and ES index. |
 
 **Rate cap:** The server clamps `eventsPerMinute` to **30** in development (`MAX_EVENTS_PER_MIN` in `simulationStore.js`). The UI shows this maximum from `GET /dev/features` → `simulationMaxEventsPerMin`.

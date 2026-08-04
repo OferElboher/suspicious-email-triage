@@ -1,0 +1,41 @@
+{
+  "description": "Rotating dev simulation emails — each template triggers a distinct rule_engine heuristic so demos show benign, suspicious, and likely_phishing verdicts.",
+  "templates": [
+    {
+      "id": "url_phishing",
+      "label": "Phishing URL hostname (likely_phishing)",
+      "expectedVerdict": "likely_phishing",
+      "senderName": "IT Security Alert",
+      "senderEmailPrefix": "phish-url",
+      "subject": "Action required: verify your account now",
+      "body": "Dear user, your session expired. Open https://secure-login.example-phish.test/login immediately to restore access."
+    },
+    {
+      "id": "credential_phishing",
+      "label": "Credential harvest keywords (likely_phishing)",
+      "expectedVerdict": "likely_phishing",
+      "senderName": "Billing Support",
+      "senderEmailPrefix": "phish-cred",
+      "subject": "Update your password and MFA",
+      "body": "We detected unusual activity. Please verify account credentials and confirm your credit card on file within 24 hours."
+    },
+    {
+      "id": "urgent_link",
+      "label": "Urgent language + external link (suspicious)",
+      "expectedVerdict": "suspicious",
+      "senderName": "HR Notifications",
+      "senderEmailPrefix": "phish-urgent",
+      "subject": "Urgent: policy acknowledgment",
+      "body": "This is urgent — review the updated handbook at http://docs.example.com/handbook before end of day."
+    },
+    {
+      "id": "benign_newsletter",
+      "label": "Benign newsletter (benign / investigate)",
+      "expectedVerdict": "benign",
+      "senderName": "Team Newsletter",
+      "senderEmailPrefix": "sim-benign",
+      "subject": "Weekly team update",
+      "body": "Hello team, here is this week's project summary. No links or sensitive requests in this message."
+    }
+  ]
+}

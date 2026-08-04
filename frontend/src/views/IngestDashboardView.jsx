@@ -16,7 +16,9 @@ import {
   YAxis,
 } from "recharts";
 import HoverHelp from "../components/HoverHelp";
+import VerdictDeliveryPanel from "../components/VerdictDeliveryPanel";
 import { useMailboxIngestPoll } from "../hooks/useMailboxIngestPoll";
+import { useVerdictDeliveryPoll } from "../hooks/useVerdictDeliveryPoll";
 import { postJson } from "../api/client";
 
 /** Format counts for stat cards. */
@@ -31,6 +33,7 @@ function fmt(n) {
  */
 export default function IngestDashboardView({ canSimulate, maxEventsPerMin = 30 }) {
   const { snapshot, loading, error, refresh } = useMailboxIngestPoll({ enabled: true });
+  const verdictPoll = useVerdictDeliveryPoll({ enabled: true, intervalMs: 6000 });
   const [simRate, setSimRate] = useState(5);
   const [simMessage, setSimMessage] = useState("");
   /** simBusy: true while start/stop POST is in flight — disables toggle and rate input. */
@@ -131,7 +134,7 @@ export default function IngestDashboardView({ canSimulate, maxEventsPerMin = 30 
           <h3>Dev simulation (Go gateway)</h3>
           <p className="muted">
             Generates synthetic mailbox emails at a configurable rate (max {maxEventsPerMin}/min).
-            Uses the same Kafka pipeline as real ingest.
+            Rotates phishing demo templates (URL phish, credential keywords, urgent link, benign).
           </p>
           <div className="ingest-dashboard__sim-row">
             <label className="ingest-dashboard__sim-rate">
@@ -182,6 +185,12 @@ export default function IngestDashboardView({ canSimulate, maxEventsPerMin = 30 
           </ResponsiveContainer>
         </div>
       </section>
+
+      <VerdictDeliveryPanel
+        snapshot={verdictPoll.snapshot}
+        loading={verdictPoll.loading}
+        error={verdictPoll.error}
+      />
     </main>
   );
 }

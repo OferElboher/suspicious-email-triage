@@ -166,7 +166,7 @@ bash scripts/configure-dev-bootstrap-admin.sh YOUR_EMAIL@example.com
 cd ~/suspicious-email-triage
 DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --build \
   mongo postgres redis neo4j redpanda elasticsearch \
-  mock-snowflake mock-secrets-manager mock-s3 mailpit \
+  mock-snowflake mock-secrets-manager mock-s3 mailpit mock-verdict-callback \
   ingest-gateway backend django-admin \
   ai-celery ai-kafka-dispatch mock-llm mock-cloud-llm
 docker compose -f infra/docker/docker-compose.yml ps

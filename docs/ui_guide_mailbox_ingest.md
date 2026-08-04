@@ -26,8 +26,25 @@ This guide explains the **Mailbox ingest gateway** sub-window in the React app: 
 | Last minute | Same snapshot | Rolling ingest rate |
 | Per-minute bar chart | `series.perMinute[]` | Webhook vs simulation vs errors each minute |
 | Dev simulation panel | `POST /metrics/mailbox-ingest/simulation` | Single **Start simulation** / **Stop simulation** toggle (same labels as the Node Dev simulation card) |
+| **Outbound verdict delivery** | `GET /metrics/verdict-delivery` | Webhook delivered/failed counts, mock receiver log, verdict bar chart |
 
-The page **auto-refreshes every 3 seconds** (same polling pattern as the Live flow dashboard).
+The page **auto-refreshes every 3 seconds** (ingest stats) and **6 seconds** (verdict delivery panel).
+
+---
+
+## Outbound verdict delivery panel
+
+After simulated or real mailbox ingest completes analysis, Node **POSTs the verdict** to the configured webhook (`VERDICT_CALLBACK_URL` → **mock-verdict-callback** in dev). This panel shows:
+
+| UI element | Meaning |
+|------------|---------|
+| Delivered / Failed / Skipped | Mongo `verdictDelivery` audit counts |
+| Mock received / Valid HMAC | Rows accepted by `mock-verdict-callback:4569` |
+| Verdict bar chart | Breakdown of mock callbacks by verdict |
+| Recent mock platform callbacks | Table with `externalMessageId` and verdict |
+| Phishing simulation templates | Rotating scenarios (URL phish, credential, urgent, benign) |
+
+Full integration guide: [data_guide_verdict_webhooks.md](data_guide_verdict_webhooks.md).
 
 ---
 
@@ -36,7 +53,7 @@ The page **auto-refreshes every 3 seconds** (same polling pattern as the Live fl
 When you have **`dev.simulation`** permission (admin/developer in dev):
 
 1. Set **Emails/min** (capped by `MAILBOX_INGEST_MAX_EVENTS_PER_MIN`, default 30). The field is **locked while simulation runs** — stop first to change the rate.
-2. Click **Start simulation** — the Go service starts a goroutine that creates reviews with `source=mailbox_simulation`. The same button becomes **Stop simulation** (red) while running; it is **grayed out** briefly while the start/stop request is in flight.
+2. Click **Start simulation** — the Go service starts a goroutine that creates reviews with `source=mailbox_simulation`. Each tick rotates a **phishing demo template** (URL phish, credential keywords, urgent link, benign) so rule_engine verdicts vary. The same button becomes **Stop simulation** (red) while running; it is **grayed out** briefly while the start/stop request is in flight.
 3. Watch the purple **Simulation** bars grow on the chart.
 4. Click **Stop simulation** when finished.
 

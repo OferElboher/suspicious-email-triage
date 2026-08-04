@@ -80,10 +80,12 @@ func (a *API) handleDashboard(w http.ResponseWriter, _ *http.Request) {
 
 // ingestBody is the JSON schema for POST /v1/ingest/email.
 type ingestBody struct {
-	SenderName  string `json:"senderName"`
-	SenderEmail string `json:"senderEmail"`
-	Subject     string `json:"subject"`
-	Body        string `json:"body"`
+	SenderName        string `json:"senderName"`
+	SenderEmail       string `json:"senderEmail"`
+	Subject           string `json:"subject"`
+	Body              string `json:"body"`
+	ExternalMessageID string `json:"externalMessageId"`
+	CallbackURL       string `json:"callbackUrl"`
 }
 
 // handleIngestEmail accepts a mailbox webhook payload and forwards to Node.
@@ -104,11 +106,13 @@ func (a *API) handleIngestEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	result, err := a.backend.CreateMailboxReview(r.Context(), backend.EmailPayload{
-		SenderName:  strings.TrimSpace(fallbackSenderName(body.SenderName)),
-		SenderEmail: body.SenderEmail,
-		Subject:     body.Subject,
-		Body:        body.Body,
-		Source:      "mailbox_ingest",
+		SenderName:        strings.TrimSpace(fallbackSenderName(body.SenderName)),
+		SenderEmail:       body.SenderEmail,
+		Subject:           body.Subject,
+		Body:              body.Body,
+		Source:            "mailbox_ingest",
+		ExternalMessageID: strings.TrimSpace(body.ExternalMessageID),
+		CallbackURL:       strings.TrimSpace(body.CallbackURL),
 	})
 	if err != nil {
 		a.stats.RecordError(true)

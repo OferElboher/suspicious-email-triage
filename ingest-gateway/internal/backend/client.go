@@ -16,11 +16,13 @@ import (
 
 // EmailPayload is the JSON body accepted by POST /ingest/internal/mailbox on Node.
 type EmailPayload struct {
-	SenderName  string `json:"senderName"`
-	SenderEmail string `json:"senderEmail"`
-	Subject     string `json:"subject"`
-	Body        string `json:"body"`
-	Source      string `json:"source"`
+	SenderName          string `json:"senderName"`
+	SenderEmail         string `json:"senderEmail"`
+	Subject             string `json:"subject"`
+	Body                string `json:"body"`
+	Source              string `json:"source"`
+	ExternalMessageID   string `json:"externalMessageId,omitempty"`
+	CallbackURL         string `json:"callbackUrl,omitempty"`
 }
 
 // CreateResult is the Node response after a review document is persisted.

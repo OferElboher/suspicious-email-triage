@@ -24,6 +24,7 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 | **S3 backups Admin UI** (usage stats + run backup) | [ui_guide_s3_backups.md](ui_guide_s3_backups.md) |
 | **Agent activity UI** (per-review trace + `#agent` fleet view) | [ui_guide_agent_activity.md](ui_guide_agent_activity.md) |
 | **Mailbox ingest gateway** (Go + `#ingest`; manual UI / `POST /reviews` vs mailbox webhooks) | [data_guide_mailbox_ingest_gateway.md](data_guide_mailbox_ingest_gateway.md), [ui_guide_mailbox_ingest.md](ui_guide_mailbox_ingest.md) |
+| **Outbound verdict webhooks** (return verdicts to mail platforms) | [data_guide_verdict_webhooks.md](data_guide_verdict_webhooks.md), [tech_verdict_webhook_stack.md](tech_verdict_webhook_stack.md) |
 | **Dev mocks vs staging/prod real cloud services** | [stack_guide_staging_production_services.md](stack_guide_staging_production_services.md) |
 | **Review dashboard UI** (queue, detail, modal submit, HoverHelp) | [ui_guide_review_dashboard.md](ui_guide_review_dashboard.md) |
 | **App navigation** (icon tabs, Live flow, Search, Logs, Settings, Admin) | [ui_guide_app_navigation.md](ui_guide_app_navigation.md) |
@@ -70,6 +71,8 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 - [data_guide_dev_mock_services.md](data_guide_dev_mock_services.md) — all dev mocks vs real cloud APIs
 - [data_guide_kafka_events.md](data_guide_kafka_events.md) — Kafka topics & consumers
 - [data_guide_mailbox_ingest_gateway.md](data_guide_mailbox_ingest_gateway.md) — Go mailbox ingest; three entry paths (UI, POST /reviews, webhooks)
+- [data_guide_verdict_webhooks.md](data_guide_verdict_webhooks.md) — return verdicts to mail platforms (webhook, poll, Kafka)
+- [tech_verdict_webhook_stack.md](tech_verdict_webhook_stack.md) — HMAC webhooks, internal tokens, Kafka completion (technology primer)
 - [data_guide_prefect_dbt_demo.md](data_guide_prefect_dbt_demo.md) — Prefect / dbt integrated in Analytics pipeline panel
 
 ### Graph (Neo4j phishing)

@@ -9,6 +9,7 @@ from app.merge import merge_results
 from app.mongo import get_db
 from app.rule_engine import run_rule_engine
 from app.stats import record_status
+from app.verdict_delivery import notify_verdict_delivery
 
 try:
     from app.agent.orchestrator import agent_triage_enabled, run_agent_triage
@@ -55,6 +56,8 @@ def analyze_review(review_id: str) -> str:
         record_status(review_id, "completed", result.get("verdict"))
         # Re-sync Neo4j so verdict + campaign edges reflect analysis (non-fatal if graph down).
         sync_review_graph(review_id)
+        # Outbound verdict webhook — mail platforms receive POST when callback URL configured.
+        notify_verdict_delivery(review_id, reason="analysis_complete")
         log_line("info", "celery", "task done", reviewId=review_id)
         return "completed"
     except Exception as exc:  # noqa: BLE001 — surface failure to Mongo + logs

@@ -78,6 +78,54 @@ describe("ingest internal mailbox API", () => {
     );
   });
 
+  it("persists externalMessageId and callbackUrl on ingest", async () => {
+    Review.create = jest.fn().mockResolvedValue({
+      _id: { toString: () => "507f1f77bcf86cd799439011" },
+      status: "pending",
+      externalMessageId: "graph-msg-99",
+    });
+    const res = await request(app)
+      .post("/ingest/internal/mailbox")
+      .set("X-Ingest-Internal-Token", "test-ingest-token")
+      .send({
+        senderEmail: "a@example.com",
+        subject: "hi",
+        body: "body",
+        source: "mailbox_ingest",
+        externalMessageId: "graph-msg-99",
+        callbackUrl: "http://customer.example/webhook",
+      });
+    expect(res.status).toBe(201);
+    expect(Review.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        externalMessageId: "graph-msg-99",
+        callbackUrl: "http://customer.example/webhook",
+      })
+    );
+    expect(res.body.externalMessageId).toBe("graph-msg-99");
+  });
+
+  it("GET /verdict/:id returns poll payload for mail platforms", async () => {
+    Review.findById = jest.fn().mockResolvedValue({
+      _id: { toString: () => "507f1f77bcf86cd799439011" },
+      externalMessageId: "ext-42",
+      status: "completed",
+      analysisResult: { verdict: "suspicious", recommendedAction: "investigate" },
+      override: null,
+      verdictDelivery: { status: "delivered" },
+      updatedAt: new Date("2026-08-01T12:00:00Z"),
+      toObject() {
+        return this;
+      },
+    });
+    const res = await request(app)
+      .get("/ingest/internal/verdict/507f1f77bcf86cd799439011")
+      .set("X-Ingest-Internal-Token", "test-ingest-token");
+    expect(res.status).toBe(200);
+    expect(res.body.externalMessageId).toBe("ext-42");
+    expect(res.body.verdict).toBe("suspicious");
+  });
+
   it("rejects invalid source value", async () => {
     const res = await request(app)
       .post("/ingest/internal/mailbox")

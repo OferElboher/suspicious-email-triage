@@ -247,6 +247,14 @@ Full guide: [ops_guide_central_logging.md](ops_guide_central_logging.md).
 
 ---
 
+## Outbound verdict webhooks
+
+After analysis completes, Node can **POST the verdict** back to the mail platform that ingested the message (SEG, Graph adapter, Postfix helper). Ingest accepts optional `externalMessageId` and `callbackUrl`; default webhook target is `VERDICT_CALLBACK_URL`.
+
+See [data_guide_verdict_webhooks.md](data_guide_verdict_webhooks.md) for payload shape, HMAC header, polling API, and the dev **mock-verdict-callback** receiver.
+
+---
+
 ## Docker Compose
 
 Service name: `ingest-gateway`. Start with the full stack:

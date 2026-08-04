@@ -14,6 +14,7 @@ const { scheduleSnowflakeExport } = require("../analytics/snowflakeExport");
 const { effectiveVerdict } = require("../lib/effectiveVerdict");
 const { dayBoundsUtc, pageIndexForDate } = require("../lib/dateNav");
 const { incrementReviewsCreated } = require("../lib/appMetrics");
+const { scheduleVerdictDelivery } = require("../services/verdictDelivery");
 const { requirePermission } = require("../http/middleware/auth");
 
 /** Default page index for GET /reviews pagination (zero-based). */
@@ -72,6 +73,7 @@ router.post("/:id/override", requirePermission("reviews.override"), async (req, 
     scheduleGraphSync(review._id);
     scheduleSearchIndex(review._id);
     scheduleSnowflakeExport(review._id);
+    scheduleVerdictDelivery(review._id, "override");
     logger.info("reviews", "override saved", { id: String(review._id) });
     return res.json({ ok: true, review });
   } catch (err) {

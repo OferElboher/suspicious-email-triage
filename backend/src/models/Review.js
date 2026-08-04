@@ -38,6 +38,22 @@ const ReviewSchema = new mongoose.Schema(
       default: "user",
       index: true,
     },
+    /** externalMessageId: mail platform correlation id (Graph message id, Postfix queue id, etc.). */
+    externalMessageId: { type: String, index: true, sparse: true },
+    /** callbackUrl: optional per-message webhook override; falls back to VERDICT_CALLBACK_URL env. */
+    callbackUrl: { type: String },
+    /** verdictDelivery: audit trail for outbound verdict webhook POST attempts. */
+    verdictDelivery: {
+      status: {
+        type: String,
+        enum: ["delivered", "failed", "skipped"],
+      },
+      reason: { type: String },
+      attempts: { type: Number },
+      lastError: { type: String },
+      deliveredAt: { type: Date },
+      lastHttpStatus: { type: Number },
+    },
     status: {
       type: String,
       enum: ["pending", "processing", "completed", "failed"],

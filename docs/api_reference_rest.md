@@ -1209,7 +1209,9 @@ Mounted **before** JWT middleware. **Not** for browser or analyst scripts — Go
   "senderEmail": "alice@example.com",
   "subject": "Invoice",
   "body": "Please review",
-  "source": "mailbox_ingest"
+  "source": "mailbox_ingest",
+  "externalMessageId": "platform-msg-id-123",
+  "callbackUrl": "https://your-seg.example/verdict-webhook"
 }
 ```
 
@@ -1220,10 +1222,41 @@ Mounted **before** JWT middleware. **Not** for browser or analyst scripts — Go
 | `subject` | Yes | Subject line |
 | `body` | Yes | Body text (links extracted) |
 | `source` | No | `mailbox_ingest` or `mailbox_simulation` (default `mailbox_ingest`) |
+| `externalMessageId` | No | Mail platform correlation id — echoed in outbound verdict webhook |
+| `callbackUrl` | No | Per-message webhook override; else `VERDICT_CALLBACK_URL` env |
 
-**Response (201):** `{ "id": "…", "status": "pending" }` — same Kafka enqueue as `POST /reviews`.
+**Response (201):** `{ "id": "…", "status": "pending", "externalMessageId": "…" }` — same Kafka enqueue as `POST /reviews`. Verdict returned later via [verdict webhook](data_guide_verdict_webhooks.md).
 
 **Errors:** **401** invalid token; **400** missing fields or invalid `source`.
+
+### GET /ingest/internal/verdict/:id
+
+**Auth:** `X-Ingest-Internal-Token`
+
+**Purpose:** Poll verdict + delivery status for one review (mail platforms without inbound HTTPS).
+
+**Response (200):** `{ reviewId, externalMessageId, status, verdict, recommendedAction, verdictDelivery, … }`
+
+```bash
+curl -sS "http://localhost:3000/ingest/internal/verdict/REVIEW_ID" \
+  -H "X-Ingest-Internal-Token: YOUR_INGEST_INTERNAL_TOKEN"
+```
+
+### POST /ingest/internal/verdict-deliver/:id
+
+**Auth:** `X-Ingest-Internal-Token`
+
+**Purpose:** Trigger outbound verdict webhook (called by Celery after analysis; optional manual replay).
+
+**Body (optional):** `{ "reason": "analysis_complete" | "override" }`
+
+---
+
+### GET /metrics/verdict-delivery
+
+**Auth:** JWT + `metrics.read`
+
+**Purpose:** Dashboard stats for outbound webhooks + mock receiver snapshot (React `#ingest` tab).
 
 **Note:** Production mailbox webhooks should call Go `POST /v1/ingest/email` on port **8080**, which forwards here. Do not expose this route to the public internet without network policy.
 

@@ -7,10 +7,18 @@
  */
 const Review = require("../models/Review");
 const logger = require("../lib/logger");
+const { extractLinks } = require("../lib/extractLinks");
 const { incrementReviewsCreated } = require("../lib/appMetrics");
 const { isDevDeployment } = require("../config/runtime");
 const { enqueueAfterCreate } = require("../services/reviewPipeline");
 const { readSimulation } = require("./simulationStore");
+const {
+  pickPhishingSimulationTemplate,
+  simulationCorrelationIds,
+} = require("../lib/phishingSimulationTemplates");
+
+/** Monotonic sequence for round-robin phishing demo templates. */
+let simulationSeq = 0;
 
 let timer = null;
 
@@ -48,20 +56,27 @@ async function applySimulationFromStore() {
 
 /** One synthetic ingest: persists a Review and enqueues the async pipeline like a real user. */
 async function tick() {
-  const n = Date.now();
+  simulationSeq += 1;
+  const template = pickPhishingSimulationTemplate(simulationSeq);
+  const { senderEmail, externalMessageId } = simulationCorrelationIds(template, simulationSeq);
   const review = await Review.create({
-    senderName: "Simulator",
-    senderEmail: `sim+${n}@dev.local`,
-    subject: `Simulated ingest ${new Date(n).toISOString()}`,
-    body: "Synthetic message for throughput testing in development.",
-    links: [],
+    senderName: template.senderName,
+    senderEmail,
+    subject: `${template.subject} (#${simulationSeq})`,
+    body: template.body,
+    links: extractLinks(template.body),
     referenceSources: [],
     source: "dev_simulation",
+    externalMessageId,
     status: "pending",
   });
   await enqueueAfterCreate(review._id);
   incrementReviewsCreated();
-  logger.info("simulation", "synthetic review", { id: String(review._id) });
+  logger.info("simulation", "synthetic review", {
+    id: String(review._id),
+    templateId: template.id,
+    expectedVerdict: template.expectedVerdict,
+  });
 }
 
 module.exports = { applySimulationFromStore, clearLoop };

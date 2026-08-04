@@ -13,6 +13,12 @@ const {
   getMailboxSimulationStatus,
   isMailboxIngestEnabled,
 } = require("../lib/ingestGatewayClient");
+const {
+  getMockVerdictCallbackStats,
+  getMockVerdictCallbacks,
+} = require("../lib/mockVerdictCallbackClient");
+const { getVerdictDeliveryMetrics } = require("../services/verdictDelivery");
+const { listPhishingSimulationTemplates } = require("../lib/phishingSimulationTemplates");
 const { requirePermission } = require("../http/middleware/auth");
 
 /** router: Express metrics route collection mounted at /metrics. */
@@ -158,6 +164,27 @@ router.post("/mailbox-ingest/simulation", requirePermission("dev.simulation"), a
   } catch (err) {
     logger.error("metrics", "mailbox-ingest simulation control failed", { error: err.message });
     res.status(502).json({ error: "mailbox_ingest_simulation_failed", detail: err.message });
+  }
+});
+
+/**
+ * GET /metrics/verdict-delivery — outbound webhook stats + mock callback receiver snapshot.
+ * Pattern: Mongo verdictDelivery audit fields + optional mock-verdict-callback HTTP proxy.
+ */
+router.get("/verdict-delivery", requirePermission("metrics.read"), async (_req, res) => {
+  try {
+    const delivery = await getVerdictDeliveryMetrics();
+    const mockStats = await getMockVerdictCallbackStats();
+    const mockCallbacks = await getMockVerdictCallbacks(15);
+    res.json({
+      delivery,
+      mockReceiver: mockStats,
+      mockCallbacks: mockCallbacks?.callbacks || [],
+      simulationTemplates: listPhishingSimulationTemplates(),
+    });
+  } catch (err) {
+    logger.error("metrics", "verdict-delivery failed", { error: err.message });
+    res.status(500).json({ error: "verdict_delivery_metrics_failed" });
   }
 });
 
