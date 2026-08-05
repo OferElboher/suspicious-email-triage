@@ -249,9 +249,11 @@ Full guide: [ops_guide_central_logging.md](ops_guide_central_logging.md).
 
 ## Outbound verdict webhooks
 
-After analysis completes, Node can **POST the verdict** back to the mail platform that ingested the message (SEG, Graph adapter, Postfix helper). Ingest accepts optional `externalMessageId` and `callbackUrl`; default webhook target is `VERDICT_CALLBACK_URL`.
+After analysis completes, Node can **POST the verdict** back to the mail platform that ingested the message (SEG, Graph adapter, Postfix helper). Each platform registers a stable **`ingestClientId`** in Postgres (`ingest_clients` table) with its own default **`callback_url`**. Per-message **`callbackUrl`** overrides that default; **`VERDICT_CALLBACK_URL`** is a dev-only fallback when no client id is set.
 
-See [data_guide_verdict_webhooks.md](data_guide_verdict_webhooks.md) for payload shape, HMAC header, polling API, and the dev **mock-verdict-callback** receiver.
+Register platforms with `PUT /ingest/internal/clients/:clientId` (internal token) or view them on the React **#ingest** tab. Send `ingestClientId` on every ingest payload (or header `X-Ingest-Client-Id`).
+
+See [data_guide_verdict_webhooks.md](data_guide_verdict_webhooks.md) for resolution order, payload shape, HMAC header, polling API, and the dev **mock-verdict-callback** receiver.
 
 ---
 

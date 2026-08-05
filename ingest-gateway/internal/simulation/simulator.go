@@ -127,6 +127,7 @@ func (c *Controller) emitOne(ctx context.Context) {
 		Body:              tmpl.Body,
 		Source:            "mailbox_simulation",
 		ExternalMessageID: externalMessageID,
+		IngestClientID:    "dev-mock",
 	}
 	_, err := c.backend.CreateMailboxReview(ctx, payload)
 	if err != nil {

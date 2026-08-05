@@ -86,6 +86,7 @@ type ingestBody struct {
 	Body              string `json:"body"`
 	ExternalMessageID string `json:"externalMessageId"`
 	CallbackURL       string `json:"callbackUrl"`
+	IngestClientID    string `json:"ingestClientId"`
 }
 
 // handleIngestEmail accepts a mailbox webhook payload and forwards to Node.
@@ -113,6 +114,7 @@ func (a *API) handleIngestEmail(w http.ResponseWriter, r *http.Request) {
 		Source:            "mailbox_ingest",
 		ExternalMessageID: strings.TrimSpace(body.ExternalMessageID),
 		CallbackURL:       strings.TrimSpace(body.CallbackURL),
+		IngestClientID:    strings.TrimSpace(body.IngestClientID),
 	})
 	if err != nil {
 		a.stats.RecordError(true)

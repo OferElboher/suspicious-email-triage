@@ -3,7 +3,7 @@
  *
  * Pattern: fire-and-forget scheduleVerdictDelivery (like scheduleSnowflakeExport);
  * Celery triggers via POST /ingest/internal/verdict-deliver/:id after scoring.
- * Technology: Node fetch, HMAC X-Verdict-Signature, optional Kafka completion event.
+ * Technology: Node fetch, HMAC X-Verdict-Signature, Postgres ingest_clients registry, optional Kafka event.
  */
 const Review = require("../models/Review");
 const logger = require("../lib/logger");
@@ -13,6 +13,7 @@ const {
   effectiveRecommendedAction,
 } = require("../lib/effectiveVerdict");
 const { publishReviewCompleted } = require("../kafka/reviewCompletedProducer");
+const { getIngestClient } = require("../ingest/ingestClientsPg");
 
 /** Maximum delivery attempts before marking failed (in-process retries). */
 const MAX_ATTEMPTS = 3;
@@ -21,14 +22,28 @@ const MAX_ATTEMPTS = 3;
 const RETRY_MS = [0, 500, 1500];
 
 /**
- * Resolve callback URL: per-message override wins, then env VERDICT_CALLBACK_URL.
+ * Resolve callback URL priority:
+ * 1) per-message review.callbackUrl (one-off override)
+ * 2) Postgres ingest_clients.callback_url for review.ingestClientId (per mail platform)
+ * 3) VERDICT_CALLBACK_URL env (single-tenant dev fallback only)
  * @param {import("../models/Review")} review
- * @returns {string|null}
+ * @returns {Promise<string|null>}
  */
-function resolveCallbackUrl(review) {
+async function resolveCallbackUrl(review) {
   const perMessage = String(review.callbackUrl || "").trim();
   if (perMessage) {
     return perMessage;
+  }
+  const clientId = String(review.ingestClientId || "").trim();
+  if (clientId) {
+    const client = await getIngestClient(clientId);
+    if (client?.callback_url) {
+      return String(client.callback_url).trim();
+    }
+    logger.warn("verdict_delivery", "unknown or inactive ingestClientId", {
+      ingestClientId: clientId,
+      reviewId: review._id?.toString(),
+    });
   }
   const envDefault = String(process.env.VERDICT_CALLBACK_URL || "").trim();
   return envDefault || null;
@@ -46,6 +61,7 @@ function buildVerdictPayload(review, reason) {
   return {
     reviewId: id,
     externalMessageId: review.externalMessageId || null,
+    ingestClientId: review.ingestClientId || null,
     status: review.status,
     verdict: verdict || null,
     recommendedAction: recommendedAction || null,
@@ -107,7 +123,7 @@ async function deliverVerdictForReview(reviewId, reason) {
     return { skipped: true, reason: "not_found" };
   }
 
-  const callbackUrl = resolveCallbackUrl(review);
+  const callbackUrl = await resolveCallbackUrl(review);
   if (!callbackUrl) {
     await Review.updateOne(
       { _id: review._id },
@@ -124,7 +140,10 @@ async function deliverVerdictForReview(reviewId, reason) {
         },
       }
     );
-    logger.info("verdict_delivery", "skipped — no callback URL", { reviewId });
+    logger.info("verdict_delivery", "skipped — no callback URL", {
+      reviewId,
+      ingestClientId: review.ingestClientId || null,
+    });
     return { skipped: true, reason: "no_callback_url" };
   }
 
@@ -177,6 +196,7 @@ async function deliverVerdictForReview(reviewId, reason) {
       logger.info("verdict_delivery", "webhook delivered", {
         reviewId,
         externalMessageId: review.externalMessageId,
+        ingestClientId: review.ingestClientId,
         verdict: payload.verdict,
         httpStatus: result.status,
       });
@@ -188,7 +208,7 @@ async function deliverVerdictForReview(reviewId, reason) {
           error: kafkaErr.message,
         });
       }
-      return { delivered: true, attempts: attempt };
+      return { delivered: true, attempts: attempt, callbackUrl };
     }
     lastError = result.error || `http_${result.status}`;
     logger.warn("verdict_delivery", "webhook attempt failed", {
@@ -238,7 +258,8 @@ function scheduleVerdictDelivery(reviewId, reason) {
  * Aggregate delivery stats for metrics dashboard.
  */
 async function getVerdictDeliveryMetrics() {
-  const [delivered, failed, skipped, pending] = await Promise.all([
+  const { listIngestClients } = require("../ingest/ingestClientsPg");
+  const [delivered, failed, skipped, pending, clients] = await Promise.all([
     Review.countDocuments({ "verdictDelivery.status": "delivered" }),
     Review.countDocuments({ "verdictDelivery.status": "failed" }),
     Review.countDocuments({ "verdictDelivery.status": "skipped" }),
@@ -247,25 +268,37 @@ async function getVerdictDeliveryMetrics() {
       "verdictDelivery.status": { $exists: false },
       $or: [
         { callbackUrl: { $exists: true, $ne: "" } },
+        { ingestClientId: { $exists: true, $ne: "" } },
         { source: { $in: ["mailbox_ingest", "mailbox_simulation"] } },
       ],
     }),
+    listIngestClients({ includeInactive: true }),
   ]);
   const recent = await Review.find({ "verdictDelivery.status": { $exists: true } })
     .sort({ "verdictDelivery.deliveredAt": -1, updatedAt: -1 })
     .limit(10)
     .select(
-      "externalMessageId source status analysisResult.verdict override.verdict verdictDelivery updatedAt"
+      "externalMessageId ingestClientId source status analysisResult.verdict override.verdict verdictDelivery updatedAt"
     )
     .lean();
 
   return {
-    enabled: Boolean(process.env.VERDICT_CALLBACK_URL || process.env.VERDICT_DELIVERY_ENABLED),
-    defaultCallbackUrl: process.env.VERDICT_CALLBACK_URL || null,
+    enabled:
+      process.env.VERDICT_DELIVERY_ENABLED !== "false" &&
+      (clients.length > 0 || Boolean(process.env.VERDICT_CALLBACK_URL)),
+    devFallbackCallbackUrl: process.env.VERDICT_CALLBACK_URL || null,
+    registeredClients: clients.map((row) => ({
+      clientId: row.client_id,
+      displayName: row.display_name,
+      callbackUrl: row.callback_url,
+      isActive: row.is_active,
+      updatedAt: row.updated_at,
+    })),
     counts: { delivered, failed, skipped, pending },
     recent: recent.map((row) => ({
       reviewId: String(row._id),
       externalMessageId: row.externalMessageId,
+      ingestClientId: row.ingestClientId,
       source: row.source,
       status: row.status,
       effectiveVerdict: effectiveVerdict(row),

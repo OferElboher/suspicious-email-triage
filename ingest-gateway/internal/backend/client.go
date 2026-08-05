@@ -23,6 +23,7 @@ type EmailPayload struct {
 	Source              string `json:"source"`
 	ExternalMessageID   string `json:"externalMessageId,omitempty"`
 	CallbackURL         string `json:"callbackUrl,omitempty"`
+	IngestClientID      string `json:"ingestClientId,omitempty"`
 }
 
 // CreateResult is the Node response after a review document is persisted.

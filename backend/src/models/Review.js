@@ -40,8 +40,10 @@ const ReviewSchema = new mongoose.Schema(
     },
     /** externalMessageId: mail platform correlation id (Graph message id, Postfix queue id, etc.). */
     externalMessageId: { type: String, index: true, sparse: true },
-    /** callbackUrl: optional per-message webhook override; falls back to VERDICT_CALLBACK_URL env. */
+    /** callbackUrl: optional per-message webhook override; lowest priority after ingestClientId registry lookup. */
     callbackUrl: { type: String },
+    /** ingestClientId: registered mail platform slug — resolves default callback_url from Postgres ingest_clients. */
+    ingestClientId: { type: String, index: true, sparse: true },
     /** verdictDelivery: audit trail for outbound verdict webhook POST attempts. */
     verdictDelivery: {
       status: {

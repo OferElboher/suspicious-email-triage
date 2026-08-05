@@ -566,6 +566,7 @@ def test_mailbox_ingest_gateway_wired():
     assert (ROOT / "ingest-gateway/cmd/ingest-gateway/main.go").is_file()
     assert (ROOT / "backend/src/api/ingestInternal.js").is_file()
     assert (ROOT / "backend/src/services/verdictDelivery.js").is_file()
+    assert (ROOT / "backend/src/ingest/ingestClientsPg.js").is_file()
     assert (ROOT / "infra/mock-verdict-callback/server.js").is_file()
     assert (ROOT / "shared/phishing_simulation_templates.json").is_file()
     assert (ROOT / "backend/src/lib/ingestGatewayClient.js").is_file()
@@ -580,6 +581,8 @@ def test_mailbox_ingest_gateway_wired():
     readme = (ROOT / "docs/README.md").read_text(encoding="utf-8")
     assert "data_guide_mailbox_ingest_gateway.md" in readme
     assert "data_guide_verdict_webhooks.md" in readme
+    assert "util_acronym_glossary.md" in readme
+    assert "tech_verdict_webhook_stack.md" not in readme
     assert "ui_guide_mailbox_ingest.md" in readme
     tbd = (ROOT / "docs/roadmap_tbd.md").read_text(encoding="utf-8")
     assert "3.1 Mailbox ingest" in tbd

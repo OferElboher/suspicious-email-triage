@@ -280,7 +280,7 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 - Dev simulation: configurable emails/minute from React **#ingest** tab (Go goroutine + ticker; **Start simulation** / **Stop simulation** single toggle — [ui_guide_mailbox_ingest.md](ui_guide_mailbox_ingest.md)).
 - Live stats: per-minute bar chart + counters (`GET /metrics/mailbox-ingest` Node proxy → Go `/v1/stats/dashboard`).
 - Prometheus scrape on Go `:8080/metrics` (`triage_mailbox_ingest_*`).
-- **Outbound verdict webhooks** — POST JSON + HMAC to `VERDICT_CALLBACK_URL` when analysis completes; polling `GET /ingest/internal/verdict/:id`; optional Kafka `email.review.completed`; dev **mock-verdict-callback** (:4569); phishing-aware simulation templates — [data_guide_verdict_webhooks.md](data_guide_verdict_webhooks.md).
+- **Outbound verdict webhooks** — per mail platform default URL in Postgres **`ingest_clients`** (`ingestClientId` on ingest); optional per-message `callbackUrl`; POST JSON + HMAC when analysis completes; client registry API `PUT /ingest/internal/clients/:clientId`; polling `GET /ingest/internal/verdict/:id`; optional Kafka `email.review.completed`; dev **mock-verdict-callback** (:4569); phishing-aware simulation templates — [data_guide_verdict_webhooks.md](data_guide_verdict_webhooks.md).
 
 **Guides:** [data_guide_mailbox_ingest_gateway.md](data_guide_mailbox_ingest_gateway.md), [data_guide_verdict_webhooks.md](data_guide_verdict_webhooks.md), [ui_guide_mailbox_ingest.md](ui_guide_mailbox_ingest.md).
 

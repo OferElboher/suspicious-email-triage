@@ -1,10 +1,10 @@
 # Outbound verdict webhooks — mail platform integration guide
 
-This guide explains how **Suspicious Email Triage** returns analysis **verdicts** to email servers and secure email gateways (SEGs) after mailbox ingest. It covers the **webhook POST** pattern, the **polling API**, optional **Kafka completion events**, and the **dev mock receiver** used in Docker Compose.
+This guide explains how **Suspicious Email Triage** returns analysis **verdicts** to email servers and **SEGs** (Secure Email Gateways) after mailbox ingest. It covers **per-client webhook registration**, the **HTTP POST webhook** pattern, **HMAC** signatures, **polling**, optional **Kafka** events, and the **dev mock receiver**.
 
-**Audience:** developers wiring Microsoft Graph, Gmail, Postfix, or a commercial SEG to this product — including readers new to webhooks and async triage.
+**Audience:** developers wiring Microsoft Graph, Gmail, Postfix, or a commercial SEG — including readers new to webhooks and async triage.
 
-**Related:** [data_guide_mailbox_ingest_gateway.md](data_guide_mailbox_ingest_gateway.md), [tech_verdict_webhook_stack.md](tech_verdict_webhook_stack.md), [ui_guide_mailbox_ingest.md](ui_guide_mailbox_ingest.md), [ops_guide_secrets_management.md](ops_guide_secrets_management.md).
+**Related:** [data_guide_mailbox_ingest_gateway.md](data_guide_mailbox_ingest_gateway.md), [ui_guide_mailbox_ingest.md](ui_guide_mailbox_ingest.md), [ops_guide_secrets_management.md](ops_guide_secrets_management.md), [util_acronym_glossary.md](util_acronym_glossary.md).
 
 ---
 
@@ -15,50 +15,145 @@ When a mail platform calls `POST /v1/ingest/email` on the Go **ingest-gateway**,
 ```text
 Ingest (201 pending) → Kafka → Celery → rule_engine + LLM/agent → status completed
                                                               ↓
-                                    Outbound verdict webhook (this guide)
+                         Outbound verdict webhook (this guide)
 ```
 
-**Pattern:** **Async SOC triage** — the edge accepts mail quickly; scoring takes seconds. Mail platforms that need a final action (quarantine, release, label) should either **wait for the webhook** or **poll** the verdict API documented below.
+**Pattern:** **Async SOC triage** — the edge accepts mail quickly; scoring takes seconds. Platforms that need quarantine/release actions should **receive the webhook** or **poll** the verdict API below.
 
 ---
 
-## Correlation fields on ingest
+## How each mail platform gets its own default webhook URL
 
-Extend the mailbox ingest JSON body with optional correlation fields:
+A single global `VERDICT_CALLBACK_URL` is only meaningful for **one-tenant dev demos**. Real deployments have **many customers**, each with its own SEG adapter URL.
 
-| Field | Meaning |
-|-------|---------|
-| `externalMessageId` | The mail platform’s message identifier (Graph message id, Postfix queue id, etc.) — echoed in the verdict webhook so your adapter knows which message to act on. |
-| `callbackUrl` | Optional **per-message** webhook URL. When set, it overrides the environment default `VERDICT_CALLBACK_URL`. |
+### Postgres `ingest_clients` registry
 
-**Design choice:** We store both fields on the MongoDB **Review** document. There is **no separate Postgres tenant table** in this repo yet — per-tenant defaults use **`VERDICT_CALLBACK_URL`** in `.env` / AWS Secrets Manager; per-message overrides use `callbackUrl` on high-volume integrations.
+**Technology:** PostgreSQL table `ingest_clients` in the same stats database as chart events (`backend/src/ingest/ingestClientsPg.js`).
 
-Example ingest body (Go `:8080/v1/ingest/email` or Node `POST /ingest/internal/mailbox`):
+| Column | Meaning |
+|--------|---------|
+| `client_id` | Stable slug your adapter sends on every ingest (e.g. `contoso-graph`, `fabrikam-postfix`) |
+| `display_name` | Human label for admin UI |
+| `callback_url` | Default HTTPS webhook for that platform |
+| `is_active` | When `false`, ingest with that id is rejected |
+
+**Dev seeds** (inserted idempotently on first use):
+
+| client_id | Purpose |
+|-----------|---------|
+| `dev-mock` | Default for Go/Node simulation → `mock-verdict-callback:4569` |
+| `dev-contoso-graph` | Example Microsoft Graph adapter |
+| `dev-fabrikam-postfix` | Example Postfix milter adapter |
+
+### Callback URL resolution priority
+
+When Celery finishes (or analyst overrides), Node picks **one** URL in this order:
+
+1. **`callbackUrl`** on the individual Review (one-off override for a single message)
+2. **`ingestClientId`** → lookup `ingest_clients.callback_url` in Postgres
+3. **`VERDICT_CALLBACK_URL`** environment variable — **dev/single-tenant fallback only**
+
+**Implementation:** `resolveCallbackUrl()` in `backend/src/services/verdictDelivery.js`.
+
+### Registering a client (staging/prod)
+
+**Option A — Internal API** (automation / Terraform hook; requires `X-Ingest-Internal-Token`):
+
+```bash
+curl -sS -X PUT "http://localhost:3000/ingest/internal/clients/contoso-graph" \
+  -H "X-Ingest-Internal-Token: YOUR_INGEST_INTERNAL_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "displayName": "Contoso Microsoft Graph adapter",
+    "callbackUrl": "https://seg.contoso.example/v1/triage-verdict",
+    "isActive": true
+  }'
+```
+
+**Option B — SQL** (break-glass / migration):
+
+```bash
+# Run against triage_stats Postgres — use placeholders, not production secrets in docs.
+psql "$STATISTICS_PG_URL" -c "
+  INSERT INTO ingest_clients (client_id, display_name, callback_url, is_active)
+  VALUES ('contoso-graph', 'Contoso Graph', 'https://seg.contoso.example/hook', true)
+  ON CONFLICT (client_id) DO UPDATE SET callback_url = EXCLUDED.callback_url;
+"
+```
+
+**Option C — View in UI** — `#ingest` tab → **Outbound verdict delivery** → **Registered mail platforms** table (from `GET /metrics/verdict-delivery`).
+
+### Sending `ingestClientId` on ingest
+
+Include in JSON body **or** HTTP header `X-Ingest-Client-Id`:
 
 ```bash
 curl -sS -X POST "http://localhost:8080/v1/ingest/email" \
   -H "Content-Type: application/json" \
   -d '{
-    "senderName": "Alerts",
+    "ingestClientId": "contoso-graph",
     "senderEmail": "alert@example.com",
-    "subject": "Invoice attached",
+    "subject": "Invoice",
     "body": "Please review...",
-    "externalMessageId": "AAMkAGI2TG93AAA=",
-    "callbackUrl": "https://your-seg.example/verdict-hook"
+    "externalMessageId": "AAMkAGI2TG93AAA="
   }'
 ```
+
+Node validates the client exists and is active before creating the Review.
+
+| Field | Meaning |
+|-------|---------|
+| `externalMessageId` | Platform message id — echoed in webhook JSON |
+| `ingestClientId` | Selects default webhook from Postgres registry |
+| `callbackUrl` | Optional per-message override (highest priority) |
+
+---
+
+## Technology primer — webhooks and HMAC
+
+### Webhook (HTTP callback)
+
+A **webhook** is an HTTP **POST** your service sends to a customer URL when analysis finishes.
+
+| Term | Meaning |
+|------|---------|
+| **Producer** | This triage app (`verdictDelivery.js`) |
+| **Consumer** | Customer adapter at `callback_url` |
+| **Payload** | JSON with `verdict`, `externalMessageId`, `ingestClientId`, etc. |
+
+Unlike a browser calling your API, the **server initiates** the connection after async work completes.
+
+### HMAC signature (`X-Verdict-Signature`)
+
+**HMAC** (Hash-based Message Authentication Code) proves the POST was signed by someone who knows a **shared secret** — without putting the secret in the URL. GitHub, Stripe, and many SEG products use the same pattern.
+
+1. Serialize payload to JSON string (exact bytes matter).
+2. Compute `HMAC-SHA256(secret, body)` → hex string.
+3. Send hex in header `X-Verdict-Signature`.
+4. Receiver recomputes HMAC and compares (use **timing-safe** compare in production).
+
+**Implementation:** `backend/src/lib/verdictCallbackSign.js` — Node built-in `crypto.createHmac`.  
+**Secret:** `VERDICT_CALLBACK_HMAC_SECRET` in gitignored `dev.secrets` / AWS Secrets Manager — **never commit values**.
+
+### Fire-and-forget scheduling
+
+Verdict delivery must **not block** Celery or analyst override HTTP responses.
+
+**Pattern:** `scheduleVerdictDelivery(reviewId)` uses `setImmediate` — same style as `scheduleSnowflakeExport` and `scheduleGraphSync`.
+
+### Internal service token (not JWT)
+
+Celery calls `POST /ingest/internal/verdict-deliver/:id` with **`X-Ingest-Internal-Token`**. Workers are not logged-in users; a static shared secret matches `graphInternal.js` and `ingestInternal.js`.
 
 ---
 
 ## Outbound webhook (primary integration)
 
-When a review reaches **`completed`** (or an analyst saves an **override**), Node **POSTs JSON** to the resolved callback URL.
+When a review reaches **`completed`** (or analyst **override**), Node **POSTs JSON** to the resolved callback URL.
 
-**Technology:** Node `fetch`, **HMAC-SHA256** signature in header `X-Verdict-Signature` (same idea as GitHub webhooks — shared secret, no JWT on the customer endpoint).
+**Triggered from:**
 
-**Implementation:** `backend/src/services/verdictDelivery.js`, triggered from:
-
-- Celery `analyze_review` → `ai_service/app/verdict_delivery.py` → `POST /ingest/internal/verdict-deliver/:id`
+- Celery `analyze_review` → `ai_service/app/verdict_delivery.py` → internal deliver route
 - Analyst override → `scheduleVerdictDelivery` in `backend/src/api/reviews.js`
 
 ### Webhook payload shape
@@ -67,107 +162,94 @@ When a review reaches **`completed`** (or an analyst saves an **override**), Nod
 {
   "reviewId": "507f1f77bcf86cd799439011",
   "externalMessageId": "AAMkAGI2TG93AAA=",
+  "ingestClientId": "contoso-graph",
   "status": "completed",
   "verdict": "likely_phishing",
   "recommendedAction": "report_and_block",
   "effectiveVerdict": "likely_phishing",
   "source": "mailbox_ingest",
   "reason": "analysis_complete",
-  "completedAt": "2026-08-03T14:00:00.000Z",
-  "analysisVerdict": "likely_phishing",
-  "overrideVerdict": null
+  "completedAt": "2026-08-03T14:00:00.000Z"
 }
 ```
 
 | Header | Meaning |
 |--------|---------|
 | `Content-Type` | `application/json` |
-| `X-Verdict-Signature` | Hex HMAC-SHA256 of the raw JSON body using `VERDICT_CALLBACK_HMAC_SECRET` |
+| `X-Verdict-Signature` | Hex HMAC-SHA256 of raw JSON body |
 | `X-Verdict-Event` | `analysis_complete` or `override` |
 
-**Retries:** Up to **3** in-process attempts with short backoff. Failures are recorded on `review.verdictDelivery` in MongoDB for the **#ingest** dashboard.
+**Retries:** Up to **3** attempts with backoff; audit stored on `review.verdictDelivery` in MongoDB.
 
 ### Environment variables
 
-| Variable | Where | Meaning |
-|----------|-------|---------|
-| `VERDICT_CALLBACK_URL` | `backend/.env.dev` (committed name, not secret) | Default webhook URL when ingest omits `callbackUrl` |
-| `VERDICT_CALLBACK_HMAC_SECRET` | gitignored `backend/dev.secrets` | Shared secret for HMAC — **never commit real values** |
-| `VERDICT_DELIVERY_ENABLED` | `.env.dev` | When `false`, Celery skips dispatch (tests/CI) |
-| `VERDICT_CALLBACK_TIMEOUT_MS` | optional | Outbound HTTP timeout (default 8000 ms) |
-
-Dev Docker default: `VERDICT_CALLBACK_URL=http://mock-verdict-callback:4569/webhook`
+| Variable | Meaning |
+|----------|---------|
+| `VERDICT_CALLBACK_URL` | **Dev-only fallback** when no `ingestClientId` / `callbackUrl` |
+| `VERDICT_CALLBACK_HMAC_SECRET` | HMAC signing secret (gitignored) |
+| `VERDICT_DELIVERY_ENABLED` | `false` disables Celery dispatch |
+| `VERDICT_CALLBACK_TIMEOUT_MS` | Outbound HTTP timeout (default 8000 ms) |
 
 ---
 
 ## Polling API (alternative integration)
 
-Mail platforms that cannot receive inbound HTTP can **poll** Node with the same internal token used for ingest.
-
 **Route:** `GET /ingest/internal/verdict/:reviewId`  
-**Auth:** `X-Ingest-Internal-Token` (same as `INGEST_INTERNAL_TOKEN` in dev.secrets — **not** analyst JWT)
+**Auth:** `X-Ingest-Internal-Token`
 
 ```bash
 curl -sS "http://localhost:3000/ingest/internal/verdict/REVIEW_ID" \
   -H "X-Ingest-Internal-Token: YOUR_INGEST_INTERNAL_TOKEN"
 ```
 
-Response includes `status`, `verdict`, `recommendedAction`, `externalMessageId`, and `verdictDelivery` audit fields.
-
-**Pattern:** **Poll after 201** — store `reviewId` from ingest response; poll until `status` is `completed` or `failed`.
+**Pattern:** Store `reviewId` from ingest `201`; poll until `status` is `completed` or `failed`.
 
 ---
 
 ## Kafka completion event (optional)
 
-After a **successful** webhook POST, Node may publish **`email.review.completed`** (Kafka/Redpanda) with the same JSON fields. Disable with `VERDICT_KAFKA_COMPLETED=false`.
+After successful webhook POST, Node may publish **`email.review.completed`** (Redpanda/Kafka). Disable with `VERDICT_KAFKA_COMPLETED=false`.
 
-**Technology:** KafkaJS producer in `backend/src/kafka/reviewCompletedProducer.js` — mail adapters can consume events instead of hosting HTTPS webhooks.
-
-**Topic env:** `KAFKA_TOPIC_REVIEW_COMPLETED` (default `email.review.completed`)
+**Technology:** KafkaJS — `backend/src/kafka/reviewCompletedProducer.js`; partition key = `reviewId`.
 
 ---
 
 ## Dev mock receiver
 
-Service **`mock-verdict-callback`** (port **4569**) simulates a customer SEG endpoint:
+**mock-verdict-callback** (port **4569**) simulates customer SEG endpoints:
 
 | Route | Method | Purpose |
 |-------|--------|---------|
 | `/webhook` | POST | Receives verdict JSON; validates HMAC |
-| `/callbacks` | GET | Lists received payloads (for demos) |
+| `/callbacks` | GET | Lists received payloads |
 | `/stats` | GET | Counts by verdict |
-| `/health` | GET | Liveness |
 
-The React **#ingest** tab includes **Outbound verdict delivery** stats (see [ui_guide_mailbox_ingest.md](ui_guide_mailbox_ingest.md)).
+React **#ingest** tab shows delivery stats and registered clients.
 
 ```bash
 curl -sS "http://localhost:4569/stats"
-curl -sS "http://localhost:4569/callbacks?limit=10"
 ```
 
 ---
 
 ## Phishing-aware dev simulation
 
-Go mailbox simulation and Node dev simulation **rotate templates** from `shared/phishing_simulation_templates.json` so demos exercise every **rule_engine** heuristic:
+Simulators rotate templates from `shared/phishing_simulation_templates.json` and set **`ingestClientId: dev-mock`** so webhooks hit the mock receiver without per-message `callbackUrl`.
 
 | Template id | Expected verdict |
 |-------------|------------------|
-| `url_phishing` | `likely_phishing` (URL hostname hints) |
-| `credential_phishing` | `likely_phishing` (password/MFA keywords) |
-| `urgent_link` | `suspicious` (urgent + http) |
+| `url_phishing` | `likely_phishing` |
+| `credential_phishing` | `likely_phishing` |
+| `urgent_link` | `suspicious` |
 | `benign_newsletter` | `benign` |
-
-Each simulated message includes an **`externalMessageId`** like `dev-sim-url_phishing-42` so mock webhook rows are easy to correlate in the UI.
 
 ---
 
 ## Security notes
 
-- **Never** paste `VERDICT_CALLBACK_HMAC_SECRET` or `INGEST_INTERNAL_TOKEN` into markdown or tickets — read from gitignored `backend/dev.secrets` locally.
-- Verify `X-Verdict-Signature` on your receiver before quarantining mail.
-- Use HTTPS for production `callbackUrl` targets; dev mock uses plain HTTP inside the Docker network only.
+- Never paste `VERDICT_CALLBACK_HMAC_SECRET` or `INGEST_INTERNAL_TOKEN` into docs, chat, or git.
+- Verify `X-Verdict-Signature` before quarantining mail.
+- Production `callback_url` values must use **HTTPS**.
 
 ---
 
@@ -175,10 +257,27 @@ Each simulated message includes an **`externalMessageId`** like `dev-sim-url_phi
 
 ```bash
 cd ~/suspicious-email-triage/backend
-npm test -- --watchAll=false --testPathPattern="verdictDelivery|ingestInternal|verdictCallbackSign"
+npm test -- --watchAll=false --testPathPattern="verdictDelivery|ingestClients|ingestInternal"
 
 cd ~/suspicious-email-triage
 ai_service/.venv/bin/pytest ai_service/tests/test_verdict_delivery.py -v
 ```
 
-See also [stack_guide_running_tests.md](stack_guide_running_tests.md).
+See [stack_guide_running_tests.md](stack_guide_running_tests.md).
+
+---
+
+## Related implementation files
+
+| File | Role |
+|------|------|
+| `backend/src/ingest/ingestClientsPg.js` | Postgres client registry |
+| `backend/src/services/verdictDelivery.js` | Webhook POST + resolution |
+| `backend/src/api/ingestInternal.js` | Ingest, poll, deliver, client CRUD |
+| `ai_service/app/verdict_delivery.py` | Celery → Node trigger |
+| `infra/mock-verdict-callback/server.js` | Dev receiver |
+
+```bash
+cd ~/suspicious-email-triage
+bash scripts/test-all.sh
+```

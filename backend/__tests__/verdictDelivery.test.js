@@ -1,6 +1,13 @@
 /**
  * Unit tests for outbound verdict webhook delivery service.
  */
+jest.mock("../src/ingest/ingestClientsPg", () => ({
+  getIngestClient: jest.fn().mockResolvedValue(null),
+  listIngestClients: jest.fn().mockResolvedValue([]),
+  upsertIngestClient: jest.fn(),
+  ensureIngestClientsSchema: jest.fn(),
+}));
+
 jest.mock("../src/kafka/reviewCompletedProducer", () => ({
   publishReviewCompleted: jest.fn().mockResolvedValue(undefined),
 }));
@@ -45,11 +52,16 @@ describe("verdictDelivery", () => {
     expect(payload.reason).toBe("analysis_complete");
   });
 
-  it("resolveCallbackUrl prefers per-message callbackUrl over env default", () => {
-    const url = resolveCallbackUrl({
+  it("resolveCallbackUrl prefers per-message callbackUrl over env default", async () => {
+    const url = await resolveCallbackUrl({
       callbackUrl: "http://custom.test/hook",
     });
     expect(url).toBe("http://custom.test/hook");
+  });
+
+  it("resolveCallbackUrl falls back to VERDICT_CALLBACK_URL env", async () => {
+    const url = await resolveCallbackUrl({});
+    expect(url).toBe("http://mock-callback.test/webhook");
   });
 
   it("deliverVerdictForReview POSTs webhook and marks delivered", async () => {

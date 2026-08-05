@@ -17,6 +17,11 @@ const {
   deliverVerdictForReview,
   buildVerdictPayload,
 } = require("../services/verdictDelivery");
+const {
+  getIngestClient,
+  listIngestClients,
+  upsertIngestClient,
+} = require("../ingest/ingestClientsPg");
 
 /** router: internal ingest routes mounted at /ingest/internal before JWT auth. */
 const router = express.Router();
@@ -33,7 +38,8 @@ const MAILBOX_SOURCES = new Set(["mailbox_ingest", "mailbox_simulation"]);
 
 /**
  * POST /ingest/internal/mailbox — persist one email-shaped review and enqueue Kafka ingest.
- * Body: { senderName, senderEmail, subject, body, source, externalMessageId?, callbackUrl? }
+ * Body: { senderName, senderEmail, subject, body, source, externalMessageId?, callbackUrl?, ingestClientId? }
+ * Header alternative: X-Ingest-Client-Id (same as ingestClientId body field)
  */
 router.post("/mailbox", async (req, res) => {
   if (!internalTokenValid(req)) {
@@ -47,12 +53,20 @@ router.post("/mailbox", async (req, res) => {
     const source = String(req.body.source || "mailbox_ingest").trim();
     const externalMessageId = String(req.body.externalMessageId || "").trim() || undefined;
     const callbackUrl = String(req.body.callbackUrl || "").trim() || undefined;
+    const ingestClientId =
+      String(req.body.ingestClientId || req.get("X-Ingest-Client-Id") || "").trim() || undefined;
 
     if (!senderEmail || !subject || !body) {
       return res.status(400).json({ error: "missing_required_fields" });
     }
     if (!MAILBOX_SOURCES.has(source)) {
       return res.status(400).json({ error: "invalid_source" });
+    }
+    if (ingestClientId) {
+      const client = await getIngestClient(ingestClientId);
+      if (!client) {
+        return res.status(400).json({ error: "unknown_ingest_client", ingestClientId });
+      }
     }
 
     const links = extractLinks(body);
@@ -65,6 +79,7 @@ router.post("/mailbox", async (req, res) => {
       source,
       externalMessageId,
       callbackUrl,
+      ingestClientId,
       status: "pending",
     });
 
@@ -77,12 +92,14 @@ router.post("/mailbox", async (req, res) => {
       reviewId: review._id.toString(),
       source,
       externalMessageId: externalMessageId || null,
+      ingestClientId: ingestClientId || null,
     });
 
     return res.status(201).json({
       id: review._id.toString(),
       status: review.status,
       externalMessageId: review.externalMessageId || null,
+      ingestClientId: review.ingestClientId || null,
     });
   } catch (err) {
     logger.error("ingest", "internal mailbox create failed", { error: err.message });
@@ -107,6 +124,7 @@ router.get("/verdict/:id", async (req, res) => {
     return res.json({
       reviewId: review._id.toString(),
       externalMessageId: review.externalMessageId || null,
+      ingestClientId: review.ingestClientId || null,
       status: review.status,
       verdict: effectiveVerdict(row),
       recommendedAction: effectiveRecommendedAction(row),
@@ -141,6 +159,47 @@ router.post("/verdict-deliver/:id", async (req, res) => {
   } catch (err) {
     logger.error("ingest", "verdict deliver failed", { error: err.message });
     return res.status(500).json({ error: "verdict_deliver_failed" });
+  }
+});
+
+/**
+ * GET /ingest/internal/clients — list registered mail platform webhook defaults (Postgres ingest_clients).
+ */
+router.get("/clients", async (req, res) => {
+  if (!internalTokenValid(req)) {
+    return res.status(401).json({ error: "invalid_internal_token" });
+  }
+  try {
+    const clients = await listIngestClients({ includeInactive: true });
+    return res.json({ clients });
+  } catch (err) {
+    logger.error("ingest", "list clients failed", { error: err.message });
+    return res.status(500).json({ error: "list_clients_failed" });
+  }
+});
+
+/**
+ * PUT /ingest/internal/clients/:clientId — register or update one mail platform default webhook URL.
+ * Body: { displayName, callbackUrl, isActive? }
+ */
+router.put("/clients/:clientId", async (req, res) => {
+  if (!internalTokenValid(req)) {
+    return res.status(401).json({ error: "invalid_internal_token" });
+  }
+  try {
+    const row = await upsertIngestClient({
+      clientId: req.params.clientId,
+      displayName: req.body.displayName,
+      callbackUrl: req.body.callbackUrl,
+      isActive: req.body.isActive !== false,
+    });
+    return res.json({ client: row });
+  } catch (err) {
+    if (err.message === "missing_required_fields" || err.message === "callback_url_must_be_http_or_https") {
+      return res.status(400).json({ error: err.message });
+    }
+    logger.error("ingest", "upsert client failed", { error: err.message });
+    return res.status(500).json({ error: "upsert_client_failed" });
   }
 });
 

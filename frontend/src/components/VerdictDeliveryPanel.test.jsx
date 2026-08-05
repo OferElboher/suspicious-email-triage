@@ -3,14 +3,22 @@ import { render, screen } from "@testing-library/react";
 import VerdictDeliveryPanel from "./VerdictDeliveryPanel";
 
 describe("VerdictDeliveryPanel", () => {
-  it("shows delivery counts and mock receiver stats", () => {
+  it("shows delivery counts, registered clients, and mock receiver stats", () => {
     render(
       <VerdictDeliveryPanel
         loading={false}
         error=""
         snapshot={{
           delivery: {
-            defaultCallbackUrl: "http://mock-verdict-callback:4569/webhook",
+            devFallbackCallbackUrl: "http://mock-verdict-callback:4569/webhook",
+            registeredClients: [
+              {
+                clientId: "dev-mock",
+                displayName: "Dev mock SEG",
+                callbackUrl: "http://mock-verdict-callback:4569/webhook",
+                isActive: true,
+              },
+            ],
             counts: { delivered: 3, failed: 1, skipped: 0 },
           },
           mockReceiver: { total: 3, signatureValid: 3, byVerdict: { suspicious: 2, benign: 1 } },
@@ -28,5 +36,7 @@ describe("VerdictDeliveryPanel", () => {
     expect(screen.getByTestId("verdict-delivery-panel")).toBeInTheDocument();
     expect(screen.getByText("Outbound verdict delivery")).toBeInTheDocument();
     expect(screen.getByText("ext-1")).toBeInTheDocument();
+    expect(screen.getByText("dev-mock")).toBeInTheDocument();
+    expect(screen.getByText(/Registered mail platforms/)).toBeInTheDocument();
   });
 });

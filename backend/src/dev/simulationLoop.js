@@ -68,6 +68,7 @@ async function tick() {
     referenceSources: [],
     source: "dev_simulation",
     externalMessageId,
+    ingestClientId: "dev-mock",
     status: "pending",
   });
   await enqueueAfterCreate(review._id);

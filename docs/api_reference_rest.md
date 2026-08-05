@@ -1211,6 +1211,7 @@ Mounted **before** JWT middleware. **Not** for browser or analyst scripts — Go
   "body": "Please review",
   "source": "mailbox_ingest",
   "externalMessageId": "platform-msg-id-123",
+  "ingestClientId": "contoso-graph",
   "callbackUrl": "https://your-seg.example/verdict-webhook"
 }
 ```
@@ -1223,11 +1224,47 @@ Mounted **before** JWT middleware. **Not** for browser or analyst scripts — Go
 | `body` | Yes | Body text (links extracted) |
 | `source` | No | `mailbox_ingest` or `mailbox_simulation` (default `mailbox_ingest`) |
 | `externalMessageId` | No | Mail platform correlation id — echoed in outbound verdict webhook |
-| `callbackUrl` | No | Per-message webhook override; else `VERDICT_CALLBACK_URL` env |
+| `ingestClientId` | No | Registered mail platform slug — selects default webhook from Postgres `ingest_clients`. Also accepted as header `X-Ingest-Client-Id`. Must exist and be active or ingest returns **400** `unknown_ingest_client`. |
+| `callbackUrl` | No | Per-message webhook override (highest priority over `ingestClientId` registry and env fallback) |
 
-**Response (201):** `{ "id": "…", "status": "pending", "externalMessageId": "…" }` — same Kafka enqueue as `POST /reviews`. Verdict returned later via [verdict webhook](data_guide_verdict_webhooks.md).
+**Response (201):** `{ "id": "…", "status": "pending", "externalMessageId": "…", "ingestClientId": "…" }` — same Kafka enqueue as `POST /reviews`. Verdict returned later via [verdict webhook](data_guide_verdict_webhooks.md).
 
-**Errors:** **401** invalid token; **400** missing fields or invalid `source`.
+**Errors:** **401** invalid token; **400** missing fields, invalid `source`, or unknown `ingestClientId`.
+
+### GET /ingest/internal/clients
+
+**Auth:** `X-Ingest-Internal-Token`
+
+**Purpose:** List registered mail platforms and their default verdict webhook URLs (Postgres `ingest_clients`).
+
+**Response (200):** `{ "clients": [{ "client_id", "display_name", "callback_url", "is_active", … }] }`
+
+### PUT /ingest/internal/clients/:clientId
+
+**Auth:** `X-Ingest-Internal-Token`
+
+**Purpose:** Register or update one mail platform's default webhook URL.
+
+**Request body:**
+
+```json
+{
+  "displayName": "Contoso Microsoft Graph adapter",
+  "callbackUrl": "https://seg.contoso.example/v1/triage-verdict",
+  "isActive": true
+}
+```
+
+**Response (200):** `{ "client": { … } }` — **400** if fields missing or `callbackUrl` is not `http://` or `https://`.
+
+```bash
+curl -sS -X PUT "http://localhost:3000/ingest/internal/clients/contoso-graph" \
+  -H "X-Ingest-Internal-Token: YOUR_INGEST_INTERNAL_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"displayName":"Contoso Graph","callbackUrl":"https://seg.example/hook"}'
+```
+
+**Callback URL resolution at verdict time:** `callbackUrl` on the Review → Postgres lookup by `ingestClientId` → dev-only `VERDICT_CALLBACK_URL` env. See [data_guide_verdict_webhooks.md](data_guide_verdict_webhooks.md).
 
 ### GET /ingest/internal/verdict/:id
 
@@ -1258,7 +1295,9 @@ curl -sS "http://localhost:3000/ingest/internal/verdict/REVIEW_ID" \
 
 **Purpose:** Dashboard stats for outbound webhooks + mock receiver snapshot (React `#ingest` tab).
 
-**Note:** Production mailbox webhooks should call Go `POST /v1/ingest/email` on port **8080**, which forwards here. Do not expose this route to the public internet without network policy.
+**Response highlights:** `delivery.counts` (delivered/failed/skipped), `delivery.registeredClients` (Postgres `ingest_clients` rows mapped to camelCase), `delivery.devFallbackCallbackUrl` (only when `VERDICT_CALLBACK_URL` env is set), `mockReceiver`, `mockCallbacks`, `simulationTemplates`.
+
+**Note:** Production mailbox webhooks should call Go `POST /v1/ingest/email` on port **8080**, which forwards here. Do not expose internal ingest routes to the public internet without network policy.
 
 ---
 

@@ -34,12 +34,14 @@ The page **auto-refreshes every 3 seconds** (ingest stats) and **6 seconds** (ve
 
 ## Outbound verdict delivery panel
 
-After simulated or real mailbox ingest completes analysis, Node **POSTs the verdict** to the configured webhook (`VERDICT_CALLBACK_URL` → **mock-verdict-callback** in dev). This panel shows:
+After simulated or real mailbox ingest completes analysis, Node **POSTs the verdict** to the resolved webhook URL. Resolution order: per-message **`callbackUrl`** → Postgres **`ingestClientId`** registry → dev-only **`VERDICT_CALLBACK_URL`**. Dev simulation uses `ingestClientId: dev-mock`, which points at **mock-verdict-callback** on port 4569.
 
 | UI element | Meaning |
 |------------|---------|
 | Delivered / Failed / Skipped | Mongo `verdictDelivery` audit counts |
 | Mock received / Valid HMAC | Rows accepted by `mock-verdict-callback:4569` |
+| **Registered mail platforms** | Postgres `ingest_clients` rows (client id, display name, default callback URL) |
+| Dev env fallback | Shown only when `VERDICT_CALLBACK_URL` is set (single-tenant dev shortcut) |
 | Verdict bar chart | Breakdown of mock callbacks by verdict |
 | Recent mock platform callbacks | Table with `externalMessageId` and verdict |
 | Phishing simulation templates | Rotating scenarios (URL phish, credential, urgent, benign) |

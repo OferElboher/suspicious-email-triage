@@ -37,12 +37,13 @@ export default function VerdictDeliveryPanel({ snapshot, loading, error }) {
 
   return (
     <section className="ingest-dashboard__verdict card" data-testid="verdict-delivery-panel">
-      <HoverHelp text="When mailbox ingest completes analysis, Node POSTs a JSON verdict webhook to VERDICT_CALLBACK_URL (mock-verdict-callback in dev). Mail platforms can also poll GET /ingest/internal/verdict/:id with the ingest internal token.">
+      <HoverHelp text="When analysis completes, Node POSTs a JSON verdict webhook. Each mail platform registers a default URL under ingestClientId in Postgres; optional per-message callbackUrl overrides it.">
         <h3>Outbound verdict delivery</h3>
       </HoverHelp>
       <p className="muted">
-        Webhook target: {delivery.defaultCallbackUrl || "(not configured)"} — HMAC header{" "}
-        <code>X-Verdict-Signature</code>
+        Callback resolution: per-message <code>callbackUrl</code> → Postgres{" "}
+        <code>ingestClientId</code> registry → dev-only <code>VERDICT_CALLBACK_URL</code> fallback.
+        HMAC header <code>X-Verdict-Signature</code>.
       </p>
 
       {error && <p className="error-banner">{error}</p>}
@@ -84,6 +85,37 @@ export default function VerdictDeliveryPanel({ snapshot, loading, error }) {
         </div>
       )}
 
+      {delivery.registeredClients?.length > 0 && (
+        <details className="ingest-dashboard__clients" style={{ marginTop: "1rem" }} open>
+          <summary>Registered mail platforms ({delivery.registeredClients.length})</summary>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>clientId</th>
+                <th>Display name</th>
+                <th>Default callback URL</th>
+                <th>Active</th>
+              </tr>
+            </thead>
+            <tbody>
+              {delivery.registeredClients.map((client) => (
+                <tr key={client.clientId}>
+                  <td>
+                    <code>{client.clientId}</code>
+                  </td>
+                  <td>{client.displayName}</td>
+                  <td>{client.callbackUrl}</td>
+                  <td>{client.isActive ? "yes" : "no"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </details>
+      )}
+
+      {delivery.devFallbackCallbackUrl && (
+        <p className="muted">Dev env fallback: {delivery.devFallbackCallbackUrl}</p>
+      )}
       {templates.length > 0 && (
         <details className="ingest-dashboard__templates" style={{ marginTop: "1rem" }}>
           <summary>Phishing simulation templates ({templates.length})</summary>
