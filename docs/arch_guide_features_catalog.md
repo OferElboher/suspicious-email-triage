@@ -73,7 +73,7 @@ If you are new to a topic (Kafka, Neo4j, JWT, etc.), follow the linked guides in
 - **Three ingest entry paths**
   - **Manual UI / `POST /reviews`** — analyst or JWT-authenticated script; MongoDB `source: user`.
   - **Go mailbox ingest-gateway** — `ingest-gateway/` service; webhooks `POST :8080/v1/ingest/email` → Node `POST /ingest/internal/mailbox`; `source: mailbox_ingest` or `mailbox_simulation`.
-  - **Outbound verdict webhooks** — per-platform default URL in Postgres `ingest_clients` (keyed by `ingestClientId`); optional per-message `callbackUrl`; HMAC POST on analysis complete/override; poll `GET /ingest/internal/verdict/:id`; client CRUD `PUT /ingest/internal/clients/:id`; Kafka `email.review.completed`; dev `mock-verdict-callback` — [data_guide_verdict_webhooks.md](data_guide_verdict_webhooks.md).
+  - **Outbound verdict webhooks** — per-platform default URL in Postgres `ingest_clients`; self-registration API; JWT UI registration form; optional per-message `callbackUrl`; HMAC POST on analysis complete/override; poll `GET /ingest/internal/verdict/:id`; Kafka `email.review.completed`; dev `mock-verdict-callback` — [data_guide_verdict_webhooks.md](data_guide_verdict_webhooks.md).
   - All paths enqueue Kafka `email.review.ingested` and share Celery scoring — see [data_guide_mailbox_ingest_gateway.md](data_guide_mailbox_ingest_gateway.md#three-ways-to-get-email-into-triage).
   - Go 1.22, `net/http`, goroutines, Prometheus; React **#ingest** tab polls `GET /metrics/mailbox-ingest`.
 

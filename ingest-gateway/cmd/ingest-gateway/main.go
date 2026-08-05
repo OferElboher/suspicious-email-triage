@@ -40,7 +40,7 @@ func main() {
 	store := stats.NewStore()
 
 	// HTTP client that POSTs to Node /ingest/internal/mailbox with shared secret header.
-	client := backend.NewClient(cfg.BackendURL, cfg.IngestInternalToken)
+	client := backend.NewClient(cfg.BackendURL, cfg.IngestInternalToken, cfg.IngestRegistrationToken)
 
 	// Simulation controller runs synthetic traffic in a background goroutine (dev only).
 	// onResult callback bridges simulation outcomes into Prometheus counters.

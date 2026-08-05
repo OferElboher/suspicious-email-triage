@@ -103,7 +103,7 @@ function buildApp(auth) {
 const adminAuth = {
   email: "admin@test.local",
   roles: ["admin"],
-  permissions: ["dev.simulation", "dev.reset", "metrics.read"],
+  permissions: ["dev.simulation", "dev.reset", "metrics.read", "ingest.clients.write"],
 };
 
 const developerAuth = {
@@ -128,6 +128,7 @@ describe("dev routes — feature flags and role gates", () => {
     expect(res.status).toBe(200);
     expect(res.body.simulation).toBe(true);
     expect(res.body.resetLocalState).toBe(true);
+    expect(res.body.ingestClientsWrite).toBe(true);
     expect(res.body.deployment).toBe("dev");
   });
 

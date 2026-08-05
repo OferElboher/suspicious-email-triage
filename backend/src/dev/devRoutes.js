@@ -82,6 +82,7 @@ router.get("/features", (req, res) => {
     resetLocalState: canReset,
     simulationMaxEventsPerMin: MAX_EVENTS_PER_MIN,
     mailboxIngestMaxEventsPerMin: Number(process.env.MAILBOX_INGEST_MAX_EVENTS_PER_MIN) || 30,
+    ingestClientsWrite: hasPermission(req.auth, "ingest.clients.write"),
     roles: req.auth.roles,
     permissions: req.auth.permissions,
   });

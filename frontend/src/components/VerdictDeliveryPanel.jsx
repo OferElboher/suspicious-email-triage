@@ -14,6 +14,7 @@ import {
   YAxis,
 } from "recharts";
 import HoverHelp from "./HoverHelp";
+import RegisterIngestClientForm from "./RegisterIngestClientForm";
 
 /** Format integer counts for stat cards. */
 function fmt(n) {
@@ -21,9 +22,15 @@ function fmt(n) {
 }
 
 /**
- * @param {{ snapshot: object|null, loading: boolean, error: string }} props
+ * @param {{ snapshot: object|null, loading: boolean, error: string, canManageClients?: boolean, onClientsChanged?: () => void }} props
  */
-export default function VerdictDeliveryPanel({ snapshot, loading, error }) {
+export default function VerdictDeliveryPanel({
+  snapshot,
+  loading,
+  error,
+  canManageClients = false,
+  onClientsChanged,
+}) {
   const delivery = snapshot?.delivery || {};
   const counts = delivery.counts || {};
   const mockStats = snapshot?.mockReceiver || {};
@@ -45,6 +52,10 @@ export default function VerdictDeliveryPanel({ snapshot, loading, error }) {
         <code>ingestClientId</code> registry → dev-only <code>VERDICT_CALLBACK_URL</code> fallback.
         HMAC header <code>X-Verdict-Signature</code>.
       </p>
+
+      {canManageClients && (
+        <RegisterIngestClientForm onRegistered={onClientsChanged} />
+      )}
 
       {error && <p className="error-banner">{error}</p>}
 

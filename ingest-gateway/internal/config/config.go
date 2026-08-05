@@ -18,8 +18,8 @@ type Config struct {
 	DeploymentEnv string
 	// BackendURL is the Node API base URL used to persist reviews (e.g. http://backend:3000).
 	BackendURL string
-	// IngestInternalToken is the shared secret sent as X-Ingest-Internal-Token to Node.
-	IngestInternalToken string
+	// IngestRegistrationToken is sent as X-Ingest-Registration-Token for PUT /v1/clients/* proxy.
+	IngestRegistrationToken string
 	// MaxEventsPerMinute caps simulation rate in dev (mirrors SIMULATION_MAX_EVENTS_PER_MIN idea).
 	MaxEventsPerMinute int
 	// GatewayEnabled allows operators to disable the HTTP server without removing the container.
@@ -44,7 +44,8 @@ func Load() Config {
 		ListenAddr:          envOr("INGEST_GATEWAY_LISTEN", ":8080"),
 		DeploymentEnv:       strings.ToLower(envOr("DEPLOYMENT_ENV", "dev")),
 		BackendURL:          strings.TrimRight(envOr("INGEST_BACKEND_URL", "http://backend:3000"), "/"),
-		IngestInternalToken: envOr("INGEST_INTERNAL_TOKEN", "dev-ingest-internal-token"),
+		IngestInternalToken:     envOr("INGEST_INTERNAL_TOKEN", "dev-ingest-internal-token"),
+		IngestRegistrationToken: envOr("INGEST_CLIENT_REGISTRATION_TOKEN", envOr("INGEST_INTERNAL_TOKEN", "dev-ingest-internal-token")),
 		MaxEventsPerMinute:  maxRate,
 		GatewayEnabled:      enabled,
 	}

@@ -223,7 +223,7 @@ def test_observability_and_api_docs_indexed():
 
 def test_each_doc_has_runnable_cli_sample():
     """Every guide under docs/ must include at least one ```bash block (self-contained samples)."""
-    skip = {"util_terminal_block_format.md"}
+    skip = {"util_terminal_block_format.md", "profile_resume_technical_skills.md", "profile_linkedin_project.md"}
     for path in sorted((ROOT / "docs").glob("*.md")):
         if path.name in skip:
             continue
@@ -567,6 +567,9 @@ def test_mailbox_ingest_gateway_wired():
     assert (ROOT / "backend/src/api/ingestInternal.js").is_file()
     assert (ROOT / "backend/src/services/verdictDelivery.js").is_file()
     assert (ROOT / "backend/src/ingest/ingestClientsPg.js").is_file()
+    assert (ROOT / "backend/src/api/ingestRegister.js").is_file()
+    assert (ROOT / "backend/src/api/ingestClients.js").is_file()
+    assert (ROOT / "frontend/src/components/RegisterIngestClientForm.jsx").is_file()
     assert (ROOT / "infra/mock-verdict-callback/server.js").is_file()
     assert (ROOT / "shared/phishing_simulation_templates.json").is_file()
     assert (ROOT / "backend/src/lib/ingestGatewayClient.js").is_file()

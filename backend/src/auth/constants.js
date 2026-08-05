@@ -4,6 +4,7 @@ const PERMISSIONS = [
   { code: "reviews.write", description: "Create new review submissions" },
   { code: "reviews.override", description: "Save analyst overrides on completed reviews" },
   { code: "metrics.read", description: "Read analytics and chart metrics" },
+  { code: "ingest.clients.write", description: "Register mail platform default verdict webhook URLs" },
   { code: "graph.read", description: "Read Neo4j phishing relationship graph and campaigns" },
   { code: "dev.simulation", description: "Use dev simulation controls" },
   { code: "dev.reset", description: "Reset local dev databases and queues" },
@@ -16,7 +17,7 @@ const PERMISSIONS = [
 const ROLE_PERMISSIONS = {
   admin: PERMISSIONS.map((p) => p.code),
   analyst: ["reviews.read", "reviews.write", "reviews.override", "graph.read"],
-  manager: ["reviews.read", "metrics.read", "graph.read"],
+  manager: ["reviews.read", "metrics.read", "graph.read", "ingest.clients.write"],
   developer: [
     "reviews.read",
     "reviews.write",
@@ -24,6 +25,8 @@ const ROLE_PERMISSIONS = {
     "graph.read",
     "dev.simulation",
     "dev.reset",
+    "metrics.read",
+    "ingest.clients.write",
   ],
   viewer: ["reviews.read", "graph.read"],
 };

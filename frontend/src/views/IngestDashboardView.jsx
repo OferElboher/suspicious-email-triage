@@ -29,9 +29,14 @@ function fmt(n) {
 /**
  * @param {object} props
  * @param {boolean} props.canSimulate — dev mailbox simulation controls
+ * @param {boolean} props.canManageIngestClients — JWT ingest.clients.write (register webhook defaults)
  * @param {number} props.maxEventsPerMin — cap from GET /dev/features
  */
-export default function IngestDashboardView({ canSimulate, maxEventsPerMin = 30 }) {
+export default function IngestDashboardView({
+  canSimulate,
+  canManageIngestClients = false,
+  maxEventsPerMin = 30,
+}) {
   const { snapshot, loading, error, refresh } = useMailboxIngestPoll({ enabled: true });
   const verdictPoll = useVerdictDeliveryPoll({ enabled: true, intervalMs: 6000 });
   const [simRate, setSimRate] = useState(5);
@@ -190,6 +195,8 @@ export default function IngestDashboardView({ canSimulate, maxEventsPerMin = 30 
         snapshot={verdictPoll.snapshot}
         loading={verdictPoll.loading}
         error={verdictPoll.error}
+        canManageClients={canManageIngestClients}
+        onClientsChanged={() => verdictPoll.refresh().catch(() => {})}
       />
     </main>
   );

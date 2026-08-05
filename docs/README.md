@@ -154,6 +154,8 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 
 - [util_acronym_glossary.md](util_acronym_glossary.md) — short definitions for acronyms used across docs
 - [util_terminal_block_format.md](util_terminal_block_format.md) — gray terminal command boxes in Markdown
+- [profile_resume_technical_skills.md](profile_resume_technical_skills.md) — résumé skills list aligned with this repo
+- [profile_linkedin_project.md](profile_linkedin_project.md) — LinkedIn project blurb (copy/paste)
 
 ---
 

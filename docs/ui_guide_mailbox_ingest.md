@@ -26,7 +26,8 @@ This guide explains the **Mailbox ingest gateway** sub-window in the React app: 
 | Last minute | Same snapshot | Rolling ingest rate |
 | Per-minute bar chart | `series.perMinute[]` | Webhook vs simulation vs errors each minute |
 | Dev simulation panel | `POST /metrics/mailbox-ingest/simulation` | Single **Start simulation** / **Stop simulation** toggle (same labels as the Node Dev simulation card) |
-| **Outbound verdict delivery** | `GET /metrics/verdict-delivery` | Webhook delivered/failed counts, mock receiver log, verdict bar chart |
+| **Outbound verdict delivery** | `GET /metrics/verdict-delivery` | Webhook delivered/failed counts, mock receiver log, verdict bar chart, registered clients table |
+| **Register mail platform webhook** | `PUT /ingest/clients/:clientId` (JWT) | Form shown when user has `ingest.clients.write` — saves default callback URL for an `ingestClientId` |
 
 The page **auto-refreshes every 3 seconds** (ingest stats) and **6 seconds** (verdict delivery panel).
 
@@ -35,6 +36,17 @@ The page **auto-refreshes every 3 seconds** (ingest stats) and **6 seconds** (ve
 ## Outbound verdict delivery panel
 
 After simulated or real mailbox ingest completes analysis, Node **POSTs the verdict** to the resolved webhook URL. Resolution order: per-message **`callbackUrl`** → Postgres **`ingestClientId`** registry → dev-only **`VERDICT_CALLBACK_URL`**. Dev simulation uses `ingestClientId: dev-mock`, which points at **mock-verdict-callback** on port 4569.
+
+### Registering a platform from the UI
+
+If your role includes **`ingest.clients.write`** (admin, manager, or developer), the **Register mail platform webhook** form appears above the delivery stats:
+
+1. Choose a **Client ID** slug (e.g. `contoso-graph`) — the platform sends this as `ingestClientId` on every ingest.
+2. Enter a **Display name** for operators.
+3. Enter the **Default callback URL** where the platform wants verdict JSON (HTTPS in production).
+4. Click **Save platform webhook** — calls `PUT /ingest/clients/:clientId` with your JWT.
+
+Mail platform automation can instead self-register with `PUT /ingest/register/:clientId` or Go `PUT /v1/clients/:clientId` and header `X-Ingest-Registration-Token` (see [data_guide_verdict_webhooks.md](data_guide_verdict_webhooks.md)).
 
 | UI element | Meaning |
 |------------|---------|

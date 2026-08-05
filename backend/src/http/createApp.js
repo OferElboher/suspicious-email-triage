@@ -16,6 +16,8 @@ const searchRoutes = require("../api/search");
 const analyticsRoutes = require("../api/analytics");
 const pipelineRoutes = require("../api/pipeline");
 const ingestInternalRoutes = require("../api/ingestInternal");
+const ingestRegisterRoutes = require("../api/ingestRegister");
+const ingestClientsRoutes = require("../api/ingestClients");
 const devRoutes = require("../dev/devRoutes");
 const { searchLogs } = require("../lib/logSearch");
 const { enqueueAfterCreate } = require("../services/reviewPipeline");
@@ -46,8 +48,11 @@ function createApp() {
   app.use("/graph/internal", graphInternalRoutes);
   app.use("/agent/internal", agentInternalRoutes);
   app.use("/ingest/internal", ingestInternalRoutes);
+  app.use("/ingest", ingestRegisterRoutes);
 
   app.use(authenticate);
+
+  app.use("/ingest/clients", ingestClientsRoutes);
 
   app.use("/reviews", reviewRoutes);
   app.use("/metrics", metricsRoutes);

@@ -5,6 +5,7 @@
 //   GET  /metrics — Prometheus scrape endpoint
 //   GET  /v1/stats/dashboard — JSON for React ingest dashboard
 //   POST /v1/ingest/email — webhook-style mailbox payload (production path)
+//   PUT  /v1/clients/{clientId} — mail platform self-registration for default verdict webhook URL
 //   POST /v1/simulation/start, /v1/simulation/stop, GET /v1/simulation/status — dev only
 package handler
 
@@ -53,6 +54,7 @@ func (a *API) Register(mux *http.ServeMux) {
 	mux.Handle("GET /metrics", promhttp.Handler())
 	mux.HandleFunc("GET /v1/stats/dashboard", a.handleDashboard)
 	mux.HandleFunc("POST /v1/ingest/email", a.handleIngestEmail)
+	mux.HandleFunc("PUT /v1/clients/{clientId}", a.handleRegisterClient)
 	mux.HandleFunc("POST /v1/simulation/start", a.handleSimulationStart)
 	mux.HandleFunc("POST /v1/simulation/stop", a.handleSimulationStop)
 	mux.HandleFunc("GET /v1/simulation/status", a.handleSimulationStatus)
@@ -131,6 +133,47 @@ func (a *API) handleIngestEmail(w http.ResponseWriter, r *http.Request) {
 		"reviewId": result.ID, "source": "mailbox_ingest", "senderEmail": body.SenderEmail,
 	})
 	writeJSON(w, http.StatusCreated, result)
+}
+
+// registerClientBody is the JSON schema for PUT /v1/clients/{clientId}.
+type registerClientBody struct {
+	DisplayName string `json:"displayName"`
+	CallbackURL string `json:"callbackUrl"`
+	IsActive    *bool  `json:"isActive"`
+}
+
+// handleRegisterClient lets a mail platform register its default verdict webhook via the Go edge.
+func (a *API) handleRegisterClient(w http.ResponseWriter, r *http.Request) {
+	clientID := strings.TrimSpace(r.PathValue("clientId"))
+	if clientID == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "missing_clientId"})
+		return
+	}
+	var body registerClientBody
+	if err := decodeJSON(r, &body); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid_json"})
+		return
+	}
+	if strings.TrimSpace(body.DisplayName) == "" || strings.TrimSpace(body.CallbackURL) == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "missing_required_fields"})
+		return
+	}
+	result, err := a.backend.RegisterIngestClient(r.Context(), clientID, backend.RegisterClientPayload{
+		DisplayName: strings.TrimSpace(body.DisplayName),
+		CallbackURL: strings.TrimSpace(body.CallbackURL),
+		IsActive:    body.IsActive,
+	})
+	if err != nil {
+		gwlogger.Error("ingest", "client registration proxy failed", map[string]interface{}{
+			"clientId": clientID, "error": err.Error(),
+		})
+		writeJSON(w, http.StatusBadGateway, map[string]string{"error": "registration_failed", "detail": err.Error()})
+		return
+	}
+	gwlogger.Info("ingest", "mail platform registered callback URL", map[string]interface{}{
+		"clientId": clientID, "callbackUrl": result.Client.CallbackURL,
+	})
+	writeJSON(w, http.StatusOK, result)
 }
 
 // simulationStartBody configures dev synthetic traffic rate.

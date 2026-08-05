@@ -47,41 +47,102 @@ A single global `VERDICT_CALLBACK_URL` is only meaningful for **one-tenant dev d
 
 ### Callback URL resolution priority
 
-When Celery finishes (or analyst overrides), Node picks **one** URL in this order:
+When Celery finishes scoring (or an analyst saves an **override**), Node must decide **which HTTPS URL** receives the outbound verdict webhook. Only **one** URL is used per delivery attempt. The lookup runs inside `resolveCallbackUrl()` in `backend/src/services/verdictDelivery.js` and follows this order:
 
-1. **`callbackUrl`** on the individual Review (one-off override for a single message)
-2. **`ingestClientId`** → lookup `ingest_clients.callback_url` in Postgres
-3. **`VERDICT_CALLBACK_URL`** environment variable — **dev/single-tenant fallback only**
+| Priority | Source | When to use |
+|----------|--------|-------------|
+| **1 (highest)** | `callbackUrl` on the individual Review document | One-off override for a single message (e.g. staging test against a temporary endpoint) |
+| **2** | Postgres `ingest_clients.callback_url` for the Review's `ingestClientId` | Normal production path — each mail platform registers once and sends the same `ingestClientId` on every ingest |
+| **3 (lowest)** | `VERDICT_CALLBACK_URL` environment variable | **Dev/single-tenant fallback only** when no per-message URL and no `ingestClientId` were stored |
 
-**Implementation:** `resolveCallbackUrl()` in `backend/src/services/verdictDelivery.js`.
+**Important:** `VERDICT_CALLBACK_URL` is **not** a per-customer setting. It exists so local Docker demos can deliver verdicts without registering a client row. Multi-tenant deployments should register every platform in `ingest_clients` instead.
 
-### Registering a client (staging/prod)
+#### How a mail platform registers its own default webhook URL
 
-**Option A — Internal API** (automation / Terraform hook; requires `X-Ingest-Internal-Token`):
+A platform integration team needs a stable **`ingestClientId`** (slug) and a **`callback_url`** (where Node POSTs the verdict JSON). This repo supports **three registration paths**:
+
+**Path 1 — Self-service HTTP (automation / the platform registers itself)**
+
+The platform's adapter calls the registration API with a shared secret **`INGEST_CLIENT_REGISTRATION_TOKEN`** (gitignored in `backend/dev.secrets`; AWS Secrets Manager in staging/prod). This token is **narrower** than `INGEST_INTERNAL_TOKEN` — it can only upsert webhook defaults, not create reviews.
+
+Node route (direct):
 
 ```bash
-curl -sS -X PUT "http://localhost:3000/ingest/internal/clients/contoso-graph" \
-  -H "X-Ingest-Internal-Token: YOUR_INGEST_INTERNAL_TOKEN" \
+curl -sS -X PUT "http://localhost:3000/ingest/register/contoso-graph" \
+  -H "X-Ingest-Registration-Token: YOUR_INGEST_CLIENT_REGISTRATION_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "displayName": "Contoso Microsoft Graph adapter",
-    "callbackUrl": "https://seg.contoso.example/v1/triage-verdict",
-    "isActive": true
+    "callbackUrl": "https://seg.contoso.example/v1/triage-verdict"
   }'
 ```
 
-**Option B — SQL** (break-glass / migration):
+Go ingest-gateway edge (same semantics, proxies to Node — typical for production ingress on port **8080**):
 
 ```bash
-# Run against triage_stats Postgres — use placeholders, not production secrets in docs.
-psql "$STATISTICS_PG_URL" -c "
-  INSERT INTO ingest_clients (client_id, display_name, callback_url, is_active)
-  VALUES ('contoso-graph', 'Contoso Graph', 'https://seg.contoso.example/hook', true)
-  ON CONFLICT (client_id) DO UPDATE SET callback_url = EXCLUDED.callback_url;
-"
+curl -sS -X PUT "http://localhost:8080/v1/clients/contoso-graph" \
+  -H "X-Ingest-Registration-Token: YOUR_INGEST_CLIENT_REGISTRATION_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "displayName": "Contoso Microsoft Graph adapter",
+    "callbackUrl": "https://seg.contoso.example/v1/triage-verdict"
+  }'
 ```
 
-**Option C — View in UI** — `#ingest` tab → **Outbound verdict delivery** → **Registered mail platforms** table (from `GET /metrics/verdict-delivery`).
+**Response (200):** `{ "client": { "clientId", "displayName", "callbackUrl", "isActive" } }`  
+**Errors:** **401** invalid token; **400** missing fields or non-HTTP(S) URL.
+
+After registration, every ingest from that platform includes `"ingestClientId": "contoso-graph"`. When analysis completes, Node reads the stored `callback_url` and POSTs the verdict there (with HMAC header `X-Verdict-Signature`).
+
+**Path 2 — React UI (operators with login)**
+
+1. Sign in at `http://localhost:3001` as **admin**, **manager**, or **developer** (roles with `ingest.clients.write`).
+2. Open the **#ingest** tab → scroll to **Outbound verdict delivery** → **Register mail platform webhook**.
+3. Fill **Client ID**, **Display name**, and **Default callback URL** → **Save platform webhook**.
+
+**Technology:** React form (`RegisterIngestClientForm.jsx`) → JWT `PUT /ingest/clients/:clientId` → Postgres upsert via `ingestClientsPg.js`. The registered clients table below refreshes automatically.
+
+**Path 3 — Operator JWT curl (same API as the UI)**
+
+```bash
+TOKEN="…"   # from POST /auth/login — see auth_guide_obtain_jwt.md
+curl -sS -X PUT "http://localhost:3000/ingest/clients/contoso-graph" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "displayName": "Contoso Graph adapter",
+    "callbackUrl": "https://seg.contoso.example/v1/triage-verdict"
+  }'
+```
+
+**Path 4 — Internal ops token** (Terraform / break-glass; full internal privileges): `PUT /ingest/internal/clients/:clientId` with `X-Ingest-Internal-Token` — see [api_reference_rest.md](api_reference_rest.md).
+
+**Path 5 — SQL** (migrations / break-glass): insert into `ingest_clients` via `psql` against the stats Postgres database.
+
+#### Demonstration (dev stack)
+
+```bash
+# 1) Register dev platform pointing at mock receiver (port 4569)
+curl -sS -X PUT "http://localhost:8080/v1/clients/my-dev-seg" \
+  -H "X-Ingest-Registration-Token: YOUR_INGEST_CLIENT_REGISTRATION_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"displayName":"My dev SEG","callbackUrl":"http://localhost:4569/webhook"}'
+
+# 2) Ingest one message with that client id
+curl -sS -X POST "http://localhost:8080/v1/ingest/email" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ingestClientId": "my-dev-seg",
+    "senderEmail": "phish@example.com",
+    "subject": "Urgent wire transfer",
+    "body": "Click http://evil.example/login"
+  }'
+
+# 3) After Celery completes (~seconds), check mock receiver
+curl -sS "http://localhost:4569/stats"
+```
+
+Or use the **#ingest** UI form with `callbackUrl` = `http://mock-verdict-callback:4569/webhook` (Docker network hostname from inside containers) or `http://localhost:4569/webhook` (from your host browser/curl).
 
 ### Sending `ingestClientId` on ingest
 

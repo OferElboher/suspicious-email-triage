@@ -284,6 +284,7 @@ export default function TriageApp() {
       {screen === "ingest" && features.mailboxIngest && hasPermission("metrics.read") && (
         <IngestDashboardView
           canSimulate={features.mailboxIngestSimulation}
+          canManageIngestClients={Boolean(features.ingestClientsWrite)}
           maxEventsPerMin={features.mailboxIngestMaxEventsPerMin}
         />
       )}

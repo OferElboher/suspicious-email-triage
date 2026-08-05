@@ -1195,7 +1195,50 @@ or `{ "action": "stop" }`.
 
 ## Internal ingest (`/ingest/internal`)
 
-Mounted **before** JWT middleware. **Not** for browser or analyst scripts — Go `ingest-gateway` only.
+Mounted **before** JWT middleware. **Not** for browser or analyst scripts — Go `ingest-gateway` and Celery use these routes.
+
+### PUT /ingest/register/:clientId (public — mail platform self-registration)
+
+Mounted at `/ingest/register/:clientId` **before** JWT. **Not** the same as internal routes below.
+
+**Auth:** `X-Ingest-Registration-Token` (matches `INGEST_CLIENT_REGISTRATION_TOKEN` in secrets; narrower than `INGEST_INTERNAL_TOKEN`)
+
+**Purpose:** Lets a mail platform (SEG, Graph adapter, Postfix helper) register **its own default verdict webhook URL** without an analyst JWT. After registration, the platform sends `ingestClientId` on every ingest; Node resolves `callback_url` from Postgres at verdict time.
+
+**Request body:** `{ "displayName", "callbackUrl", "isActive?" }`
+
+**Go edge equivalent:** `PUT http://localhost:8080/v1/clients/:clientId` (same body and header; proxies to this Node route).
+
+```bash
+curl -sS -X PUT "http://localhost:3000/ingest/register/contoso-graph" \
+  -H "X-Ingest-Registration-Token: YOUR_INGEST_CLIENT_REGISTRATION_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"displayName":"Contoso Graph","callbackUrl":"https://seg.example/hook"}'
+```
+
+---
+
+## Ingest client registry (JWT — `/ingest/clients`)
+
+**Purpose:** Operators with login manage the same Postgres `ingest_clients` rows from curl or the React **#ingest** registration form.
+
+### GET /ingest/clients
+
+**Auth:** JWT + `metrics.read`
+
+**Response (200):** `{ "clients": [{ "clientId", "displayName", "callbackUrl", "isActive", … }] }`
+
+### PUT /ingest/clients/:clientId
+
+**Auth:** JWT + `ingest.clients.write` (admin, manager, developer)
+
+**Request body:** `{ "displayName", "callbackUrl", "isActive?" }`
+
+**Response (200):** `{ "client": { … } }`
+
+---
+
+## Internal ingest routes (`/ingest/internal`)
 
 ### POST /ingest/internal/mailbox
 
