@@ -223,7 +223,7 @@ def test_observability_and_api_docs_indexed():
 
 def test_each_doc_has_runnable_cli_sample():
     """Every guide under docs/ must include at least one ```bash block (self-contained samples)."""
-    skip = {"util_terminal_block_format.md", "profile_resume_technical_skills.md", "profile_linkedin_project.md"}
+    skip = {"util_terminal_block_format.md"}
     for path in sorted((ROOT / "docs").glob("*.md")):
         if path.name in skip:
             continue
