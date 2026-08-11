@@ -42,8 +42,13 @@ func main() {
 	// HTTP client that POSTs to Node /ingest/internal/mailbox with shared secret header.
 	client := backend.NewClient(cfg.BackendURL, cfg.IngestInternalToken, cfg.IngestRegistrationToken)
 
-	// Simulation controller runs synthetic traffic in a background goroutine (dev only).
-	// onResult callback bridges simulation outcomes into Prometheus counters.
+	// Simulation controller: dev-only *traffic generator* (not created conditionally here — always wired).
+	// Role: when an operator calls POST /v1/simulation/start, it runs a background goroutine with a
+	// time.Ticker that invents synthetic emails at N/min and POSTs them through the same backend client
+	// as real webhooks (source=mailbox_simulation). Updates in-memory stats for the #ingest dashboard.
+	// Non-dev guard: handler routes check cfg.IsDev() (DEPLOYMENT_ENV=dev) and return 403 before
+	// calling sim.Start — staging/prod never start the loop even though this struct exists.
+	// onResult: forwards each tick outcome to Prometheus counters (success vs backend vs sim error).
 	sim := simulation.NewController(cfg.MaxEventsPerMinute, store, client, func(ok bool, backendFailure bool) {
 		if ok {
 			gwmetrics.RecordSuccess("mailbox_simulation")
@@ -56,12 +61,16 @@ func main() {
 		}
 	})
 
-	// HTTP handlers bundle config + dependencies; Register mounts routes on the mux.
+	// api: handler bundle holding cfg, stats, backend client, and sim controller.
 	api := handler.NewAPI(cfg, store, client, sim)
+
+	// mux: Go 1.22 ServeMux — route table (health, metrics, ingest, simulation, client registration).
+	// Initialized empty, then api.Register(mux) attaches "METHOD /path" patterns to handler funcs.
 	mux := http.NewServeMux()
 	api.Register(mux)
 
-	// Standard library HTTP server — no framework; explicit timeouts on the server struct.
+	// server: stdlib HTTP listener config — binds Addr, serves all routes via mux, caps header read time.
+	// Initialized as a struct literal; ListenAndServe() below opens the TCP socket and blocks.
 	server := &http.Server{
 		Addr:    cfg.ListenAddr, // e.g. ":8080" from INGEST_GATEWAY_LISTEN
 		Handler: mux,
