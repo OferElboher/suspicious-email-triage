@@ -1,7 +1,10 @@
 // Package config loads environment variables for the ingest-gateway process.
 //
-// Pattern: twelve-factor app — configuration comes from the environment at startup,
-// not from hard-coded paths. Docker Compose and Kubernetes inject the same keys.
+// Pattern: twelve-factor app — all settings come from the environment at startup.
+// Docker Compose and Kubernetes inject the same variable names in dev and prod.
+//
+// Usage flow:
+//  main() → config.Load() → Config passed to handler.NewAPI and backend.NewClient
 package config
 
 import (
@@ -11,52 +14,58 @@ import (
 )
 
 // Config holds all runtime settings for the Go mailbox ingest gateway.
+//
+// Usage flow:
+//  Load() fills this struct from env → main wires fields into HTTP server, backend client, simulation cap.
 type Config struct {
-	// ListenAddr is the HTTP bind address (e.g. ":8080").
+	// ListenAddr — TCP bind address for the HTTP server (e.g. ":8080" → port 8080 on all interfaces).
 	ListenAddr string
-	// DeploymentEnv distinguishes dev simulation from staging/prod (dev enables /v1/simulation/*).
+	// DeploymentEnv — "dev" enables /v1/simulation/* routes; staging/prod return 403 on simulation.
 	DeploymentEnv string
-	// BackendURL is the Node API base URL used to persist reviews (e.g. http://backend:3000).
+	// BackendURL — Node API base URL without trailing slash (e.g. http://backend:3000).
 	BackendURL string
-	// IngestRegistrationToken is sent as X-Ingest-Registration-Token for PUT /v1/clients/* proxy.
+	// IngestInternalToken — shared secret for POST /ingest/internal/mailbox (X-Ingest-Internal-Token).
+	IngestInternalToken string
+	// IngestRegistrationToken — shared secret for PUT /ingest/register/* (X-Ingest-Registration-Token).
 	IngestRegistrationToken string
-	// MaxEventsPerMinute caps simulation rate in dev (mirrors SIMULATION_MAX_EVENTS_PER_MIN idea).
+	// MaxEventsPerMinute — upper cap on dev simulation rate (MAILBOX_INGEST_MAX_EVENTS_PER_MIN).
 	MaxEventsPerMinute int
-	// GatewayEnabled allows operators to disable the HTTP server without removing the container.
+	// GatewayEnabled — when false, main.go sleeps forever instead of listening (compose profile toggle).
 	GatewayEnabled bool
 }
 
 // Load reads process environment and applies safe defaults for local Docker dev.
+//
+// Usage: called once at startup in cmd/ingest-gateway/main.go before wiring dependencies.
 func Load() Config {
-	// Default simulation cap matches Node SIMULATION_MAX_EVENTS_PER_MIN convention (30/min).
-	maxRate := 30
+	maxRate := 30 // default cap matches Node SIMULATION_MAX_EVENTS_PER_MIN convention
 	if v := os.Getenv("MAILBOX_INGEST_MAX_EVENTS_PER_MIN"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
 			maxRate = n
 		}
 	}
 	// Enabled by default when unset — dev compose expects the gateway without extra env.
-	// Explicit "false" disables the HTTP server in main.go (container sleeps instead).
+	// Explicit MAILBOX_INGEST_ENABLED=false makes main.go block without opening a port.
 	enabled := strings.EqualFold(os.Getenv("MAILBOX_INGEST_ENABLED"), "true") ||
 		os.Getenv("MAILBOX_INGEST_ENABLED") == ""
 
 	return Config{
-		ListenAddr:          envOr("INGEST_GATEWAY_LISTEN", ":8080"),
-		DeploymentEnv:       strings.ToLower(envOr("DEPLOYMENT_ENV", "dev")),
-		BackendURL:          strings.TrimRight(envOr("INGEST_BACKEND_URL", "http://backend:3000"), "/"),
+		ListenAddr:              envOr("INGEST_GATEWAY_LISTEN", ":8080"),
+		DeploymentEnv:           strings.ToLower(envOr("DEPLOYMENT_ENV", "dev")),
+		BackendURL:              strings.TrimRight(envOr("INGEST_BACKEND_URL", "http://backend:3000"), "/"),
 		IngestInternalToken:     envOr("INGEST_INTERNAL_TOKEN", "dev-ingest-internal-token"),
 		IngestRegistrationToken: envOr("INGEST_CLIENT_REGISTRATION_TOKEN", envOr("INGEST_INTERNAL_TOKEN", "dev-ingest-internal-token")),
-		MaxEventsPerMinute:  maxRate,
-		GatewayEnabled:      enabled,
+		MaxEventsPerMinute:      maxRate,
+		GatewayEnabled:          enabled,
 	}
 }
 
-// IsDev returns true when simulation controls are allowed (DEPLOYMENT_ENV=dev).
+// IsDev returns true when DEPLOYMENT_ENV=dev — simulation HTTP routes check this before Start().
 func (c Config) IsDev() bool {
 	return c.DeploymentEnv == "dev"
 }
 
-// envOr returns the environment value or a default when unset.
+// envOr returns the trimmed environment value or fallback when unset/blank.
 func envOr(key, fallback string) string {
 	if v := strings.TrimSpace(os.Getenv(key)); v != "" {
 		return v

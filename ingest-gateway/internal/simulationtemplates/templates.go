@@ -1,12 +1,15 @@
 // Package simulationtemplates holds rotating phishing demo emails for dev mailbox simulation.
 //
-// Pattern: mirrors shared/phishing_simulation_templates.json used by Node simulationLoop.js
-// so Go and Node demos exercise the same rule_engine scenarios.
+// Usage flow:
+//  simulation.emitOne → Pick(seq) → CorrelationIDs → backend.EmailPayload
+//  → rule_engine sees varied verdicts (phishing vs benign) in the #ingest dashboard
+//
+// Content mirrors shared/phishing_simulation_templates.json used by Node simulationLoop.js.
 package simulationtemplates
 
 import "fmt"
 
-// Template is one synthetic email scenario (URL phish, credential phish, urgent link, benign).
+// Template is one synthetic email scenario with expected rule_engine verdict.
 type Template struct {
 	ID                string
 	Label             string
@@ -17,7 +20,7 @@ type Template struct {
 	Body              string
 }
 
-// All returns the rotating template list (order matches shared JSON).
+// All returns the rotating template list (fixed order — round-robin via Pick).
 func All() []Template {
 	return []Template{
 		{
@@ -47,7 +50,9 @@ func All() []Template {
 	}
 }
 
-// Pick selects template by 1-based sequence (round-robin).
+// Pick selects template by 1-based sequence (round-robin over All()).
+//
+// Usage: simulation emitOne passes incrementing seq so templates rotate each tick.
 func Pick(seq int64) Template {
 	list := All()
 	if len(list) == 0 {
@@ -60,7 +65,9 @@ func Pick(seq int64) Template {
 	return list[idx]
 }
 
-// CorrelationIDs builds sender email and externalMessageId for webhook correlation demos.
+// CorrelationIDs builds unique senderEmail and externalMessageId for webhook correlation demos.
+//
+// Usage: passed into EmailPayload so mock-verdict-callback and Mongo audit show distinct ids per tick.
 func CorrelationIDs(t Template, seq int64) (senderEmail, externalMessageID string) {
 	prefix := t.SenderEmailPrefix
 	if prefix == "" {

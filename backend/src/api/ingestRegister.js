@@ -1,9 +1,15 @@
 /**
  * Public mail-platform self-registration for default verdict webhook URLs.
  *
- * Pattern: shared-secret header before JWT (like /ingest/internal) but scoped to client registry only —
- * platform teams receive INGEST_CLIENT_REGISTRATION_TOKEN without full internal ingest privileges.
- * Technology: Express Router, Postgres ingest_clients via ingestClientsPg.js.
+ * Usage flow:
+ *  1. Mail platform (or Go PUT /v1/clients/:id proxy) sends PUT /ingest/register/:clientId
+ *     with header X-Ingest-Registration-Token and body { displayName, callbackUrl }.
+ *  2. registrationTokenValid checks the shared secret (narrower than full internal ingest token).
+ *  3. upsertIngestClient writes Postgres ingest_clients row.
+ *  4. Later ingests with matching ingestClientId receive verdict POSTs at that callback_url.
+ *
+ * Mounted at /ingest BEFORE JWT middleware (createApp.js) — no analyst login required.
+ * Technology: Express Router, Postgres via ingestClientsPg.js.
  */
 const express = require("express");
 const logger = require("../lib/logger");

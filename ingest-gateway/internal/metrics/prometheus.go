@@ -1,6 +1,8 @@
 // Package metrics exposes Prometheus counters for the ingest-gateway process.
 //
-// Technology: prometheus/client_golang — de-facto Go metrics library scraped by Prometheus or Grafana.
+// Usage flow:
+//  handler/simulation call RecordSuccess/RecordError → CounterVec.Inc()
+//  → GET /metrics (promhttp) → Prometheus or Grafana scrapes triage_mailbox_ingest_* counters
 package metrics
 
 import (
@@ -9,27 +11,25 @@ import (
 )
 
 var (
-	// ReceivedTotal counts emails accepted by the Node backend after ingest.
-	// CounterVec allows a "source" label (mailbox_ingest vs mailbox_simulation).
+	// ReceivedTotal counts emails Node accepted after ingest (label: source = mailbox_ingest | mailbox_simulation).
 	ReceivedTotal = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "triage_mailbox_ingest_received_total",
 		Help: "Mailbox ingest emails successfully persisted via Node internal API",
 	}, []string{"source"})
 
-	// ErrorsTotal counts validation and backend failures at the gateway.
-	// promauto registers metrics on init — no manual Register() call needed in main.
+	// ErrorsTotal counts gateway-side failures (label: reason = invalid_json | validation | backend | simulation).
 	ErrorsTotal = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "triage_mailbox_ingest_errors_total",
 		Help: "Mailbox ingest failures at the gateway",
 	}, []string{"reason"})
 )
 
-// RecordSuccess increments Prometheus counters for a successful ingest.
+// RecordSuccess increments Prometheus counters after a successful Node persist.
 func RecordSuccess(source string) {
 	ReceivedTotal.WithLabelValues(source).Inc()
 }
 
-// RecordError increments Prometheus error counters.
+// RecordError increments Prometheus error counters with a reason label.
 func RecordError(reason string) {
 	ErrorsTotal.WithLabelValues(reason).Inc()
 }

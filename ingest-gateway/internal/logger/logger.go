@@ -1,7 +1,8 @@
 // Package logger appends NDJSON lines to merged.log — same searchable format as Node logger.js.
 //
-// Pattern: twelve-factor logging — MERGED_LOG_PATH points at the shared Docker volume
-// (/var/log/triage/merged.log) so GET /logs/search can filter by service=ingest-gateway.
+// Usage flow:
+//  handler/simulation/main call Info/Warn/Error → writeLine → append merged.log + stdout
+//  → Node GET /logs/search?service=ingest-gateway finds these lines in the shared Docker volume
 package logger
 
 import (
@@ -21,13 +22,12 @@ var (
 )
 
 func init() {
-	// SERVICE_NAME matches Node/Python containers for GET /logs/search?service=…
 	if s := os.Getenv("SERVICE_NAME"); s != "" {
 		serviceName = s
 	}
 }
 
-// mergedPath reads MERGED_LOG_PATH on each write so tests can override via t.Setenv.
+// mergedPath returns MERGED_LOG_PATH or default logs/merged.log (re-read each write for tests).
 func mergedPath() string {
 	if p := os.Getenv("MERGED_LOG_PATH"); p != "" {
 		return p
@@ -49,22 +49,14 @@ func MergedPath() string {
 	return mergedPath()
 }
 
-// entry is one NDJSON log record compatible with backend/src/lib/logSearch.js (reserved for doc).
-type entry struct {
-	Timestamp string `json:"ts"`
-	Level     string `json:"level"`
-	Topic     string `json:"topic"`
-	Message   string `json:"message"`
-	Service   string `json:"service"`
-}
-
-// writeLine appends one JSON line and mirrors a human-readable line to stdout.
+// writeLine appends one NDJSON record and mirrors a human-readable line to stdout.
+//
+// Usage: Info/Warn/Error delegate here with level, topic, message, and optional meta map.
 func writeLine(level, topic, message string, meta map[string]interface{}) {
 	mu.Lock()
 	defer mu.Unlock()
 
 	path := mergedPath()
-
 	if meta == nil {
 		meta = map[string]interface{}{}
 	}
@@ -90,8 +82,6 @@ func writeLine(level, topic, message string, meta map[string]interface{}) {
 	} else if err := appendFile(path, line); err != nil {
 		fmt.Fprintf(os.Stderr, "ingest-gateway logger append failed: %v\n", err)
 	}
-
-	// Mirror to stdout for docker compose logs (same as Node/Python logutil).
 	fmt.Printf("[%s] [%s] [%s] [%s] %s\n", payload["ts"], level, serviceName, topic, message)
 }
 
@@ -106,17 +96,17 @@ func appendFile(path string, line []byte) error {
 	return err
 }
 
-// Info logs an informational event (successful ingest, simulation start, etc.).
+// Info logs a normal operational event (successful ingest, simulation start, server listening).
 func Info(topic, message string, meta map[string]interface{}) {
 	writeLine("info", topic, message, meta)
 }
 
-// Warn logs a recoverable problem (backend slow, simulation advisory failure).
+// Warn logs a recoverable problem (validation failure, simulation emit retry advisory).
 func Warn(topic, message string, meta map[string]interface{}) {
 	writeLine("warn", topic, message, meta)
 }
 
-// Error logs a failure (validation, backend HTTP error, fatal startup).
+// Error logs a failure worth investigating (Node backend down, fatal startup error).
 func Error(topic, message string, meta map[string]interface{}) {
 	writeLine("error", topic, message, meta)
 }
