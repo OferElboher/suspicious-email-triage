@@ -28,7 +28,12 @@ type Bucket struct {
 //
 // Usage: one Store per process, shared by handler.API and simulation.Controller.
 type Store struct {
-	mu sync.Mutex // protects all fields — dev-scale concurrency; not sharded
+	// mu: HTTP ingest handlers and the simulation goroutine update this store concurrently.
+	// Required so totals and buckets stay consistent (e.g. append + increment in one step).
+	// sync.Mutex — not RWMutex: Snapshot needs a consistent totals+buckets snapshot; mixed
+	// read/write locking would still block writers during reads at dev traffic levels.
+	// Not sync/atomic per field: touchCurrentBucket mutates a slice — atomics cannot guard that as a unit.
+	mu sync.Mutex
 
 	totalReceived        int64
 	totalSimulation      int64
@@ -101,6 +106,7 @@ func (s *Store) SetSimulationState(enabled bool, rate int) {
 //
 // Usage: handleDashboard passes uptime from API.startedAt; Node proxy forwards to React.
 func (s *Store) Snapshot(maxRate int, uptimeSeconds int64) map[string]interface{} {
+	// Lock for read: copy buckets while no writer interleaves — avoids torn chart data in JSON.
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	bucketsCopy := append([]Bucket(nil), s.buckets...) // defensive copy for concurrent serialization
@@ -137,7 +143,7 @@ func (s *Store) ResetMinuteCounter() {
 
 // touchCurrentBucket appends or updates the bucket for the current UTC minute.
 //
-// Usage: internal helper — callers hold mu via RecordSuccess/RecordError.
+// Caller must hold mu — not locked here to avoid double-lock; Record*/Snapshot hold mu first.
 // Ring buffer: when len(buckets) > maxBuckets, drop oldest minute.
 func (s *Store) touchCurrentBucket(update func(*Bucket)) {
 	minute := time.Now().UTC().Truncate(time.Minute)

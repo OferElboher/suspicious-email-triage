@@ -17,6 +17,11 @@ import (
 const defaultServiceName = "ingest-gateway"
 
 var (
+	// mu: package-level logger — HTTP handlers and simulation goroutine call Info/Warn/Error
+	// concurrently. Serializes marshal + file append so NDJSON lines are not interleaved.
+	// sync.Mutex — not RWMutex: every call writes; no read-heavy path. Not a channel: no
+	// background drainer — each log is fire-and-forget. O_APPEND alone does not guarantee
+	// one line is written atomically when multiple processes/goroutines share merged.log.
 	mu          sync.Mutex
 	serviceName = defaultServiceName
 )
@@ -37,6 +42,7 @@ func mergedPath() string {
 
 // SetServiceName overrides the JSON "service" field (tests only).
 func SetServiceName(name string) {
+	// Lock: tests mutate serviceName while writeLine reads it — prevents torn string / race.
 	mu.Lock()
 	defer mu.Unlock()
 	if name != "" {
@@ -53,6 +59,7 @@ func MergedPath() string {
 //
 // Usage: Info/Warn/Error delegate here with level, topic, message, and optional meta map.
 func writeLine(level, topic, message string, meta map[string]interface{}) {
+	// Lock held for full write — short critical section; no I/O across await points in Go.
 	mu.Lock()
 	defer mu.Unlock()
 

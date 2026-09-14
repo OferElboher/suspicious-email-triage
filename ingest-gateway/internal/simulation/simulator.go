@@ -29,7 +29,11 @@ import (
 // Usage flow:
 //  NewController (main.go) → Start (HTTP) → loop goroutine → emitOne → Stop (HTTP or process exit)
 type Controller struct {
-	mu       sync.Mutex       // serializes Start/Stop/Status vs seq increment
+	// mu: POST /v1/simulation/start|stop (HTTP) races with loop ticks calling emitOne.
+	// Guards running, rate, seq, cancel as one logical state — Start must not overlap Stop.
+	// sync.Mutex — not a channel: no message stream to forward; just protect shared fields.
+	// Not RWMutex: Status reads are cheap; seq bump in emitOne is microseconds — no read fan-out.
+	mu sync.Mutex
 	running  bool             // true while loop goroutine is active
 	rate     int              // current emails per minute (after clamping to maxRate)
 	maxRate  int              // upper bound from MAILBOX_INGEST_MAX_EVENTS_PER_MIN env
@@ -139,7 +143,9 @@ func (c *Controller) emitOne(ctx context.Context) {
 	c.mu.Lock()
 	c.seq++
 	n := c.seq
-	c.mu.Unlock() // release lock before network I/O — never hold mutex during HTTP
+	// Unlock before HTTP: Mutex must not cover CreateMailboxReview — would block Start/Stop
+	// for the whole Node round-trip; channel-based sync would add complexity with no benefit here.
+	c.mu.Unlock()
 
 	tmpl := simulationtemplates.Pick(n)
 	senderEmail, externalMessageID := simulationtemplates.CorrelationIDs(tmpl, n)
