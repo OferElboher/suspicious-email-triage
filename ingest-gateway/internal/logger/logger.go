@@ -17,11 +17,12 @@ import (
 const defaultServiceName = "ingest-gateway"
 
 var (
-	// mu: package-level logger — HTTP handlers and simulation goroutine call Info/Warn/Error
-	// concurrently. Serializes marshal + file append so NDJSON lines are not interleaved.
-	// sync.Mutex — not RWMutex: every call writes; no read-heavy path. Not a channel: no
-	// background drainer — each log is fire-and-forget. O_APPEND alone does not guarantee
-	// one line is written atomically when multiple processes/goroutines share merged.log.
+	// mu is a package-level sync.Mutex. Multiple goroutines call Info/Warn/Error concurrently.
+	// mu serializes JSON marshal + file Write so each NDJSON line is one contiguous record.
+	// Why sync.Mutex: every log call is a write — no benefit from sync.RWMutex read locks.
+	// Why not a channel + background writer: adds goroutine lifecycle; logs are rare and short.
+	// Why not sync/atomic on serviceName only: writeLine also needs exclusive access to the file Write.
+	// O_APPEND is used but does not replace mu — two goroutines can still interleave bytes in one line.
 	mu          sync.Mutex
 	serviceName = defaultServiceName
 )
@@ -42,9 +43,9 @@ func mergedPath() string {
 
 // SetServiceName overrides the JSON "service" field (tests only).
 func SetServiceName(name string) {
-	// Lock: tests mutate serviceName while writeLine reads it — prevents torn string / race.
+	// Acquire mu (package sync.Mutex): serviceName write must not race writeLine's read of serviceName.
 	mu.Lock()
-	defer mu.Unlock()
+	defer mu.Unlock() // Release mu
 	if name != "" {
 		serviceName = name
 	}
@@ -56,12 +57,10 @@ func MergedPath() string {
 }
 
 // writeLine appends one NDJSON record and mirrors a human-readable line to stdout.
-//
-// Usage: Info/Warn/Error delegate here with level, topic, message, and optional meta map.
 func writeLine(level, topic, message string, meta map[string]interface{}) {
-	// Lock held for full write — short critical section; no I/O across await points in Go.
+	// Acquire mu (package sync.Mutex): serialize marshal+Write — sync.RWMutex useless when every call writes.
 	mu.Lock()
-	defer mu.Unlock()
+	defer mu.Unlock() // Release mu
 
 	path := mergedPath()
 	if meta == nil {
@@ -93,6 +92,7 @@ func writeLine(level, topic, message string, meta map[string]interface{}) {
 }
 
 // appendFile opens the log file with O_APPEND for concurrent writers on the shared volume.
+// Called only while mu (sync.Mutex) is held in writeLine — external callers must not use without mu.
 func appendFile(path string, line []byte) error {
 	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {

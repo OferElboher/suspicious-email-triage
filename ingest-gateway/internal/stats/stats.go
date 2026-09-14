@@ -28,11 +28,13 @@ type Bucket struct {
 //
 // Usage: one Store per process, shared by handler.API and simulation.Controller.
 type Store struct {
-	// mu: HTTP ingest handlers and the simulation goroutine update this store concurrently.
-	// Required so totals and buckets stay consistent (e.g. append + increment in one step).
-	// sync.Mutex — not RWMutex: Snapshot needs a consistent totals+buckets snapshot; mixed
-	// read/write locking would still block writers during reads at dev traffic levels.
-	// Not sync/atomic per field: touchCurrentBucket mutates a slice — atomics cannot guard that as a unit.
+	// mu is a sync.Mutex (exclusive lock). HTTP handlers and the simulation goroutine
+	// update totals, flags, and buckets concurrently — mu serializes those critical sections.
+	// Why sync.Mutex: one lock covers int64 fields + []Bucket slice append/truncate together.
+	// Why not sync.RWMutex: Snapshot must read totals and buckets as one consistent view;
+	//   RLock would still block writers and adds API surface for no gain at dev ingest rates.
+	// Why not sync/atomic: cannot atomically update a slice (buckets) with related int64 totals.
+	// Why not a channel: no producer/consumer pipeline — just shared mutable counters.
 	mu sync.Mutex
 
 	totalReceived        int64
@@ -52,11 +54,10 @@ func NewStore() *Store {
 }
 
 // RecordSuccess increments counters after Node accepted the review (HTTP 2xx from backend.Client).
-//
-// Usage: called from handleIngestEmail (webhook) and emitOne (simulation=true).
 func (s *Store) RecordSuccess(source string, simulation bool) {
+	// Acquire s.mu (Store.sync.Mutex): totals + buckets must update together; atomics/channels cannot guard the slice.
 	s.mu.Lock()
-	defer s.mu.Unlock()
+	defer s.mu.Unlock() // Release s.mu
 	s.totalReceived++
 	s.lastMinuteReceived++
 	if simulation {
@@ -75,11 +76,10 @@ func (s *Store) RecordSuccess(source string, simulation bool) {
 }
 
 // RecordError increments failure counters (validation errors or Node HTTP failures).
-//
-// Usage: backendFailure=true when Node returned non-2xx or connection failed.
 func (s *Store) RecordError(backendFailure bool) {
+	// Acquire s.mu (Store.sync.Mutex): same critical section as RecordSuccess — no interleaved bucket writes.
 	s.mu.Lock()
-	defer s.mu.Unlock()
+	defer s.mu.Unlock() // Release s.mu
 	s.totalErrors++
 	if backendFailure {
 		s.totalBackendFailures++
@@ -93,23 +93,20 @@ func (s *Store) RecordError(backendFailure bool) {
 }
 
 // SetSimulationState updates simulation metadata shown in dashboard rates section.
-//
-// Usage: simulation.Start/Stop call this when toggling the background goroutine.
 func (s *Store) SetSimulationState(enabled bool, rate int) {
+	// Acquire s.mu (Store.sync.Mutex): simulationEnabled and simulationRate are one Snapshot-visible pair.
 	s.mu.Lock()
-	defer s.mu.Unlock()
+	defer s.mu.Unlock() // Release s.mu
 	s.simulationEnabled = enabled
 	s.simulationRate = rate
 }
 
 // Snapshot returns a JSON-serializable dashboard payload for GET /v1/stats/dashboard.
-//
-// Usage: handleDashboard passes uptime from API.startedAt; Node proxy forwards to React.
 func (s *Store) Snapshot(maxRate int, uptimeSeconds int64) map[string]interface{} {
-	// Lock for read: copy buckets while no writer interleaves — avoids torn chart data in JSON.
+	// Acquire s.mu (Store.sync.Mutex): copy buckets under exclusive lock — sync.RWMutex RLock rejected (writers dominate).
 	s.mu.Lock()
-	defer s.mu.Unlock()
-	bucketsCopy := append([]Bucket(nil), s.buckets...) // defensive copy for concurrent serialization
+	defer s.mu.Unlock() // Release s.mu
+	bucketsCopy := append([]Bucket(nil), s.buckets...)
 	return map[string]interface{}{
 		"generatedAt":   time.Now().UTC().Format(time.RFC3339),
 		"uptimeSeconds": uptimeSeconds,
@@ -133,18 +130,15 @@ func (s *Store) Snapshot(maxRate int, uptimeSeconds int64) map[string]interface{
 }
 
 // ResetMinuteCounter clears the rolling last-minute counter.
-//
-// Usage: simulation loop's minuteReset ticker calls this for the "Last minute" stat card.
 func (s *Store) ResetMinuteCounter() {
+	// Acquire s.mu (Store.sync.Mutex): minute ticker and Record* must not race on lastMinuteReceived.
 	s.mu.Lock()
-	defer s.mu.Unlock()
+	defer s.mu.Unlock() // Release s.mu
 	s.lastMinuteReceived = 0
 }
 
 // touchCurrentBucket appends or updates the bucket for the current UTC minute.
-//
-// Caller must hold mu — not locked here to avoid double-lock; Record*/Snapshot hold mu first.
-// Ring buffer: when len(buckets) > maxBuckets, drop oldest minute.
+// Caller must already hold s.mu — this helper does not Lock (would deadlock sync.Mutex).
 func (s *Store) touchCurrentBucket(update func(*Bucket)) {
 	minute := time.Now().UTC().Truncate(time.Minute)
 	if len(s.buckets) == 0 || !s.buckets[len(s.buckets)-1].Minute.Equal(minute) {

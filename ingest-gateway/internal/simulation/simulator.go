@@ -25,28 +25,25 @@ import (
 )
 
 // Controller owns the background goroutine that emits synthetic emails.
-//
-// Usage flow:
-//  NewController (main.go) → Start (HTTP) → loop goroutine → emitOne → Stop (HTTP or process exit)
 type Controller struct {
-	// mu: POST /v1/simulation/start|stop (HTTP) races with loop ticks calling emitOne.
-	// Guards running, rate, seq, cancel as one logical state — Start must not overlap Stop.
-	// sync.Mutex — not a channel: no message stream to forward; just protect shared fields.
-	// Not RWMutex: Status reads are cheap; seq bump in emitOne is microseconds — no read fan-out.
-	mu sync.Mutex
-	running  bool             // true while loop goroutine is active
-	rate     int              // current emails per minute (after clamping to maxRate)
-	maxRate  int              // upper bound from MAILBOX_INGEST_MAX_EVENTS_PER_MIN env
-	seq      int64            // monotonic counter — unique sender address and template rotation
-	cancel   context.CancelFunc // calling cancel() stops loop via ctx.Done()
-	stats    *stats.Store     // in-memory dashboard counters updated on each emit
-	backend  *backend.Client  // same Node client used for real webhook ingest
-	onResult func(success bool, backendFailure bool) // optional bridge to Prometheus in main.go
+	// mu is a sync.Mutex. HTTP Start/Stop/Status and emitOne ticks can run on different goroutines.
+	// mu protects running, rate, seq, and cancel as one logical state.
+	// Why sync.Mutex: short critical sections (check running, bump seq) — exclusive lock is enough.
+	// Why not sync.RWMutex: Status() is infrequent; seq++ is a write — readers would block anyway.
+	// Why not a chan struct{}: no work queue to drain — only guarding a few struct fields.
+	// Why not sync/atomic on running alone: Start sets running+rate+cancel together — need one lock.
+	mu      sync.Mutex
+	running bool
+	rate    int
+	maxRate int
+	seq     int64
+	cancel  context.CancelFunc
+	stats   *stats.Store
+	backend *backend.Client
+	onResult func(success bool, backendFailure bool)
 }
 
 // NewController constructs a simulation controller tied to stats and the Node client.
-//
-// Usage: called once from main.go; the returned pointer is shared with handler.API.
 func NewController(maxRate int, store *stats.Store, client *backend.Client, onResult func(bool, bool)) *Controller {
 	return &Controller{
 		maxRate:  maxRate,
@@ -57,13 +54,10 @@ func NewController(maxRate int, store *stats.Store, client *backend.Client, onRe
 }
 
 // Start enables simulation at emailsPerMinute (clamped to maxRate).
-//
-// Usage flow:
-//  POST /v1/simulation/start → Start → spawns loop goroutine → returns immediately to HTTP client.
-//  Returns error if simulation is already running.
 func (c *Controller) Start(emailsPerMinute int) error {
+	// Acquire c.mu (Controller.sync.Mutex): running/rate/cancel must update atomically before go c.loop.
 	c.mu.Lock()
-	defer c.mu.Unlock()
+	defer c.mu.Unlock() // Release c.mu
 	if c.running {
 		return fmt.Errorf("simulation already running")
 	}
@@ -72,24 +66,22 @@ func (c *Controller) Start(emailsPerMinute int) error {
 		rate = 1
 	}
 	if rate > c.maxRate {
-		rate = c.maxRate // UI cannot exceed MAILBOX_INGEST_MAX_EVENTS_PER_MIN
+		rate = c.maxRate
 	}
-	// context.WithCancel: Stop() calls cancel() so loop exits cleanly without os.Exit.
 	ctx, cancel := context.WithCancel(context.Background())
 	c.running = true
 	c.rate = rate
 	c.cancel = cancel
 	c.stats.SetSimulationState(true, rate)
-	go c.loop(ctx, rate) // fire-and-forget — HTTP handler must not block on ticks
+	go c.loop(ctx, rate)
 	return nil
 }
 
 // Stop cancels the simulation goroutine and clears dashboard simulation flags.
-//
-// Usage flow: POST /v1/simulation/stop → Stop → loop receives ctx.Done() and returns.
 func (c *Controller) Stop() {
+	// Acquire c.mu (Controller.sync.Mutex): Stop must not call cancel() while Start is mid-flight.
 	c.mu.Lock()
-	defer c.mu.Unlock()
+	defer c.mu.Unlock() // Release c.mu
 	if !c.running {
 		return
 	}
@@ -101,32 +93,28 @@ func (c *Controller) Stop() {
 }
 
 // Status returns whether simulation is active and the configured rate.
-//
-// Usage flow: GET /v1/simulation/status and dashboard polling read these values.
 func (c *Controller) Status() (enabled bool, rate int) {
+	// Acquire c.mu (Controller.sync.Mutex): read running+rate as one pair — sync/atomic.Bool alone cannot cover rate.
 	c.mu.Lock()
-	defer c.mu.Unlock()
+	defer c.mu.Unlock() // Release c.mu
 	return c.running, c.rate
 }
 
 // loop ticks at the requested interval until context cancellation.
-//
-// Usage: started only from Start — not called directly by handlers.
-// Runs three concurrent timers via select: tick emit, minute counter reset, cancel.
 func (c *Controller) loop(ctx context.Context, rate int) {
-	interval := time.Minute / time.Duration(rate) // e.g. 10/min → one email every 6 seconds
+	interval := time.Minute / time.Duration(rate)
 	if interval < time.Millisecond {
-		interval = time.Millisecond // safety floor for absurdly high dev rates
+		interval = time.Millisecond
 	}
 	ticker := time.NewTicker(interval)
-	minuteReset := time.NewTicker(time.Minute) // aligns lastMinuteReceived with dashboard "Last minute" stat
+	minuteReset := time.NewTicker(time.Minute)
 	defer ticker.Stop()
 	defer minuteReset.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
-			return // Stop() was called
+			return
 		case <-minuteReset.C:
 			c.stats.ResetMinuteCounter()
 		case <-ticker.C:
@@ -136,15 +124,12 @@ func (c *Controller) loop(ctx context.Context, rate int) {
 }
 
 // emitOne creates a single synthetic review via the Node internal API.
-//
-// Usage flow:
-//  loop tick → emitOne → Pick template → CreateMailboxReview → stats.RecordSuccess/RecordError
 func (c *Controller) emitOne(ctx context.Context) {
+	// Acquire c.mu (Controller.sync.Mutex): hold only for seq++ — not for HTTP (would block Start/Stop).
 	c.mu.Lock()
 	c.seq++
 	n := c.seq
-	// Unlock before HTTP: Mutex must not cover CreateMailboxReview — would block Start/Stop
-	// for the whole Node round-trip; channel-based sync would add complexity with no benefit here.
+	// Release c.mu before CreateMailboxReview — sync.Mutex must not cover network I/O; channels would still need seq guard.
 	c.mu.Unlock()
 
 	tmpl := simulationtemplates.Pick(n)
@@ -157,7 +142,7 @@ func (c *Controller) emitOne(ctx context.Context) {
 		Body:              tmpl.Body,
 		Source:            "mailbox_simulation",
 		ExternalMessageID: externalMessageID,
-		IngestClientID:    "dev-mock", // routes verdict webhook to mock-verdict-callback in dev
+		IngestClientID:    "dev-mock",
 	}
 	_, err := c.backend.CreateMailboxReview(ctx, payload)
 	if err != nil {
