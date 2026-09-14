@@ -26,12 +26,25 @@ import (
 
 // Controller owns the background goroutine that emits synthetic emails.
 type Controller struct {
-	// mu is a sync.Mutex. HTTP Start/Stop/Status and emitOne ticks can run on different goroutines.
-	// mu protects running, rate, seq, and cancel as one logical state.
-	// Why sync.Mutex: short critical sections (check running, bump seq) — exclusive lock is enough.
-	// Why not sync.RWMutex: Status() is infrequent; seq++ is a write — readers would block anyway.
-	// Why not a chan struct{}: no work queue to drain — only guarding a few struct fields.
-	// Why not sync/atomic on running alone: Start sets running+rate+cancel together — need one lock.
+	// mu is a sync.Mutex — Go's standard exclusive lock (Lock / Unlock).
+	// In Go, "mutex" and "lock" refer to the same idea: only one goroutine may hold mu at a time.
+	//
+	// Why any lock is required: HTTP handlers call Start/Stop/Status on one goroutine while the
+	// simulation loop calls emitOne on another. Those functions all read and write running, rate,
+	// seq, and cancel. Without mu, Start and Stop could overlap and leave running=true with a
+	// stale cancel function, or two loop goroutines could run at once.
+	//
+	// Why sync.Mutex and not sync.RWMutex: Status() reads two fields occasionally, but emitOne
+	// writes seq on every tick and Start/Stop write several fields. A read/write lock helps when
+	// reads dominate; here writes are common, so RWMutex would still block often with extra rules.
+	//
+	// Why not sync/atomic on running or seq alone: Start atomically sets running, rate, and cancel
+	// together before spawning the loop. Protecting only one field with atomics would still leave
+	// the other fields racy — we need one lock covering the whole Controller state.
+	//
+	// Why not a channel (chan struct{} or work queue): we are not sending jobs to a worker — we
+	// only need to guard a handful of struct fields. A channel adds a goroutine and still needs
+	// locking inside the receiver for the same fields.
 	mu      sync.Mutex
 	running bool
 	rate    int
@@ -55,9 +68,12 @@ func NewController(maxRate int, store *stats.Store, client *backend.Client, onRe
 
 // Start enables simulation at emailsPerMinute (clamped to maxRate).
 func (c *Controller) Start(emailsPerMinute int) error {
-	// Acquire c.mu (Controller.sync.Mutex): running/rate/cancel must update atomically before go c.loop.
+	// Lock c.mu (Controller.sync.Mutex): check-then-act on running, then set running, rate, and
+	// cancel before spawning the loop goroutine. Without this exclusive lock, two concurrent Start
+	// requests could both see running=false and launch two loops. Mutex is the right tool because
+	// several fields must change together; atomics or a bare "lock flag" cannot do that safely.
 	c.mu.Lock()
-	defer c.mu.Unlock() // Release c.mu
+	defer c.mu.Unlock()
 	if c.running {
 		return fmt.Errorf("simulation already running")
 	}
@@ -79,9 +95,11 @@ func (c *Controller) Start(emailsPerMinute int) error {
 
 // Stop cancels the simulation goroutine and clears dashboard simulation flags.
 func (c *Controller) Stop() {
-	// Acquire c.mu (Controller.sync.Mutex): Stop must not call cancel() while Start is mid-flight.
+	// Lock c.mu (Controller.sync.Mutex): Stop reads running and calls cancel() while Start may
+	// still be assigning cancel on another goroutine. The Mutex ensures Stop waits until Start
+	// finishes its critical section — otherwise cancel could be nil or point at the wrong context.
 	c.mu.Lock()
-	defer c.mu.Unlock() // Release c.mu
+	defer c.mu.Unlock()
 	if !c.running {
 		return
 	}
@@ -94,9 +112,12 @@ func (c *Controller) Stop() {
 
 // Status returns whether simulation is active and the configured rate.
 func (c *Controller) Status() (enabled bool, rate int) {
-	// Acquire c.mu (Controller.sync.Mutex): read running+rate as one pair — sync/atomic.Bool alone cannot cover rate.
+	// Lock c.mu (Controller.sync.Mutex): return running and rate as a matched pair. Without the
+	// lock, Stop could set running=false between reading the two fields and the caller would see
+	// "stopped but rate still 10/min". RWMutex.RLock was not used because this read is rare and
+	// seq++ in emitOne is a write that would block readers anyway.
 	c.mu.Lock()
-	defer c.mu.Unlock() // Release c.mu
+	defer c.mu.Unlock()
 	return c.running, c.rate
 }
 
@@ -125,11 +146,13 @@ func (c *Controller) loop(ctx context.Context, rate int) {
 
 // emitOne creates a single synthetic review via the Node internal API.
 func (c *Controller) emitOne(ctx context.Context) {
-	// Acquire c.mu (Controller.sync.Mutex): hold only for seq++ — not for HTTP (would block Start/Stop).
+	// Lock c.mu (Controller.sync.Mutex): hold only long enough to increment seq and copy the value.
+	// We deliberately Unlock before the HTTP call below — keeping mu locked during network I/O
+	// would block Start/Stop for the entire Node round-trip (potentially seconds). That is why
+	// a Mutex with a short critical section beats a channel or a single global lock around emit.
 	c.mu.Lock()
 	c.seq++
 	n := c.seq
-	// Release c.mu before CreateMailboxReview — sync.Mutex must not cover network I/O; channels would still need seq guard.
 	c.mu.Unlock()
 
 	tmpl := simulationtemplates.Pick(n)
