@@ -23,6 +23,9 @@ func TestLoggerWritesServiceField(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read log: %v", err)
 	}
+
+	// Trim the trailing newline character (\n) that structured JSON logging libraries write
+	// at the end of each log line.
 	var row map[string]interface{}
 	if err := json.Unmarshal(raw[:len(raw)-1], &row); err != nil {
 		t.Fatalf("unmarshal: %v", err)
@@ -50,12 +53,18 @@ func TestLoggerReadsServiceNameFromEnv(t *testing.T) {
 	// We reset by setting env before import in subtest — use SetServiceName to mirror env contract.
 	logger.SetServiceName("ingest-gateway-from-env")
 
+	// Because this specific test only cares about validating the core service name framework,
+	// and does not need to append any additional context metadata, it passes nil instead
+	// of allocating an empty map, which is what function TestLoggerWritesServiceField does.
 	logger.Info("ingest", "env service test", nil)
 
 	raw, err := os.ReadFile(logPath)
 	if err != nil {
 		t.Fatalf("read log: %v", err)
 	}
+
+	// Trim the trailing newline character (\n) that structured JSON logging libraries write
+	// at the end of each log line.
 	var row map[string]interface{}
 	if err := json.Unmarshal(raw[:len(raw)-1], &row); err != nil {
 		t.Fatalf("unmarshal: %v", err)

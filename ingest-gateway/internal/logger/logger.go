@@ -37,8 +37,10 @@ var (
 	// Why not sync/atomic only on serviceName: writeLine also writes to the file and reads
 	// serviceName while building the payload — the race is on the whole write path, not one string.
 	//
-	// Note: os.O_APPEND helps when multiple processes append, but two goroutines in this process
-	// can still corrupt a single line without mu — Append mode does not make Write atomic.
+	// Note: With os.O_APPEND, the OS fuses seek and write into an atomic operation at the kernel
+	// level. Therefore, it safely synchronizes multiple independent processes since each has its
+	// own file descriptor. But two Goroutines in same process share the same os.File instance,
+	// requiring a Mutex to prevent data races.
 	mu          sync.Mutex
 	serviceName = defaultServiceName
 )

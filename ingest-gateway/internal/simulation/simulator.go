@@ -53,6 +53,13 @@ type Controller struct {
 	cancel  context.CancelFunc
 	stats   *stats.Store
 	backend *backend.Client
+	// onResult is an optional hook (wired in main.go) after each synthetic emit attempt.
+	// Parameters (emitOne is always simulation traffic; these flags describe outcome, not source):
+	//   success — true when CreateMailboxReview returned no error (Node accepted and persisted the review).
+	//   backendFailure — meaningful only when success is false: true if the failure was the Node
+	//     internal ingest call (HTTP error, timeout, connection refused); false for other simulation-side
+	//     failures. On success, emitOne passes backendFailure=false; main's callback ignores the second
+	//     argument when success is true and increments Prometheus received for mailbox_simulation.
 	onResult func(success bool, backendFailure bool)
 }
 
@@ -84,6 +91,8 @@ func (c *Controller) Start(emailsPerMinute int) error {
 	if rate > c.maxRate {
 		rate = c.maxRate
 	}
+	// Create a new context and cancel function.
+	// This context will not be used for request-scoped data, which will be instead stored in the controller (see right below).
 	ctx, cancel := context.WithCancel(context.Background())
 	c.running = true
 	c.rate = rate
