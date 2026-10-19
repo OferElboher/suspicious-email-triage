@@ -27,8 +27,14 @@ export const NODE_COLORS = {
 };
 
 /**
- * Place nodes evenly on a circle so small campaign graphs stay readable.
+ * Assign x/y coordinates by spacing nodes evenly on a circle centered in the canvas.
+ * Used by CampaignGraphCanvas after Neo4j nodes are filtered to one connected component —
+ * no force-directed layout, so behavior is predictable and unit-testable.
+ *
  * @param {Array<{id:string, label:string, type:string}>} nodes
+ * @param {number} width — SVG viewport width (pixels)
+ * @param {number} height — SVG viewport height (pixels)
+ * @returns {Array<object>} same nodes with x and y added
  */
 export function layoutNodesOnCircle(nodes, width = GRAPH_CANVAS_WIDTH, height = GRAPH_CANVAS_HEIGHT) {
   const cx = width / 2;

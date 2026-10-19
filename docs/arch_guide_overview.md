@@ -51,6 +51,8 @@ This keeps developer machines safe and repeatable while still allowing staging a
 
 For a complete inventory of implemented capabilities, see [arch_guide_features_catalog.md](arch_guide_features_catalog.md).
 
+For a single diagram that spans UI, Node API, Go ingest-gateway, Kafka/Celery, and all major stores, see [arch_guide_system_flowchart.md](arch_guide_system_flowchart.md).
+
 ## Sequence diagram
 
 ```mermaid

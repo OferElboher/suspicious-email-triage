@@ -83,6 +83,8 @@ func (s *Store) RecordSuccess(source string, simulation bool) {
 		s.totalWebhook++
 	}
 	s.touchCurrentBucket(func(b *Bucket) {
+		// This is an anonymous/lambda function. Such a function is automatically also a closure,
+		// that is, a function that references variables from outside its own scope body.
 		b.Received++
 		if simulation {
 			b.Simulation++
@@ -104,6 +106,8 @@ func (s *Store) RecordError(backendFailure bool) {
 		s.totalBackendFailures++
 	}
 	s.touchCurrentBucket(func(b *Bucket) {
+		// This is an anonymous/lambda function. Such a function is automatically also a closure,
+		// that is, a function that references variables from outside its own scope body.
 		b.Errors++
 		if backendFailure {
 			b.BackendFailures++
