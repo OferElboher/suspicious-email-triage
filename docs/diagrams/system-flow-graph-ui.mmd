@@ -1,0 +1,8 @@
+%% Phishing graph UI path — open in Mermaid Live Editor if Markdown preview fails.
+%% Source: docs/arch_guide_system_flowchart.md
+flowchart LR
+  UI[GraphView tab] -->|GET graph campaigns| API[Node graph routes]
+  API --> NEO[(Neo4j)]
+  API -->|nodes and edges JSON| CANVAS[CampaignGraphCanvas]
+  CANVAS --> LAYOUT["layoutNodesOnCircle<br/>graphLayout.js"]
+  LAYOUT --> SVG[SVG pan zoom tooltips]

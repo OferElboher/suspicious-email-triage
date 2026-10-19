@@ -4,55 +4,72 @@ One-page map of how the **Suspicious Email Triage** monorepo fits together in a 
 
 ---
 
+## Viewing on Windows 11
+
+Some Mermaid preview tools **do not render diagrams inside `.md` files** reliably (especially with two diagrams in one file, or when opening a WSL path in an older extension).
+
+| What works | How |
+|------------|-----|
+| **Standalone source (recommended)** | Open **`docs/diagrams/system-flow-main.mmd`** in [Mermaid Live Editor](https://mermaid.live) (File → Open) or in VS Code with a Mermaid extension that supports `.mmd`. |
+| **Graph UI diagram only** | Open **`docs/diagrams/system-flow-graph-ui.mmd`**. |
+| **Markdown preview in Cursor/VS Code** | Install **Markdown Preview Mermaid Support**, open this `.md` file, run **Markdown: Open Preview**. Use the copies below (syntax tuned for common bundled Mermaid versions). |
+| **Paste test** | Copy **only** the lines between ` ```mermaid ` and the closing ` ``` ` — not the whole markdown file — into Mermaid Live Editor. |
+
+If preview is blank, check the extension’s Mermaid version (9.x+ recommended) and try the `.mmd` files first.
+
+---
+
 ## Whole-project flow (analyst path + async pipeline)
+
+Same diagram as [diagrams/system-flow-main.mmd](diagrams/system-flow-main.mmd).
 
 ```mermaid
 flowchart TB
-  subgraph clients["Clients"]
-    BROWSER["React UI :3001\n(triage, analytics, graph, search, logs)"]
-    MAIL["Mail platforms / webhooks\n(optional prod path)"]
+  subgraph clients [Clients]
+    BROWSER["React UI port 3001<br/>triage, analytics, graph, search, logs"]
+    MAIL["Mail platforms and webhooks<br/>optional production path"]
   end
 
-  subgraph edge["Ingest edge"]
-    GW["Go ingest-gateway :8080\nsimulation + mailbox webhooks"]
+  subgraph edge [Ingest edge]
+    GW["Go ingest-gateway port 8080<br/>simulation and mailbox webhooks"]
   end
 
-  subgraph api["Node API :3000"]
-    EXPRESS["Express\nauth, reviews, metrics, graph, search, logs"]
+  subgraph nodeApi [Node API port 3000]
+    EXPRESS["Express<br/>auth, reviews, metrics, graph, search, logs"]
   end
 
-  subgraph data["Data stores"]
-    MONGO[(MongoDB\nReview documents)]
-    PG[(PostgreSQL\nauth + chart stats + ingest clients)]
-    NEO[(Neo4j\nphishing graph)]
-    ES[(Elasticsearch\nreview search)]
-    REDIS[(Redis\nCelery broker + dev sim state)]
+  subgraph data [Data stores]
+    MONGO[(MongoDB<br/>Review documents)]
+    PG[(PostgreSQL<br/>auth, chart stats, ingest clients)]
+    NEO[(Neo4j<br/>phishing graph)]
+    ES[(Elasticsearch<br/>review search)]
+    REDIS[(Redis<br/>Celery broker and dev sim state)]
   end
 
-  subgraph events["Events"]
-    KAFKA["Redpanda / Kafka\ntopics e.g. email.review.ingested"]
+  subgraph events [Events]
+    KAFKA["Redpanda or Kafka<br/>email.review.ingested topic"]
   end
 
-  subgraph workers["Python workers"]
-    DISPATCH["ai-kafka-dispatch\nconsumer"]
-    CELERY["ai-celery\nanalyze_review, graph sync, ES index, …"]
+  subgraph workers [Python workers]
+    DISPATCH["ai-kafka-dispatch consumer"]
+    CELERY["ai-celery tasks<br/>analyze, graph sync, ES index"]
   end
 
-  subgraph external["Outbound / reporting"]
-    VERDICT["Verdict webhooks / poll\n(per-client registry in PG)"]
-    SNOW["Snowflake export\n(mock-snowflake in dev)"]
+  subgraph external [Outbound and reporting]
+    VERDICT["Verdict webhooks and poll<br/>registry in PostgreSQL"]
+    SNOW["Snowflake export<br/>mock-snowflake in dev"]
   end
 
-  subgraph mocks["Dev mocks (optional)"]
-    MOCKLLM["mock-llm / mock-cloud-llm"]
-    MOCKAWS["mock-secrets, mock-s3"]
+  subgraph mocks [Dev mocks optional]
+    MOCKLLM["mock-llm and mock-cloud-llm"]
+    MOCKAWS["mock-secrets and mock-s3"]
     MOCKCB["mock-verdict-callback"]
-    MAILPIT["Mailpit\npassword reset email"]
+    MAILPIT["Mailpit password reset email"]
   end
 
   BROWSER -->|JWT REST via proxy| EXPRESS
   MAIL --> GW
-  GW -->|internal ingest + token| EXPRESS
+  GW -->|internal ingest token| EXPRESS
 
   EXPRESS --> MONGO
   EXPRESS --> PG
@@ -93,13 +110,15 @@ flowchart TB
 
 Analyst opens **Phishing graph** → Node reads Neo4j → JSON nodes/edges → React `GraphView` → `CampaignGraphCanvas` assigns **circular x/y** with `layoutNodesOnCircle` → SVG draw. See [graph_guide_neo4j_phishing.md](graph_guide_neo4j_phishing.md).
 
+Standalone file: [diagrams/system-flow-graph-ui.mmd](diagrams/system-flow-graph-ui.mmd).
+
 ```mermaid
 flowchart LR
-  UI["GraphView tab"] -->|GET /graph/campaigns…| API["Node graph routes"]
+  UI[GraphView tab] -->|GET graph campaigns| API[Node graph routes]
   API --> NEO[(Neo4j)]
-  API -->|nodes + edges JSON| CANVAS["CampaignGraphCanvas"]
-  CANVAS --> LAYOUT["layoutNodesOnCircle\n(graphLayout.js)"]
-  LAYOUT --> SVG["SVG pan / zoom / tooltips"]
+  API -->|nodes and edges JSON| CANVAS[CampaignGraphCanvas]
+  CANVAS --> LAYOUT["layoutNodesOnCircle<br/>graphLayout.js"]
+  LAYOUT --> SVG[SVG pan zoom tooltips]
 ```
 
 ---

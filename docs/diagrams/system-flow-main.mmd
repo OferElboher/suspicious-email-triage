@@ -1,0 +1,70 @@
+%% End-to-end system flow — open this file in Mermaid Live Editor or VS Code Mermaid preview.
+%% Source: docs/arch_guide_system_flowchart.md
+flowchart TB
+  subgraph clients [Clients]
+    BROWSER["React UI port 3001<br/>triage, analytics, graph, search, logs"]
+    MAIL["Mail platforms and webhooks<br/>optional production path"]
+  end
+
+  subgraph edge [Ingest edge]
+    GW["Go ingest-gateway port 8080<br/>simulation and mailbox webhooks"]
+  end
+
+  subgraph nodeApi [Node API port 3000]
+    EXPRESS["Express<br/>auth, reviews, metrics, graph, search, logs"]
+  end
+
+  subgraph data [Data stores]
+    MONGO[(MongoDB<br/>Review documents)]
+    PG[(PostgreSQL<br/>auth, chart stats, ingest clients)]
+    NEO[(Neo4j<br/>phishing graph)]
+    ES[(Elasticsearch<br/>review search)]
+    REDIS[(Redis<br/>Celery broker and dev sim state)]
+  end
+
+  subgraph events [Events]
+    KAFKA["Redpanda or Kafka<br/>email.review.ingested topic"]
+  end
+
+  subgraph workers [Python workers]
+    DISPATCH["ai-kafka-dispatch consumer"]
+    CELERY["ai-celery tasks<br/>analyze, graph sync, ES index"]
+  end
+
+  subgraph external [Outbound and reporting]
+    VERDICT["Verdict webhooks and poll<br/>registry in PostgreSQL"]
+    SNOW["Snowflake export<br/>mock-snowflake in dev"]
+  end
+
+  subgraph mocks [Dev mocks optional]
+    MOCKLLM["mock-llm and mock-cloud-llm"]
+    MOCKAWS["mock-secrets and mock-s3"]
+    MOCKCB["mock-verdict-callback"]
+    MAILPIT["Mailpit password reset email"]
+  end
+
+  BROWSER -->|JWT REST via proxy| EXPRESS
+  MAIL --> GW
+  GW -->|internal ingest token| EXPRESS
+
+  EXPRESS --> MONGO
+  EXPRESS --> PG
+  EXPRESS --> NEO
+  EXPRESS --> ES
+  EXPRESS --> REDIS
+  EXPRESS --> KAFKA
+  EXPRESS --> VERDICT
+  EXPRESS --> SNOW
+
+  KAFKA --> DISPATCH
+  DISPATCH --> CELERY
+  CELERY --> MONGO
+  CELERY --> PG
+  CELERY --> NEO
+  CELERY --> ES
+  CELERY --> MOCKLLM
+  CELERY --> VERDICT
+
+  EXPRESS -.-> MAILPIT
+  EXPRESS -.-> MOCKAWS
+  VERDICT -.-> MOCKCB
