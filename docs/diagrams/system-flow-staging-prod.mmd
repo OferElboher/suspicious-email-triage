@@ -1,0 +1,41 @@
+%% Staging and prod — mocks replaced by real vendors. See stack_guide_staging_production_services.md
+flowchart LR
+  subgraph app [Same application containers]
+    NODE[Node API]
+    PY[Python Celery and dispatch]
+    GW2[ingest-gateway optional]
+  end
+
+  subgraph awsAndVendors [Typical staging prod endpoints]
+    SM[AWS Secrets Manager]
+    S3[Amazon S3 backups]
+    MSK[Amazon MSK or Confluent Kafka]
+    RDS[Amazon RDS PostgreSQL]
+    ATLAS[MongoDB Atlas]
+    ELASTIC[ElastiCache Redis]
+    OS[OpenSearch or Elastic Cloud]
+    AURA[Neo4j Aura or managed Neo4j]
+    SF[Snowflake cloud]
+    OAI[OpenAI Azure or Anthropic API]
+    BR[Amazon Bedrock Converse]
+    VTX[Google Vertex Gemini]
+    SES[Amazon SES email]
+  end
+
+  NODE --> SM
+  NODE --> RDS
+  NODE --> ATLAS
+  NODE --> OS
+  NODE --> AURA
+  NODE --> MSK
+  NODE --> S3
+  NODE --> SF
+  PY --> SM
+  PY --> RDS
+  PY --> ATLAS
+  PY --> ELASTIC
+  PY --> MSK
+  PY --> OAI
+  PY --> BR
+  PY --> VTX
+  NODE -.-> SES

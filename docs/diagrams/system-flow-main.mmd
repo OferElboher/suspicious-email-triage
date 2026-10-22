@@ -1,49 +1,62 @@
-%% End-to-end system flow — open this file in Mermaid Live Editor or VS Code Mermaid preview.
-%% Source: docs/arch_guide_system_flowchart.md
+%% End-to-end dev stack — docs/arch_guide_system_flowchart.md
 flowchart TB
   subgraph clients [Clients]
-    BROWSER["React UI port 3001<br/>triage, analytics, graph, search, logs"]
-    MAIL["Mail platforms and webhooks<br/>optional production path"]
+    BROWSER["React UI port 3001<br/>triage analytics graph search logs admin"]
+    MAIL["Mail platforms webhooks<br/>production mailbox path"]
   end
 
   subgraph edge [Ingest edge]
-    GW["Go ingest-gateway port 8080<br/>simulation and mailbox webhooks"]
+    GW["Go ingest-gateway port 8080<br/>webhooks and dev simulation"]
   end
 
   subgraph nodeApi [Node API port 3000]
-    EXPRESS["Express<br/>auth, reviews, metrics, graph, search, logs"]
+    EXPRESS["Express REST<br/>auth reviews metrics graph search logs ops"]
   end
 
-  subgraph data [Data stores]
-    MONGO[(MongoDB<br/>Review documents)]
-    PG[(PostgreSQL<br/>auth, chart stats, ingest clients)]
-    NEO[(Neo4j<br/>phishing graph)]
-    ES[(Elasticsearch<br/>review search)]
-    REDIS[(Redis<br/>Celery broker and dev sim state)]
+  subgraph adminOps [Admin and ops]
+    DJANGO["Django admin port 8000<br/>user CRUD via PostgreSQL"]
+    LOGVOL["Docker volume triage-logs<br/>merged.log NDJSON central logging"]
+  end
+
+  subgraph data [Databases and search stores]
+    MONGO[(MongoDB document DB<br/>Review documents and agentTrace)]
+    PG[(PostgreSQL relational<br/>auth_users stats events ingest_clients)]
+    NEO[(Neo4j graph DB<br/>Sender Review Url Domain Campaign)]
+    ES[(Elasticsearch<br/>full-text review search index)]
+    REDIS[(Redis in-memory<br/>Celery broker dev sim state)]
   end
 
   subgraph events [Events]
-    KAFKA["Redpanda or Kafka<br/>email.review.ingested topic"]
+    KAFKA["Redpanda or Kafka<br/>ingest DLQ completed topics"]
   end
 
   subgraph workers [Python workers]
-    DISPATCH["ai-kafka-dispatch consumer"]
-    CELERY["ai-celery tasks<br/>analyze, graph sync, ES index"]
+    DISPATCH["ai-kafka-dispatch"]
+    CELERY["ai-celery<br/>rules LLM agent graph ES callbacks"]
   end
 
-  subgraph external [Outbound and reporting]
-    VERDICT["Verdict webhooks and poll<br/>registry in PostgreSQL"]
-    SNOW["Snowflake export<br/>mock-snowflake in dev"]
+  subgraph outbound [Outbound integrations]
+    VERDICT["Verdict webhooks poll Kafka<br/>client registry in PostgreSQL"]
+    SNOW["Snowflake analytics export<br/>mock-snowflake in dev"]
   end
 
-  subgraph mocks [Dev mocks optional]
-    MOCKLLM["mock-llm and mock-cloud-llm"]
-    MOCKAWS["mock-secrets and mock-s3"]
+  subgraph devMocks [Dev mocks replace cloud APIs]
+    MOCKSECR["mock-secrets-manager port 4566"]
+    MOCKS3["mock-s3 port 4568<br/>Postgres backup objects"]
+    MOCKLLM["mock-llm port 8090<br/>OpenAI-compatible scoring"]
+    MOCKAGENT["mock-cloud-llm port 8091<br/>Bedrock Vertex shape"]
     MOCKCB["mock-verdict-callback"]
-    MAILPIT["Mailpit password reset email"]
+    MAILPIT["Mailpit SMTP capture"]
   end
 
-  BROWSER -->|JWT REST via proxy| EXPRESS
+  subgraph externalId [External identity and email]
+    GOOGLE["Google OAuth 2.0"]
+    EMAILVENDOR["Gmail API SES or corporate SMTP"]
+  end
+
+  BROWSER -->|JWT REST via dev proxy| EXPRESS
+  BROWSER -.->|sign-in redirect| GOOGLE
+  GOOGLE -.->|OAuth callback| EXPRESS
   MAIL --> GW
   GW -->|internal ingest token| EXPRESS
 
@@ -55,6 +68,17 @@ flowchart TB
   EXPRESS --> KAFKA
   EXPRESS --> VERDICT
   EXPRESS --> SNOW
+  EXPRESS --> LOGVOL
+  EXPRESS -->|ops backups PutObject| MOCKS3
+  EXPRESS -.->|password reset| MAILPIT
+  EXPRESS -.->|staging prod email| EMAILVENDOR
+
+  DJANGO --> PG
+  DJANGO --> LOGVOL
+
+  MOCKSECR -.->|GetSecretValue at startup| EXPRESS
+  MOCKSECR -.->|secrets bundle| CELERY
+  MOCKSECR -.->|secrets bundle| GW
 
   KAFKA --> DISPATCH
   DISPATCH --> CELERY
@@ -63,8 +87,10 @@ flowchart TB
   CELERY --> NEO
   CELERY --> ES
   CELERY --> MOCKLLM
+  CELERY --> MOCKAGENT
   CELERY --> VERDICT
+  CELERY --> LOGVOL
+  CELERY -.->|internal HTTP graph sync| EXPRESS
 
-  EXPRESS -.-> MAILPIT
-  EXPRESS -.-> MOCKAWS
+  GW --> LOGVOL
   VERDICT -.-> MOCKCB
