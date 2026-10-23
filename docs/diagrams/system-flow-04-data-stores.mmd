@@ -1,4 +1,3 @@
-%% Chart 4 — Which service writes which store
 flowchart TB
   N["1 Node API"]
   W["2 ai-celery"]
@@ -25,13 +24,3 @@ flowchart TB
   G --> LOG
   DJ --> PG
   DJ --> LOG
-
-  subgraph legend4 [Number key]
-    direction TB
-    L5["5 Canonical Review documents and agentTrace"]
-    L6["6 auth_users stats events ingest_clients registry"]
-    L7["7 Sender Review Url Domain Campaign graph"]
-    L8["8 Search index for keyword queries"]
-    L9["9 Celery broker and dev simulation keys"]
-    L10["10 Central NDJSON log file on Docker volume"]
-  end

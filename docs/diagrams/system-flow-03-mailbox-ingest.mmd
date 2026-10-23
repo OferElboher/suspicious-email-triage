@@ -1,4 +1,3 @@
-%% Chart 3 — Three ways email enters the pipeline
 flowchart TB
   P1["1 Analyst UI modal"]
   P2["2 Mail webhook"]
@@ -14,17 +13,3 @@ flowchart TB
   GW -->|"D shared secret header"| API
   API -->|"E persist and publish"| K
   K --> CEL
-
-  subgraph legend3 [Number key]
-    direction TB
-    L1["1 Manual path source user in MongoDB"]
-    L2["2 Production mailbox connectors hit Go edge"]
-    L3["3 Dev load test source mailbox_simulation"]
-    L4["4 Internal route validates INGEST_INTERNAL_TOKEN"]
-    L5["5 Go service webhooks metrics simulation API"]
-    LA["A Standard analyst workflow"]
-    LB["B External mail platform payload"]
-    LC["C Dev-only synthetic emails per minute"]
-    LD["D Same persist logic as manual reviews"]
-    LE["E Joins chart 1 Kafka and Celery flow"]
-  end

@@ -1,4 +1,3 @@
-%% Chart 8 — Phishing graph UI
 flowchart LR
   UI["1 GraphView tab"]
   API["2 Node graph routes"]
@@ -12,11 +11,3 @@ flowchart LR
   API -->|"C JSON nodes edges"| CAN
   CAN -->|"D circle x y"| LAY
   LAY --> SVG
-
-  subgraph legend8 [Number key]
-    direction TB
-    LA["A Campaign list sorted by review count"]
-    LB["B Subgraph for one campaign indicator"]
-    LC["C filterToPrimaryComponent plus layout"]
-    LD["D Pure JS layout in graphLayout.js"]
-  end

@@ -1,4 +1,3 @@
-%% Chart 2 — REST API families on Node port 3000
 flowchart LR
   UI["1 React or curl client"]
   API["2 Express createApp routes"]
@@ -11,17 +10,3 @@ flowchart LR
   UI -->|"F /logs search"| API
   UI -->|"G /ops backups prometheus"| API
   UI -->|"H /dev simulation reset"| API
-
-  subgraph legend2 [Number key]
-    direction TB
-    L1["1 CRA dev proxy or Bearer token on port 3000"]
-    L2["2 Single Node API process in Docker backend service"]
-    LA["A Email password Google OAuth JWT RBAC"]
-    LB["B Manual triage list detail override"]
-    LC["C PostgreSQL-backed timeseries and Snowflake analytics APIs"]
-    LD["D Neo4j read APIs for Phishing graph tab"]
-    LE["E Elasticsearch query APIs for Search tab"]
-    LF["F merged.log search NDJSON"]
-    LG["G S3 backups stats Prometheus alerts"]
-    LH["H Dev-only simulation and reset-local-state"]
-  end

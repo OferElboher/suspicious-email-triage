@@ -1,6 +1,6 @@
 # End-to-end system flowchart
 
-This guide explains the **Suspicious Email Triage** monorepo in **eight partial charts**. Each chart covers one topic. **Numbers on boxes** name components; **letters on arrows** name steps. A **Number key** subgraph at the bottom of each chart explains every label.
+This guide opens with one **overall dev-stack diagram**, then **eight partial diagrams** that zoom into one topic each. Numbers on shapes and letters on arrows match the **numbered lists directly under each diagram**.
 
 For prose detail, see [arch_guide_overview.md](arch_guide_overview.md), [arch_guide_system_comprehensive.md](arch_guide_system_comprehensive.md), and [arch_guide_features_catalog.md](arch_guide_features_catalog.md).
 
@@ -27,51 +27,166 @@ For prose detail, see [arch_guide_overview.md](arch_guide_overview.md), [arch_gu
 
 ## Viewing on Windows 11
 
-| Partial chart | Standalone `.mmd` file |
-|---------------|------------------------|
-| Overview index | [diagrams/system-flow-main.mmd](diagrams/system-flow-main.mmd) |
-| 1 Triage async | [diagrams/system-flow-01-triage-async.mmd](diagrams/system-flow-01-triage-async.mmd) |
-| 2 REST API families | [diagrams/system-flow-02-rest-api.mmd](diagrams/system-flow-02-rest-api.mmd) |
-| 3 Mailbox ingest | [diagrams/system-flow-03-mailbox-ingest.mmd](diagrams/system-flow-03-mailbox-ingest.mmd) |
-| 4 Data stores | [diagrams/system-flow-04-data-stores.mmd](diagrams/system-flow-04-data-stores.mmd) |
-| 5 Verdicts and analytics | [diagrams/system-flow-05-verdict-analytics.mmd](diagrams/system-flow-05-verdict-analytics.mmd) |
-| 6 Dev mocks | [diagrams/system-flow-06-dev-mocks.mmd](diagrams/system-flow-06-dev-mocks.mmd) |
-| 7 Staging / prod | [diagrams/system-flow-staging-prod.mmd](diagrams/system-flow-staging-prod.mmd) |
-| 8 Phishing graph UI | [diagrams/system-flow-graph-ui.mmd](diagrams/system-flow-graph-ui.mmd) |
+| Diagram | Standalone `.mmd` file |
+|---------|-------------------------|
+| **Overall dev stack** | [diagrams/system-flow-main.mmd](diagrams/system-flow-main.mmd) |
+| Partial chart 1–6 | [diagrams/system-flow-01-triage-async.mmd](diagrams/system-flow-01-triage-async.mmd) … [06](diagrams/system-flow-06-dev-mocks.mmd) |
+| Partial chart 7 staging/prod | [diagrams/system-flow-staging-prod.mmd](diagrams/system-flow-staging-prod.mmd) |
+| Partial chart 8 graph UI | [diagrams/system-flow-graph-ui.mmd](diagrams/system-flow-graph-ui.mmd) |
 
-Open any `.mmd` file in [Mermaid Live Editor](https://mermaid.live). For Markdown preview, use one fenced `mermaid` block at a time.
+Open any `.mmd` file in [Mermaid Live Editor](https://mermaid.live). In Markdown preview, render one fenced `mermaid` block at a time if the page feels slow.
 
 ---
 
-## Overview — which chart to open
+## Overall whole-project flow — dev stack (Docker Compose)
+
+Same source as [diagrams/system-flow-main.mmd](diagrams/system-flow-main.mmd).
 
 ```mermaid
 flowchart TB
-  START["Start here"]
-  C1["Chart 1 Triage async"]
-  C2["Chart 2 REST API"]
-  C3["Chart 3 Mailbox ingest"]
-  C4["Chart 4 Data stores"]
-  C5["Chart 5 Verdicts analytics"]
-  C6["Chart 6 Dev mocks"]
-  C7["Chart 7 Staging prod"]
-  C8["Chart 8 Graph UI"]
+  subgraph clients [Clients]
+    BROWSER["1 React UI port 3001<br/>triage analytics graph search logs admin"]
+    MAIL["2 Mail platforms webhooks"]
+  end
 
-  START --> C1
-  START --> C2
-  START --> C3
-  START --> C4
-  START --> C5
-  START --> C6
-  START --> C7
-  START --> C8
+  subgraph edge [Ingest edge]
+    GW["3 Go ingest-gateway port 8080<br/>webhooks and dev simulation"]
+  end
+
+  subgraph nodeApi [Node API port 3000]
+    EXPRESS["4 Express REST<br/>auth reviews metrics graph search logs ops"]
+  end
+
+  subgraph adminOps [Admin and ops]
+    DJANGO["5 Django admin port 8000"]
+    LOGVOL["6 Docker volume triage-logs merged.log"]
+  end
+
+  subgraph data [Databases and search stores]
+    MONGO[(7 MongoDB Review documents)]
+    PG[(8 PostgreSQL auth stats ingest_clients)]
+    NEO[(9 Neo4j phishing graph)]
+    ES[(10 Elasticsearch search index)]
+    REDIS[(11 Redis Celery broker)]
+  end
+
+  subgraph events [Events]
+    KAFKA["12 Redpanda Kafka topics"]
+  end
+
+  subgraph workers [Python workers]
+    DISPATCH["13 ai-kafka-dispatch"]
+    CELERY["14 ai-celery scoring and sync"]
+  end
+
+  subgraph outbound [Outbound integrations]
+    VERDICT["15 Verdict webhooks and Kafka"]
+    SNOW["16 Snowflake export"]
+  end
+
+  subgraph devMocks [Dev mocks]
+    MOCKSECR["17 mock-secrets-manager"]
+    MOCKS3["18 mock-s3 backups"]
+    MOCKLLM["19 mock-llm"]
+    MOCKAGENT["20 mock-cloud-llm"]
+    MOCKCB["21 mock-verdict-callback"]
+    MAILPIT["22 Mailpit"]
+  end
+
+  subgraph externalId [External identity and email]
+    GOOGLE["23 Google OAuth"]
+    EMAILVENDOR["24 Gmail SES SMTP"]
+  end
+
+  BROWSER -->|A JWT REST| EXPRESS
+  BROWSER -.->|B OAuth redirect| GOOGLE
+  GOOGLE -.->|C OAuth callback| EXPRESS
+  MAIL -->|D webhook| GW
+  GW -->|E internal ingest| EXPRESS
+
+  EXPRESS --> MONGO
+  EXPRESS --> PG
+  EXPRESS --> NEO
+  EXPRESS --> ES
+  EXPRESS --> REDIS
+  EXPRESS --> KAFKA
+  EXPRESS --> VERDICT
+  EXPRESS --> SNOW
+  EXPRESS --> LOGVOL
+  EXPRESS -->|F backup upload| MOCKS3
+  EXPRESS -.->|G reset email| MAILPIT
+  EXPRESS -.->|H production mail| EMAILVENDOR
+
+  DJANGO --> PG
+  DJANGO --> LOGVOL
+
+  MOCKSECR -.->|I startup secrets| EXPRESS
+  MOCKSECR -.-> CELERY
+  MOCKSECR -.-> GW
+
+  KAFKA -->|J consume ingest| DISPATCH
+  DISPATCH --> CELERY
+  CELERY --> MONGO
+  CELERY --> PG
+  CELERY --> NEO
+  CELERY --> ES
+  CELERY --> MOCKLLM
+  CELERY --> MOCKAGENT
+  CELERY --> VERDICT
+  CELERY --> LOGVOL
+  CELERY -.->|K graph internal sync| EXPRESS
+
+  GW --> LOGVOL
+  VERDICT -.-> MOCKCB
 ```
+
+**What the numbered boxes mean**
+
+1. React UI on port 3001 — Create React App dev server; proxies API calls to Node on port 3000.
+2. External mail platforms that POST mailbox events (production-style path).
+3. Go **ingest-gateway** — webhook edge and dev simulation ticks; forwards to Node with a shared secret.
+4. Node **Express** API — main REST surface for the SPA, scripts, and internal worker callbacks.
+5. **Django admin** on port 8000 — optional user/role CRUD against PostgreSQL auth tables.
+6. Shared **triage-logs** volume — append-only `merged.log` for unified log search.
+7. **MongoDB** — canonical review documents and analysis output.
+8. **PostgreSQL** — login/RBAC, analytics event rows, ingest client registry for verdict webhooks.
+9. **Neo4j** — phishing relationship graph (senders, URLs, campaigns).
+10. **Elasticsearch** — full-text search index for the Search tab.
+11. **Redis** — Celery broker and dev-only simulation state.
+12. **Kafka/Redpanda** — ingest, dead-letter, and completed-review topics.
+13. **ai-kafka-dispatch** — Python consumer that enqueues Celery work.
+14. **ai-celery** — scoring pipeline, graph/search side effects, optional LLM/agent calls.
+15. **Verdict delivery** — HTTPS callbacks and optional Kafka fan-out to mail platforms.
+16. **Snowflake export** — analytical copy of completed reviews (mock HTTP warehouse in dev).
+17. **mock-secrets-manager** — serves gitignored `dev.secrets` at container startup.
+18. **mock-s3** — local object storage for Postgres backup uploads.
+19. **mock-llm** — OpenAI-shaped HTTP server for commercial LLM scoring in dev.
+20. **mock-cloud-llm** — Bedrock/Vertex-shaped HTTP server for agent triage in dev.
+21. **mock-verdict-callback** — receives test verdict POSTs in dev.
+22. **Mailpit** — captures password-reset email in dev.
+23. **Google OAuth** — optional browser sign-in flow.
+24. **Gmail API, Amazon SES, or SMTP** — outbound mail in configured environments.
+
+**What the lettered arrows mean**
+
+- **A** — Browser calls Node with a JWT after login (triage, charts, graph, search, logs, ops).
+- **B / C** — Optional Google OAuth redirect and callback that ends in a JWT for the SPA.
+- **D** — Mail provider hits the Go gateway webhook endpoint.
+- **E** — Gateway forwards normalized payload to Node internal mailbox ingest.
+- **F** — Admin backup job uploads a snapshot to S3 (mock bucket in dev).
+- **G** — Password-reset messages go to Mailpit in dev.
+- **H** — Production/staging email delivery when Mailpit is bypassed.
+- **I** — Containers fetch secrets (JWT key, DB passwords, tokens) before serving traffic.
+- **J** — Dispatcher reads `email.review.ingested` and schedules Celery tasks.
+- **K** — Celery invokes Node internal routes to sync Neo4j and Elasticsearch after scoring.
+
+The partial charts below explain each area in more step-by-step detail.
 
 ---
 
-## Chart 1 — Analyst email triage and async scoring
+## Partial chart 1 — Analyst email triage and async scoring
 
-Manual submit through polling and Celery completion. Source: [diagrams/system-flow-01-triage-async.mmd](diagrams/system-flow-01-triage-async.mmd).
+Source: [diagrams/system-flow-01-triage-async.mmd](diagrams/system-flow-01-triage-async.mmd).
 
 ```mermaid
 flowchart TB
@@ -95,38 +210,38 @@ flowchart TB
   W -->|"I load and save result"| M
   W -->|"J status_changed row"| P
   W -->|"K optional LLM call"| LLM
-  W -->|"L graph and ES sync via Node internal routes"| API
-
-  subgraph legend1 [Number key for boxes 1-8 and arrows A-L]
-    direction TB
-    L1b["1 React dev server CRA proxy to API"]
-    L2b["2 Express handles auth and reviews"]
-    L3b["3 MongoDB holds Review lifecycle"]
-    L4b["4 PostgreSQL chart events"]
-    L5b["5 Kafka decouples ingest from scoring"]
-    L6b["6 Python consumer process"]
-    L7b["7 Celery worker task"]
-    L8b["8 Rules engine and optional LLM HTTP"]
-    LA["A Analyst submits email content"]
-    LB["B status pending with extracted links"]
-    LC["C Analytics pipeline input"]
-    LD["D email.review.ingested message"]
-    LE["E Hook polls until terminal status"]
-    LF["F Returns analysisResult when completed"]
-    LG["G Reads ingest topic"]
-    LH["H Dispatches analyze_review"]
-    LI["I Merges rules and LLM output"]
-    LJ["J Live flow and analytics see completion"]
-    LK["K mock-llm or agent path when enabled"]
-    LL["L POST graph internal sync and ES index upsert"]
-  end
+  W -->|"L graph and ES sync"| API
 ```
+
+**Comments**
+
+1. React triage UI where the analyst pastes or submits suspicious email content.
+2. Node API validates JWT permissions and accepts `POST /reviews`.
+3. MongoDB stores the new `Review` with status `pending` and extracted links.
+4. PostgreSQL receives a compact `review_created` event for analytics charts.
+5. Kafka topic `email.review.ingested` carries the handoff to Python workers.
+6. Long-running Python process that subscribes to the ingest topic.
+7. Celery worker that runs the `analyze_review` task.
+8. Rule engine inside the worker, plus optional HTTP call to mock-llm or agent LLM when enabled.
+
+- **A** — Authenticated submit from the dashboard or modal.
+- **B** — Persist pending review document.
+- **C** — Record chart-friendly statistics without scanning Mongo later.
+- **D** — Publish durable event so scoring can scale separately from HTTP.
+- **E** — UI polling loop until status becomes `completed` or `failed`.
+- **F** — API returns current `analysisResult` when ready.
+- **G** — Dispatcher pulls the next ingest message.
+- **H** — Task queued on Redis for Celery workers.
+- **I** — Worker writes merged verdict, findings, and final status to MongoDB.
+- **J** — Worker inserts status-change row for Live flow and Analytics.
+- **K** — Optional LLM HTTP request when `DISABLE_LLM=false` or agent mode is on.
+- **L** — Worker calls Node internal endpoints to refresh Neo4j and Elasticsearch.
 
 ---
 
-## Chart 2 — REST API families (Node port 3000)
+## Partial chart 2 — REST API families (Node port 3000)
 
-One diagram per **route family** the React UI or scripts call. Source: [diagrams/system-flow-02-rest-api.mmd](diagrams/system-flow-02-rest-api.mmd).
+Source: [diagrams/system-flow-02-rest-api.mmd](diagrams/system-flow-02-rest-api.mmd).
 
 ```mermaid
 flowchart LR
@@ -141,27 +256,27 @@ flowchart LR
   UI -->|"F /logs search"| API
   UI -->|"G /ops backups prometheus"| API
   UI -->|"H /dev simulation reset"| API
-
-  subgraph legend2 [Number key for boxes 1-2 and arrows A-H]
-    direction TB
-    L1b["1 Browser on port 3001 or API port 3000"]
-    L2b["2 Single backend container"]
-    LA["A Login OAuth JWT preferences RBAC"]
-    LB["B Create list detail override reviews"]
-    LC["C Timeseries status breakdown Snowflake analytics"]
-    LD["D Neo4j campaign list and subgraph JSON"]
-    LE["E Elasticsearch multi_match queries"]
-    LF["F merged.log keyword search"]
-    LG["G S3 backup run stats Prometheus alerts"]
-    LH["H Dev simulation timer and reset local state"]
-  end
 ```
+
+**Comments**
+
+1. Browser on port 3001 (dev proxy) or any HTTP client with a bearer token on port 3000.
+2. Single Express application registered in `createApp.js` — all routes share JWT middleware where required.
+
+- **A** — Login, OAuth callback handling, preferences, password reset (`/auth/*`).
+- **B** — Create/list/detail reviews and analyst override (`/reviews/*`).
+- **C** — PostgreSQL-backed timeseries and Snowflake analytics APIs (`/metrics/*`, `/analytics/*`).
+- **D** — Neo4j-backed campaign list and subgraph JSON (`/graph/*`).
+- **E** — Elasticsearch queries over indexed reviews (`/search/*`).
+- **F** — Keyword search in shared `merged.log` (`/logs/search`).
+- **G** — S3 backups, Prometheus text, alert evaluation (`/ops/*`).
+- **H** — Dev-only simulation timer and `reset-local-state` (`/dev/*`).
 
 ---
 
-## Chart 3 — Mailbox ingest entry paths
+## Partial chart 3 — Mailbox ingest entry paths
 
-Three ways email reaches the **same** Kafka and Celery pipeline. Source: [diagrams/system-flow-03-mailbox-ingest.mmd](diagrams/system-flow-03-mailbox-ingest.mmd).
+Source: [diagrams/system-flow-03-mailbox-ingest.mmd](diagrams/system-flow-03-mailbox-ingest.mmd).
 
 ```mermaid
 flowchart TB
@@ -179,29 +294,29 @@ flowchart TB
   GW -->|"D shared secret header"| API
   API -->|"E persist and publish"| K
   K --> CEL
-
-  subgraph legend3 [Number key for boxes 1-7 and arrows A-E]
-    direction TB
-    L1b["1 ManualReviewSubmitModal"]
-    L2b["2 External mail platform"]
-    L3b["3 Dev simulation goroutine"]
-    L4b["4 Internal ingest handler"]
-    L5b["5 Go gateway service"]
-    L6b["6 Redpanda topic"]
-    L7b["7 Chart 1 worker path"]
-    LA["A source user in MongoDB"]
-    LB["B Production webhook payload"]
-    LC["C source mailbox_simulation"]
-    LD["D INGEST_INTERNAL_TOKEN"]
-    LE["E Identical enqueue after persist"]
-  end
 ```
+
+**Comments**
+
+1. Manual **Submit email** modal — same pipeline as typing in the triage form (`source: user`).
+2. Real or test mail platform POSTing JSON to the Go gateway in production-style setups.
+3. Dev **simulation** goroutine inside ingest-gateway (`source: mailbox_simulation`).
+4. Node internal route that validates `INGEST_INTERNAL_TOKEN` and normalizes payload.
+5. Go service exposing webhook, metrics, and simulation control on port 8080.
+6. Same Kafka ingest topic used by manual reviews — one async pipeline for all sources.
+7. Celery scoring path described in partial chart 1.
+
+- **A** — Standard analyst JWT path (does not require the gateway).
+- **B** — External webhook hits Go, not Node directly.
+- **C** — Simulation tick builds synthetic email and calls the same Node client as webhooks.
+- **D** — Header-protected internal HTTP between Go and Node.
+- **E** — Mongo persist plus Kafka publish — identical enqueue semantics for every path.
 
 ---
 
-## Chart 4 — Data stores and writers
+## Partial chart 4 — Data stores and writers
 
-Which runtime writes each database or log volume. Source: [diagrams/system-flow-04-data-stores.mmd](diagrams/system-flow-04-data-stores.mmd).
+Source: [diagrams/system-flow-04-data-stores.mmd](diagrams/system-flow-04-data-stores.mmd).
 
 ```mermaid
 flowchart TB
@@ -230,27 +345,27 @@ flowchart TB
   G --> LOG
   DJ --> PG
   DJ --> LOG
-
-  subgraph legend4 [Number key for boxes 1-10]
-    direction TB
-    L1b["1 Express on port 3000"]
-    L2b["2 Python worker container"]
-    L3b["3 Go gateway container"]
-    L4b["4 Django admin port 8000"]
-    L5b["5 Review documents agentTrace"]
-    L6b["6 auth stats ingest_clients"]
-    L7b["7 Phishing relationship graph"]
-    L8b["8 Full text search index"]
-    L9b["9 Celery broker dev sim keys"]
-    L10b["10 Central NDJSON log volume"]
-  end
 ```
+
+**Comments**
+
+1. Node API — creates reviews, serves queries, syncs graph/search on ingest and override.
+2. Celery worker — completes analysis, updates Mongo/Postgres, triggers graph/search callbacks.
+3. Go gateway — appends structured log lines for mailbox ingest and simulation.
+4. Django admin — reads/writes PostgreSQL auth tables; logs bootstrap actions.
+
+5. MongoDB — full review documents and optional agent trace audit fields.
+6. PostgreSQL — users, roles, chart events, ingest client registry.
+7. Neo4j — phishing entities and relationships for the Graph tab.
+8. Elasticsearch — search index documents derived from reviews.
+9. Redis — Celery broker and dev simulation keys.
+10. Central NDJSON log file on the shared Docker volume.
 
 ---
 
-## Chart 5 — Outbound verdicts and analytics export
+## Partial chart 5 — Outbound verdicts and analytics export
 
-After analysis or override. Source: [diagrams/system-flow-05-verdict-analytics.mmd](diagrams/system-flow-05-verdict-analytics.mmd).
+Source: [diagrams/system-flow-05-verdict-analytics.mmd](diagrams/system-flow-05-verdict-analytics.mmd).
 
 ```mermaid
 flowchart LR
@@ -266,26 +381,26 @@ flowchart LR
   NODE -->|"A HMAC POST"| WH
   NODE -->|"B publish"| K
   REV -->|"C export row"| SF
-
-  subgraph legend5 [Number key for boxes 1-6 and arrows A-C]
-    direction TB
-    L1b["1 Terminal review state"]
-    L2b["2 verdictDelivery scheduler"]
-    L3b["3 Per platform callback registry"]
-    L4b["4 Mail platform HTTPS endpoint"]
-    L5b["5 Optional integration topic"]
-    L6b["6 Warehouse REST in dev"]
-    LA["A Signed verdict JSON body"]
-    LB["B Downstream subscribers"]
-    LC["C snowflakeExport after completion"]
-  end
 ```
+
+**Comments**
+
+1. Trigger moment — automated analysis finished or analyst saved an override.
+2. Node service that schedules delivery jobs and reads client configuration.
+3. PostgreSQL `ingest_clients` — default callback URL, secrets, and `ingestClientId` mapping.
+4. Customer mail platform HTTPS endpoint that receives signed verdict JSON.
+5. Kafka topic for integrations that prefer event streaming over webhooks.
+6. Analytical warehouse row export (mock REST server in dev).
+
+- **A** — Signed POST with verdict payload to the registered webhook URL.
+- **B** — Optional message on `email.review.completed` for subscribers.
+- **C** — Async export mapper sends row to Snowflake API after completion.
 
 ---
 
-## Chart 6 — Dev mocks and startup secrets
+## Partial chart 6 — Dev mocks and startup secrets
 
-Local Docker substitutes for cloud APIs. Source: [diagrams/system-flow-06-dev-mocks.mmd](diagrams/system-flow-06-dev-mocks.mmd).
+Source: [diagrams/system-flow-06-dev-mocks.mmd](diagrams/system-flow-06-dev-mocks.mmd).
 
 ```mermaid
 flowchart TB
@@ -309,24 +424,29 @@ flowchart TB
   N --> MSF
   N --> MS3
   N -->|"B password reset"| MP
-
-  subgraph legend6 [Number key for boxes 1-10 and arrows A-B]
-    direction TB
-    L2b["2 Gitignored secrets file on disk"]
-    LA["A Loads JWT and DB passwords at start"]
-    LB["B Captured reset mail in Mailpit UI"]
-    L6b["6 OpenAI chat completions shape"]
-    L7b["7 Agent Bedrock Vertex shape"]
-    L8b["8 Analytics insert endpoints"]
-    L9b["9 Postgres backup objects"]
-  end
 ```
+
+**Comments**
+
+1. HTTP service mimicking AWS Secrets Manager `GetSecretValue` on port 4566.
+2. Gitignored local file edited from `dev.secrets.example` — passwords never committed.
+3. Node backend container — loads secrets at boot via entrypoint.
+4. Celery worker container — same secret bundle for DB and LLM URLs.
+5. Go gateway container — reads ingest tokens from the same bundle.
+6. OpenAI-compatible mock for single-shot commercial LLM scoring.
+7. Separate mock for agent FSM cloud LLM (Bedrock/Vertex response shape).
+8. In-memory Snowflake-style analytics REST.
+9. Local S3 API for Postgres backup objects.
+10. Mailpit captures SMTP from password-reset flow in dev.
+
+- **A** — Entrypoint HTTP fetch injects env vars before processes listen on ports.
+- **B** — Reset email routed to Mailpit web UI instead of the public internet.
 
 ---
 
-## Chart 7 — Staging and production vendor endpoints
+## Partial chart 7 — Staging and production vendor endpoints
 
-Same containers; environment variables point at managed services. See [stack_guide_staging_production_services.md](stack_guide_staging_production_services.md). Source: [diagrams/system-flow-staging-prod.mmd](diagrams/system-flow-staging-prod.mmd).
+See [stack_guide_staging_production_services.md](stack_guide_staging_production_services.md). Source: [diagrams/system-flow-staging-prod.mmd](diagrams/system-flow-staging-prod.mmd).
 
 ```mermaid
 flowchart TB
@@ -340,23 +460,23 @@ flowchart TB
   APP --> DATA
   APP --> AI
   APP --> OUT
-
-  subgraph legend7 [Number key for boxes 1-5 and arrow A]
-    direction TB
-    L1b["1 Node Python Go images from repo"]
-    L2b["2 triage staging or prod bundle"]
-    L3b["3 Hostnames in env profile"]
-    L4b["4 LLM scoring and agent FSM"]
-    L5b["5 Email object storage warehouse"]
-    LA["A GetSecretValue at container boot"]
-  end
 ```
+
+**Comments**
+
+1. Same Node, Python, and Go images built from this repository — only configuration changes.
+2. AWS Secrets Manager holds `triage/staging` or `triage/prod` JSON bundles.
+3. Managed data plane — PostgreSQL, MongoDB, OpenSearch/Elastic, Neo4j Aura, Kafka, Redis endpoints from env profiles.
+4. Commercial LLM vendors for scoring and agent triage (OpenAI-compatible APIs, Bedrock Converse, Vertex Gemini).
+5. Outbound email (SES), backup buckets (S3), and Snowflake warehouse URLs.
+
+- **A** — Containers call `GetSecretValue` with IAM roles instead of the dev mock on port 4566.
 
 ---
 
-## Chart 8 — Phishing graph UI
+## Partial chart 8 — Phishing graph UI
 
-Neo4j data to SVG. See [graph_guide_neo4j_phishing.md](graph_guide_neo4j_phishing.md). Source: [diagrams/system-flow-graph-ui.mmd](diagrams/system-flow-graph-ui.mmd).
+See [graph_guide_neo4j_phishing.md](graph_guide_neo4j_phishing.md). Source: [diagrams/system-flow-graph-ui.mmd](diagrams/system-flow-graph-ui.mmd).
 
 ```mermaid
 flowchart LR
@@ -372,21 +492,21 @@ flowchart LR
   API -->|"C JSON nodes edges"| CAN
   CAN -->|"D circle x y"| LAY
   LAY --> SVG
-
-  subgraph legend8 [Number key for boxes 1-6 and arrows A-D]
-    direction TB
-    L1b["1 Phishing graph sub window"]
-    L2b["2 graph.read JWT routes"]
-    L3b["3 Property graph database"]
-    L4b["4 Pan zoom resize component"]
-    L5b["5 graphLayout.js"]
-    L6b["6 Nodes edges tooltips"]
-    LA["A Campaign picker list"]
-    LB["B Subgraph for indicator"]
-    LC["C Connected component filter"]
-    LD["D Circular layout then draw"]
-  end
 ```
+
+**Comments**
+
+1. **Phishing graph** sub-window in the React app (`GraphView.jsx`).
+2. Express routes protected by `graph.read` permission.
+3. Neo4j stores campaigns, senders, reviews, URLs, and domains.
+4. React component that draws one campaign subgraph with pan, zoom, and resize.
+5. Pure JavaScript helper that places nodes on a circle (`graphLayout.js`).
+6. SVG output with tooltips and hover highlighting.
+
+- **A** — UI loads campaign list sorted by linked review count.
+- **B** — API runs Cypher for the selected campaign indicator.
+- **C** — JSON nodes/edges returned to the browser.
+- **D** — Layout assigns x/y coordinates before drawing edges and labels.
 
 ---
 

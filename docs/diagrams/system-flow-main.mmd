@@ -1,20 +1,96 @@
-%% Overview — follow numbered partial charts in arch_guide_system_flowchart.md
+%% Overall dev stack — docs/arch_guide_system_flowchart.md
 flowchart TB
-  START["Read partial charts 1-8 in arch_guide_system_flowchart.md"]
-  C1["1 Triage async pipeline"]
-  C2["2 REST API families"]
-  C3["3 Mailbox ingest paths"]
-  C4["4 Data stores"]
-  C5["5 Verdicts and analytics export"]
-  C6["6 Dev mocks and secrets"]
-  C7["7 Staging prod vendors"]
-  C8["8 Phishing graph UI"]
+  subgraph clients [Clients]
+    BROWSER["1 React UI port 3001<br/>triage analytics graph search logs admin"]
+    MAIL["2 Mail platforms webhooks"]
+  end
 
-  START --> C1
-  START --> C2
-  START --> C3
-  START --> C4
-  START --> C5
-  START --> C6
-  START --> C7
-  START --> C8
+  subgraph edge [Ingest edge]
+    GW["3 Go ingest-gateway port 8080<br/>webhooks and dev simulation"]
+  end
+
+  subgraph nodeApi [Node API port 3000]
+    EXPRESS["4 Express REST<br/>auth reviews metrics graph search logs ops"]
+  end
+
+  subgraph adminOps [Admin and ops]
+    DJANGO["5 Django admin port 8000"]
+    LOGVOL["6 Docker volume triage-logs merged.log"]
+  end
+
+  subgraph data [Databases and search stores]
+    MONGO[(7 MongoDB Review documents)]
+    PG[(8 PostgreSQL auth stats ingest_clients)]
+    NEO[(9 Neo4j phishing graph)]
+    ES[(10 Elasticsearch search index)]
+    REDIS[(11 Redis Celery broker)]
+  end
+
+  subgraph events [Events]
+    KAFKA["12 Redpanda Kafka topics"]
+  end
+
+  subgraph workers [Python workers]
+    DISPATCH["13 ai-kafka-dispatch"]
+    CELERY["14 ai-celery scoring and sync"]
+  end
+
+  subgraph outbound [Outbound integrations]
+    VERDICT["15 Verdict webhooks and Kafka"]
+    SNOW["16 Snowflake export"]
+  end
+
+  subgraph devMocks [Dev mocks]
+    MOCKSECR["17 mock-secrets-manager"]
+    MOCKS3["18 mock-s3 backups"]
+    MOCKLLM["19 mock-llm"]
+    MOCKAGENT["20 mock-cloud-llm"]
+    MOCKCB["21 mock-verdict-callback"]
+    MAILPIT["22 Mailpit"]
+  end
+
+  subgraph externalId [External identity and email]
+    GOOGLE["23 Google OAuth"]
+    EMAILVENDOR["24 Gmail SES SMTP"]
+  end
+
+  BROWSER -->|A JWT REST| EXPRESS
+  BROWSER -.->|B OAuth redirect| GOOGLE
+  GOOGLE -.->|C OAuth callback| EXPRESS
+  MAIL -->|D webhook| GW
+  GW -->|E internal ingest| EXPRESS
+
+  EXPRESS --> MONGO
+  EXPRESS --> PG
+  EXPRESS --> NEO
+  EXPRESS --> ES
+  EXPRESS --> REDIS
+  EXPRESS --> KAFKA
+  EXPRESS --> VERDICT
+  EXPRESS --> SNOW
+  EXPRESS --> LOGVOL
+  EXPRESS -->|F backup upload| MOCKS3
+  EXPRESS -.->|G reset email| MAILPIT
+  EXPRESS -.->|H production mail| EMAILVENDOR
+
+  DJANGO --> PG
+  DJANGO --> LOGVOL
+
+  MOCKSECR -.->|I startup secrets| EXPRESS
+  MOCKSECR -.-> CELERY
+  MOCKSECR -.-> GW
+
+  KAFKA -->|J consume ingest| DISPATCH
+  DISPATCH --> CELERY
+  CELERY --> MONGO
+  CELERY --> PG
+  CELERY --> NEO
+  CELERY --> ES
+  CELERY --> MOCKLLM
+  CELERY --> MOCKAGENT
+  CELERY --> VERDICT
+  CELERY --> LOGVOL
+  CELERY -.->|K graph internal sync| EXPRESS
+
+  GW --> LOGVOL
+  VERDICT -.-> MOCKCB

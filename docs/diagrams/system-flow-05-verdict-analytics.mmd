@@ -1,4 +1,3 @@
-%% Chart 5 — Outbound verdicts and warehouse export
 flowchart LR
   REV["1 Review completed or override"]
   NODE["2 Node verdictDelivery"]
@@ -12,13 +11,3 @@ flowchart LR
   NODE -->|"A HMAC POST"| WH
   NODE -->|"B publish"| K
   REV -->|"C export row"| SF
-
-  subgraph legend5 [Number key]
-    direction TB
-    L1["1 Analysis finished or analyst override saved"]
-    L2["2 Schedules delivery from registry and callbackUrl"]
-    L3["3 Per mail platform default webhook and ingestClientId"]
-    LA["A Signed verdict JSON to mail platform"]
-    LB["B Optional async fan-out for integrations"]
-    LC["C Analytics warehouse copy mock in dev"]
-  end

@@ -1,21 +1,11 @@
-%% Chart 7 — Staging and production vendor endpoints
 flowchart TB
-  APP["1 Application containers unchanged"]
+  APP["1 Application containers"]
   SM["2 AWS Secrets Manager"]
-  DATA["3 Managed data plane RDS Atlas OS Aura MSK Redis"]
-  AI["4 LLM vendors OpenAI Bedrock Vertex"]
+  DATA["3 RDS Atlas OpenSearch Aura MSK ElastiCache"]
+  AI["4 OpenAI Bedrock Vertex"]
   OUT["5 SES S3 Snowflake"]
 
-  APP -->|"A same env var names"| SM
+  APP -->|"A secret bundle id"| SM
   APP --> DATA
   APP --> AI
   APP --> OUT
-
-  subgraph legend7 [Number key]
-    direction TB
-    L1["1 Node Python Go images from this repo"]
-    LA["A Secrets bundle triage staging or prod"]
-    L3["3 PostgreSQL Mongo OpenSearch Neo4j Kafka Redis hosts in profile"]
-    L4["4 Commercial and agent scoring endpoints"]
-    L5["5 Email delivery backups warehouse"]
-  end

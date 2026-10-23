@@ -1,4 +1,3 @@
-%% Chart 6 — Dev mocks and startup secrets
 flowchart TB
   SEC["1 mock-secrets-manager 4566"]
   DEV["2 backend/dev.secrets file"]
@@ -20,13 +19,3 @@ flowchart TB
   N --> MSF
   N --> MS3
   N -->|"B password reset"| MP
-
-  subgraph legend6 [Number key]
-    direction TB
-    LA["A JWT DB passwords tokens loaded at container start"]
-    LB["B Captured reset emails in dev inbox UI"]
-    L6["6 OpenAI-shaped scoring HTTP"]
-    L7["7 Bedrock Vertex shaped agent LLM"]
-    L8["8 Warehouse insert and analytics REST"]
-    L9["9 Postgres backup PutObject"]
-  end
