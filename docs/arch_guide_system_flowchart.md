@@ -6,7 +6,7 @@ One-page map of how the **Suspicious Email Triage** monorepo fits together. It l
 
 ## Database and storage inventory
 
-This project uses **several store types**; each has a distinct job. **Phishing graph data is not stored in a column-oriented database** (no Cassandra, ClickHouse, or Bigtable). Campaign relationships live in **Neo4j**, a **labeled property graph database** (nodes + relationships, queried with Cypher).
+This project uses **several store types**; each has a distinct job. Campaign relationships live in **Neo4j**, a **labeled property graph database** (nodes and relationships, queried with Cypher).
 
 | Store | Type | What it holds | Used by |
 |-------|------|---------------|---------|
@@ -16,12 +16,12 @@ This project uses **several store types**; each has a distinct job. **Phishing g
 | **Elasticsearch** | Search index | Denormalized review text for keyword search | Node search API; background indexing |
 | **Redis** | In-memory | Celery broker/result backend; dev simulation state | Celery, Node dev routes |
 | **Redpanda/Kafka** | Event log | `email.review.ingested`, DLQ, `email.review.completed` (verdict fan-out) | Node producer, Python dispatcher |
-| **Docker volume `triage-logs`** | Append-only file | `merged.log` NDJSON (central logging, not a query DB) | Node, Python, Go gateway, Django bootstrap |
-| **SQLite (Django only)** | Embedded | Django **session** store inside `django-admin` container only — not application data | Django admin UI |
+| **Docker volume `triage-logs`** | Append-only file | `merged.log` NDJSON for central logging and `GET /logs/search` | Node, Python, Go gateway, Django bootstrap |
+| **SQLite (Django only)** | Embedded | Django **session** store inside the `django-admin` container | Django admin UI |
 | **Snowflake (or mock)** | Cloud warehouse | Analytical copies of completed reviews | Node export after analysis/override |
 | **S3 (or mock-s3)** | Object storage | PostgreSQL logical backup JSON snapshots | Node `POST /ops/backups/run` |
 
-**Optional / alternate paths (not in the main diagram):** legacy **BullMQ** Node worker (`--profile legacy-bullmq`), local **Ollama** LLM if configured, **Prefect/dbt** demo reads PostgreSQL only ([data_guide_prefect_dbt_demo.md](data_guide_prefect_dbt_demo.md)).
+**Optional / alternate paths:** legacy **BullMQ** Node worker (`--profile legacy-bullmq`), local **Ollama** LLM when configured, **Prefect/dbt** demo on PostgreSQL ([data_guide_prefect_dbt_demo.md](data_guide_prefect_dbt_demo.md)).
 
 Deep dives: [graph_guide_neo4j_phishing.md](graph_guide_neo4j_phishing.md), [stack_guide_staging_production_services.md](stack_guide_staging_production_services.md), [data_guide_dev_mock_services.md](data_guide_dev_mock_services.md).
 
@@ -36,7 +36,7 @@ Deep dives: [graph_guide_neo4j_phishing.md](graph_guide_neo4j_phishing.md), [sta
 | **Graph UI only** | Open **`docs/diagrams/system-flow-graph-ui.mmd`**. |
 | **Markdown preview** | **Markdown Preview Mermaid Support** → preview this file. |
 
-Copy **only** the contents of a ` ```mermaid ` block (or a `.mmd` file), not the whole markdown page, into Mermaid Live Editor if preview fails.
+Copy one diagram source (a single ` ```mermaid ` fenced block or a `.mmd` file) into [Mermaid Live Editor](https://mermaid.live) if preview fails.
 
 ---
 
@@ -148,8 +148,8 @@ flowchart TB
 |-------|---------|
 | Browser → Node | Primary path: triage, polling, analytics, Neo4j graph API, Elasticsearch search, unified logs, ops backups. |
 | Mail → Go gateway → Node | Mailbox ingest and dev simulation share Node internal persist → Kafka pipeline. |
-| Node / Celery → Neo4j | **Graph storage** — property graph, not columns or Mongo embeds. |
-| Node / Celery → Elasticsearch | Search index separate from Neo4j graph traversals. |
+| Node / Celery → Neo4j | Sender, Review, Url, Domain, and Campaign nodes with relationship traversals for the Phishing graph tab. |
+| Node / Celery → Elasticsearch | Denormalized review fields indexed for keyword search in the Search tab. |
 | mock-secrets-manager | In dev, all containers load JWT/DB passwords from gitignored `dev.secrets` via HTTP GetSecretValue shape. |
 | mock-s3 | Dev stand-in for **Amazon S3** backup bucket ([ops_guide_s3_backups.md](ops_guide_s3_backups.md)). |
 | Verdict / Snowflake | Outbound integrations; registry in PostgreSQL; dev uses mock containers. |
@@ -158,7 +158,7 @@ flowchart TB
 
 ## Staging and production — real cloud services
 
-In **dev**, the `devMocks` boxes above replace paid APIs. In **staging/prod**, the same env vars point at real vendors (no code fork). See [stack_guide_staging_production_services.md](stack_guide_staging_production_services.md).
+In **dev**, the `devMocks` boxes above stand in for cloud APIs. In **staging/prod**, the same environment variables point at managed vendor endpoints. See [stack_guide_staging_production_services.md](stack_guide_staging_production_services.md).
 
 Standalone diagram: [diagrams/system-flow-staging-prod.mmd](diagrams/system-flow-staging-prod.mmd).
 
