@@ -1,0 +1,37 @@
+%% Chart 4 — Which service writes which store
+flowchart TB
+  N["1 Node API"]
+  W["2 ai-celery"]
+  G["3 ingest-gateway"]
+  DJ["4 django-admin"]
+
+  M[(5 MongoDB)]
+  PG[(6 PostgreSQL)]
+  NEO[(7 Neo4j)]
+  ES[(8 Elasticsearch)]
+  R[(9 Redis)]
+  LOG["10 triage-logs merged.log"]
+
+  N --> M
+  N --> PG
+  N --> NEO
+  N --> ES
+  N --> R
+  N --> LOG
+  W --> M
+  W --> PG
+  W --> NEO
+  W --> ES
+  G --> LOG
+  DJ --> PG
+  DJ --> LOG
+
+  subgraph legend4 [Number key]
+    direction TB
+    L5["5 Canonical Review documents and agentTrace"]
+    L6["6 auth_users stats events ingest_clients registry"]
+    L7["7 Sender Review Url Domain Campaign graph"]
+    L8["8 Search index for keyword queries"]
+    L9["9 Celery broker and dev simulation keys"]
+    L10["10 Central NDJSON log file on Docker volume"]
+  end

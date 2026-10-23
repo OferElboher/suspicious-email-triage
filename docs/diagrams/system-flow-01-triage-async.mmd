@@ -1,0 +1,39 @@
+%% Chart 1 — Analyst submit and async scoring
+flowchart TB
+  UI["1 React UI port 3001"]
+  API["2 Node Express port 3000"]
+  M[(3 MongoDB Review doc)]
+  P[(4 PostgreSQL stats event)]
+  K["5 Kafka email.review.ingested"]
+  D["6 ai-kafka-dispatch"]
+  W["7 ai-celery analyze_review"]
+  LLM["8 mock-llm or rules engine"]
+
+  UI -->|"A JWT POST /reviews"| API
+  API -->|"B insert pending"| M
+  API -->|"C review_created row"| P
+  API -->|"D publish ingest"| K
+  UI -->|"E poll GET /reviews/id"| API
+  API -->|"F read status"| M
+  K -->|"G consume"| D
+  D -->|"H enqueue task"| W
+  W -->|"I load and save result"| M
+  W -->|"J status_changed row"| P
+  W -->|"K optional LLM call"| LLM
+  W -->|"L graph and ES sync via Node internal routes"| API
+
+  subgraph legend1 [Number key for boxes A-L on arrows]
+    direction TB
+    LA["A Browser submits email body with JWT"]
+    LB["B Review stored with status pending"]
+    LC["C Narrow event for Analytics charts"]
+    LD["D Durable handoff to Python workers"]
+    LE["E UI polls until completed or failed"]
+    LF["F Returns analysisResult when ready"]
+    LG["G Dispatcher reads ingest topic"]
+    LH["H Celery task runs scoring pipeline"]
+    LI["I Writes analysisResult and status"]
+    LJ["J Chart pipeline sees completion"]
+    LK["K Rules plus optional commercial or agent LLM"]
+    LL["L Side effects: Neo4j subgraph and Elasticsearch index"]
+  end

@@ -1,96 +1,20 @@
-%% End-to-end dev stack — docs/arch_guide_system_flowchart.md
+%% Overview — follow numbered partial charts in arch_guide_system_flowchart.md
 flowchart TB
-  subgraph clients [Clients]
-    BROWSER["React UI port 3001<br/>triage analytics graph search logs admin"]
-    MAIL["Mail platforms webhooks<br/>production mailbox path"]
-  end
+  START["Read partial charts 1-8 in arch_guide_system_flowchart.md"]
+  C1["1 Triage async pipeline"]
+  C2["2 REST API families"]
+  C3["3 Mailbox ingest paths"]
+  C4["4 Data stores"]
+  C5["5 Verdicts and analytics export"]
+  C6["6 Dev mocks and secrets"]
+  C7["7 Staging prod vendors"]
+  C8["8 Phishing graph UI"]
 
-  subgraph edge [Ingest edge]
-    GW["Go ingest-gateway port 8080<br/>webhooks and dev simulation"]
-  end
-
-  subgraph nodeApi [Node API port 3000]
-    EXPRESS["Express REST<br/>auth reviews metrics graph search logs ops"]
-  end
-
-  subgraph adminOps [Admin and ops]
-    DJANGO["Django admin port 8000<br/>user CRUD via PostgreSQL"]
-    LOGVOL["Docker volume triage-logs<br/>merged.log NDJSON central logging"]
-  end
-
-  subgraph data [Databases and search stores]
-    MONGO[(MongoDB document DB<br/>Review documents and agentTrace)]
-    PG[(PostgreSQL relational<br/>auth_users stats events ingest_clients)]
-    NEO[(Neo4j graph DB<br/>Sender Review Url Domain Campaign)]
-    ES[(Elasticsearch<br/>full-text review search index)]
-    REDIS[(Redis in-memory<br/>Celery broker dev sim state)]
-  end
-
-  subgraph events [Events]
-    KAFKA["Redpanda or Kafka<br/>ingest DLQ completed topics"]
-  end
-
-  subgraph workers [Python workers]
-    DISPATCH["ai-kafka-dispatch"]
-    CELERY["ai-celery<br/>rules LLM agent graph ES callbacks"]
-  end
-
-  subgraph outbound [Outbound integrations]
-    VERDICT["Verdict webhooks poll Kafka<br/>client registry in PostgreSQL"]
-    SNOW["Snowflake analytics export<br/>mock-snowflake in dev"]
-  end
-
-  subgraph devMocks [Dev mocks replace cloud APIs]
-    MOCKSECR["mock-secrets-manager port 4566"]
-    MOCKS3["mock-s3 port 4568<br/>Postgres backup objects"]
-    MOCKLLM["mock-llm port 8090<br/>OpenAI-compatible scoring"]
-    MOCKAGENT["mock-cloud-llm port 8091<br/>Bedrock Vertex shape"]
-    MOCKCB["mock-verdict-callback"]
-    MAILPIT["Mailpit SMTP capture"]
-  end
-
-  subgraph externalId [External identity and email]
-    GOOGLE["Google OAuth 2.0"]
-    EMAILVENDOR["Gmail API SES or corporate SMTP"]
-  end
-
-  BROWSER -->|JWT REST via dev proxy| EXPRESS
-  BROWSER -.->|sign-in redirect| GOOGLE
-  GOOGLE -.->|OAuth callback| EXPRESS
-  MAIL --> GW
-  GW -->|internal ingest token| EXPRESS
-
-  EXPRESS --> MONGO
-  EXPRESS --> PG
-  EXPRESS --> NEO
-  EXPRESS --> ES
-  EXPRESS --> REDIS
-  EXPRESS --> KAFKA
-  EXPRESS --> VERDICT
-  EXPRESS --> SNOW
-  EXPRESS --> LOGVOL
-  EXPRESS -->|ops backups PutObject| MOCKS3
-  EXPRESS -.->|password reset| MAILPIT
-  EXPRESS -.->|staging prod email| EMAILVENDOR
-
-  DJANGO --> PG
-  DJANGO --> LOGVOL
-
-  MOCKSECR -.->|GetSecretValue at startup| EXPRESS
-  MOCKSECR -.->|secrets bundle| CELERY
-  MOCKSECR -.->|secrets bundle| GW
-
-  KAFKA --> DISPATCH
-  DISPATCH --> CELERY
-  CELERY --> MONGO
-  CELERY --> PG
-  CELERY --> NEO
-  CELERY --> ES
-  CELERY --> MOCKLLM
-  CELERY --> MOCKAGENT
-  CELERY --> VERDICT
-  CELERY --> LOGVOL
-  CELERY -.->|internal HTTP graph sync| EXPRESS
-
-  GW --> LOGVOL
-  VERDICT -.-> MOCKCB
+  START --> C1
+  START --> C2
+  START --> C3
+  START --> C4
+  START --> C5
+  START --> C6
+  START --> C7
+  START --> C8

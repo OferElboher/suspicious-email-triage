@@ -1,8 +1,22 @@
-%% Phishing graph UI path — open in Mermaid Live Editor if Markdown preview fails.
-%% Source: docs/arch_guide_system_flowchart.md
+%% Chart 8 — Phishing graph UI
 flowchart LR
-  UI[GraphView tab] -->|GET graph campaigns| API[Node graph routes]
-  API --> NEO[(Neo4j)]
-  API -->|nodes and edges JSON| CANVAS[CampaignGraphCanvas]
-  CANVAS --> LAYOUT["layoutNodesOnCircle<br/>graphLayout.js"]
-  LAYOUT --> SVG[SVG pan zoom tooltips]
+  UI["1 GraphView tab"]
+  API["2 Node graph routes"]
+  NEO[(3 Neo4j)]
+  CAN["4 CampaignGraphCanvas"]
+  LAY["5 layoutNodesOnCircle"]
+  SVG["6 SVG render"]
+
+  UI -->|"A GET /graph/campaigns"| API
+  API -->|"B Cypher read"| NEO
+  API -->|"C JSON nodes edges"| CAN
+  CAN -->|"D circle x y"| LAY
+  LAY --> SVG
+
+  subgraph legend8 [Number key]
+    direction TB
+    LA["A Campaign list sorted by review count"]
+    LB["B Subgraph for one campaign indicator"]
+    LC["C filterToPrimaryComponent plus layout"]
+    LD["D Pure JS layout in graphLayout.js"]
+  end
