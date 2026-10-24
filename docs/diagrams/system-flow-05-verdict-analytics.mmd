@@ -1,13 +1,13 @@
 flowchart LR
-  REV["1 Review completed or override"]
-  NODE["2 Node verdictDelivery"]
-  PG[(3 PostgreSQL ingest_clients)]
-  WH["4 Customer webhook URL"]
-  K["5 Kafka email.review.completed"]
-  SF["6 Snowflake or mock-snowflake"]
+  REV["Review completed or override (1)"]
+  NODE["Node verdictDelivery (2)"]
+  PG[(PostgreSQL ingest_clients (3))]
+  WH["Customer webhook URL (4)"]
+  K["Kafka email.review.completed (5)"]
+  SF["Snowflake or mock-snowflake (6)"]
 
   REV --> NODE
   NODE --> PG
-  NODE -->|"A HMAC POST"| WH
-  NODE -->|"B publish"| K
-  REV -->|"C export row"| SF
+  NODE -->|"HMAC POST (A)"| WH
+  NODE -->|"publish (B)"| K
+  REV -->|"export row (C)"| SF

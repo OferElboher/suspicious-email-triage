@@ -1,15 +1,15 @@
 flowchart TB
-  P1["1 Analyst UI modal"]
-  P2["2 Mail webhook"]
-  P3["3 Go simulation tick"]
-  API["4 Node POST /ingest/internal/mailbox"]
-  GW["5 ingest-gateway port 8080"]
-  K["6 Kafka same ingest topic"]
-  CEL["7 ai-celery same analyze path"]
+  P1["Analyst UI modal (1)"]
+  P2["Mail webhook (2)"]
+  P3["Go simulation tick (3)"]
+  API["Node POST /ingest/internal/mailbox (4)"]
+  GW["ingest-gateway port 8080 (5)"]
+  K["Kafka same ingest topic (6)"]
+  CEL["ai-celery same analyze path (7)"]
 
-  P1 -->|"A POST /reviews JWT"| API
-  P2 -->|"B POST /v1/ingest/email"| GW
-  P3 -->|"C timer in gateway"| GW
-  GW -->|"D shared secret header"| API
-  API -->|"E persist and publish"| K
+  P1 -->|"POST /reviews JWT (A)"| API
+  P2 -->|"POST /v1/ingest/email (B)"| GW
+  P3 -->|"timer in gateway (C)"| GW
+  GW -->|"shared secret header (D)"| API
+  API -->|"persist and publish (E)"| K
   K --> CEL

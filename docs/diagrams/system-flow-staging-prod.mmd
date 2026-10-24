@@ -1,11 +1,11 @@
 flowchart TB
-  APP["1 Application containers"]
-  SM["2 AWS Secrets Manager"]
-  DATA["3 RDS Atlas OpenSearch Aura MSK ElastiCache"]
-  AI["4 OpenAI Bedrock Vertex"]
-  OUT["5 SES S3 Snowflake"]
+  APP["Application containers (1)"]
+  SM["AWS Secrets Manager (2)"]
+  DATA["RDS Atlas OpenSearch Aura MSK ElastiCache (3)"]
+  AI["OpenAI Bedrock Vertex (4)"]
+  OUT["SES S3 Snowflake (5)"]
 
-  APP -->|"A secret bundle id"| SM
+  APP -->|"secret bundle id (A)"| SM
   APP --> DATA
   APP --> AI
   APP --> OUT

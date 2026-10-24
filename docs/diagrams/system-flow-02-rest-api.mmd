@@ -1,12 +1,12 @@
 flowchart LR
-  UI["1 React or curl client"]
-  API["2 Express createApp routes"]
+  UI["React or curl client (1)"]
+  API["Express createApp routes (2)"]
 
-  UI -->|"A /auth login JWT"| API
-  UI -->|"B /reviews CRUD override"| API
-  UI -->|"C /metrics /analytics charts"| API
-  UI -->|"D /graph campaigns subgraph"| API
-  UI -->|"E /search reviews"| API
-  UI -->|"F /logs search"| API
-  UI -->|"G /ops backups prometheus"| API
-  UI -->|"H /dev simulation reset"| API
+  UI -->|"auth login JWT (A)"| API
+  UI -->|"reviews CRUD override (B)"| API
+  UI -->|"metrics analytics charts (C)"| API
+  UI -->|"graph campaigns subgraph (D)"| API
+  UI -->|"search reviews (E)"| API
+  UI -->|"logs search (F)"| API
+  UI -->|"ops backups prometheus (G)"| API
+  UI -->|"dev simulation reset (H)"| API

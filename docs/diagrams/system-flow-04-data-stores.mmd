@@ -1,15 +1,15 @@
 flowchart TB
-  N["1 Node API"]
-  W["2 ai-celery"]
-  G["3 ingest-gateway"]
-  DJ["4 django-admin"]
+  N["Node API (1)"]
+  W["ai-celery (2)"]
+  G["ingest-gateway (3)"]
+  DJ["django-admin (4)"]
 
-  M[(5 MongoDB)]
-  PG[(6 PostgreSQL)]
-  NEO[(7 Neo4j)]
-  ES[(8 Elasticsearch)]
-  R[(9 Redis)]
-  LOG["10 triage-logs merged.log"]
+  M[(MongoDB (5))]
+  PG[(PostgreSQL (6))]
+  NEO[(Neo4j (7))]
+  ES[(Elasticsearch (8))]
+  R[(Redis (9))]
+  LOG["triage-logs merged.log (10)"]
 
   N --> M
   N --> PG

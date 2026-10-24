@@ -1,13 +1,13 @@
 flowchart LR
-  UI["1 GraphView tab"]
-  API["2 Node graph routes"]
-  NEO[(3 Neo4j)]
-  CAN["4 CampaignGraphCanvas"]
-  LAY["5 layoutNodesOnCircle"]
-  SVG["6 SVG render"]
+  UI["GraphView tab (1)"]
+  API["Node graph routes (2)"]
+  NEO[(Neo4j (3))]
+  CAN["CampaignGraphCanvas (4)"]
+  LAY["layoutNodesOnCircle (5)"]
+  SVG["SVG render (6)"]
 
-  UI -->|"A GET /graph/campaigns"| API
-  API -->|"B Cypher read"| NEO
-  API -->|"C JSON nodes edges"| CAN
-  CAN -->|"D circle x y"| LAY
+  UI -->|"GET /graph/campaigns (A)"| API
+  API -->|"Cypher read (B)"| NEO
+  API -->|"JSON nodes edges (C)"| CAN
+  CAN -->|"circle x y (D)"| LAY
   LAY --> SVG
