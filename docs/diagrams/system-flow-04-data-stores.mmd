@@ -1,15 +1,23 @@
 flowchart TB
-  N["Node API (1)"]
-  W["ai-celery (2)"]
-  G["ingest-gateway (3)"]
-  DJ["django-admin (4)"]
+  subgraph nodeW [Node API writes]
+    N["Node API (1)"]
+  end
+  subgraph celeryW [ai-celery writes]
+    W["ai-celery (2)"]
+  end
+  subgraph gwW [ingest-gateway writes]
+    G["ingest-gateway (3)"]
+  end
+  subgraph djangoW [django-admin writes]
+    DJ["django-admin (4)"]
+  end
 
   M[(MongoDB (5))]
   PG[(PostgreSQL (6))]
   NEO[(Neo4j (7))]
   ES[(Elasticsearch (8))]
   R[(Redis (9))]
-  LOG["triage-logs merged.log (10)"]
+  LOG["merged.log volume triage-logs (10)"]
 
   N --> M
   N --> PG
@@ -17,10 +25,13 @@ flowchart TB
   N --> ES
   N --> R
   N --> LOG
+
   W --> M
   W --> PG
-  W --> NEO
-  W --> ES
+  W --> R
+  W --> LOG
+
   G --> LOG
+
   DJ --> PG
   DJ --> LOG
