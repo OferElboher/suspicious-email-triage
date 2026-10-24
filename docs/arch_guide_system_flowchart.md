@@ -335,29 +335,21 @@ flowchart TB
 
 Source: [diagrams/system-flow-04-data-stores.mmd](diagrams/system-flow-04-data-stores.mmd).
 
-This chart lists **append/write** relationships only (not every read). Each arrow means “this process persists data to that store.” **Neo4j and Elasticsearch are written only by Node**; after scoring, **ai-celery** calls `POST /graph/internal/sync/:id` on Node, and Node performs the Neo4j upsert and Elasticsearch index update. **ai-kafka-dispatch** is omitted here — it consumes Kafka and enqueues Celery via Redis but does not write MongoDB or PostgreSQL directly.
+Each arrow means **this service saves data there** (writes only — not every read). Follow one box on the left to its outgoing arrows only; there are no shared “bus” lines. After background scoring, the Python worker updates MongoDB and chart stats, then **asks Node** to refresh the phishing graph and search index — so **Neo4j and Elasticsearch arrows start at Node only**, not at ai-celery.
 
 ```mermaid
 flowchart TB
-  subgraph nodeW [Node API writes]
-    N["Node API (1)"]
-  end
-  subgraph celeryW [ai-celery writes]
-    W["ai-celery (2)"]
-  end
-  subgraph gwW [ingest-gateway writes]
-    G["ingest-gateway (3)"]
-  end
-  subgraph djangoW [django-admin writes]
-    DJ["django-admin (4)"]
-  end
+  N["Node API (1)"]
+  W["ai-celery (2)"]
+  G["ingest-gateway (3)"]
+  DJ["django-admin (4)"]
 
   M[(MongoDB (5))]
   PG[(PostgreSQL (6))]
   NEO[(Neo4j (7))]
   ES[(Elasticsearch (8))]
   R[(Redis (9))]
-  LOG["merged.log volume triage-logs (10)"]
+  LOG["shared log file merged.log (10)"]
 
   N --> M
   N --> PG
@@ -377,42 +369,23 @@ flowchart TB
   DJ --> LOG
 ```
 
-### Who writes what (by entity)
+**Comments**
 
-| Entity | Writes to | What gets written |
-|--------|-----------|-------------------|
-| **Node API (1)** | **MongoDB** | `Review` documents on `POST /reviews`, mailbox internal ingest, overrides, and status updates driven from API routes. |
-| | **PostgreSQL** | `auth_users` / roles (login, bootstrap, preferences), `review_stats_events` (e.g. `review_created`), `ingest_clients` and related ops data. |
-| | **Neo4j** | Campaign/sender/url/domain/review graph upserts via `syncReview` (ingest, override, and internal sync after Celery). |
-| | **Elasticsearch** | Search index rows via `indexReviewDocument` on the same sync paths as graph. |
-| | **Redis** | Application key only (see store **9** below) — not Celery queue payloads. |
-| | **merged.log** | NDJSON lines with `service":"backend"` (reviews, auth, ingest, graph, search, ops topics). |
-| **ai-celery (2)** | **MongoDB** | Analysis output: status, `analysisResult`, findings, optional agent trace fields on `analyze_review`. |
-| | **PostgreSQL** | `review_stats_events` rows (e.g. `status_changed`) via `ai_service/app/stats.py`. |
-| | **Redis** | Celery **broker** (DB `0`) and **result backend** (DB `1`) — task messages and task results (Kombu/Celery key namespaces, not the dev simulation key). |
-| | **merged.log** | NDJSON with `service":"ai-celery"` (task start/done/fail, graph_sync warnings). |
-| | *(via HTTP only)* | Calls Node **`POST /graph/internal/sync/:id`** — Node then writes **Neo4j** and **Elasticsearch**; Celery does not open those drivers. |
-| **ingest-gateway (3)** | **merged.log** only | NDJSON with `service":"ingest-gateway"` (webhook receive, forward to Node, simulation ticks, errors). |
-| **django-admin (4)** | **PostgreSQL** | Same `auth_users` / role tables as Node (Django ORM, database alias `triage`) when admins edit users or `ensure_dev_bootstrap_admin` runs. |
-| | **merged.log** | Bootstrap and admin actions with `service":"django-admin"`. |
-| | *(not on diagram)* | **SQLite** on volume `django-admin-state` — Django **sessions** and admin log only (`DJANGO_ADMIN_SQLITE_PATH`), not review data. |
+1. **Node API** — writes to: **MongoDB** (new/updated reviews), **PostgreSQL** (login users, dashboard chart events, ingest client settings), **Neo4j** (phishing graph), **Elasticsearch** (search tab index), **Redis** (dev “simulation on/off” toggle only), **merged.log** (API-side events, tagged `service=backend`).
+2. **ai-celery** — writes to: **MongoDB** (analysis verdict and status on each review), **PostgreSQL** (chart events when status changes), **Redis** (background job queue traffic for Celery — see **9**), **merged.log** (worker lines, tagged `service=ai-celery`). Does **not** write Neo4j or Elasticsearch.
+3. **ingest-gateway** — writes to: **merged.log** only (mailbox webhooks and simulation, tagged `service=ingest-gateway`). Does not write any database.
+4. **django-admin** — writes to: **PostgreSQL** (same user/role tables as the main app when you use the admin UI or dev bootstrap), **merged.log** (bootstrap messages, tagged `service=django-admin`). Django also keeps its own small **SQLite** file for admin sessions on a separate volume — not shown on this chart.
 
-**Comments (numbered boxes on the chart)**
-
-1. **Node API** — sole writer to Neo4j and Elasticsearch in this stack; also the only writer of the dev simulation Redis key.
-2. **ai-celery** — worker process that mutates MongoDB/PostgreSQL after Kafka-driven analysis; enqueues/consumes Celery work through Redis DB `0`/`1`.
-3. **ingest-gateway** — Go service; no database clients in the default design — observability goes to **merged.log** (and stdout).
-4. **django-admin** — optional ops UI; shares Postgres auth schema with Node, does not write Mongo or graph/search stores.
-
-5. **MongoDB** — canonical **`Review`** collection (`backend/src/models/Review.js`).
-6. **PostgreSQL** — auth tables + **`review_stats_events`** analytics + **`ingest_clients`** (see `backend/src/stats/statsPg.js`).
-7. **Neo4j** — phishing graph for `#graph` (Node `backend/src/graph/*`).
-8. **Elasticsearch** — `reviews` search index (`backend/src/search/reviewSearchIndex.js`).
-9. **Redis** — two logical uses on one server:
-   - **DB index `0`** — `CELERY_BROKER_URL=redis://redis:6379/0`: Celery/Kombu queue keys (task publish/consume for `analyze_review`). Coexists with the app key **`triage:dev:simulation`** → JSON string `{"enabled":<bool>,"eventsPerMinute":<number>}` read/written by Node **`simulationStore.js`** (dev simulation toggle in API/UI).
-   - **DB index `1`** — `CELERY_RESULT_BACKEND=redis://redis:6379/1`: Celery task result metadata (ephemeral keys per task id).
-   - **Writers:** Node writes **`triage:dev:simulation`** only; **ai-celery** (and the dispatcher when it enqueues tasks) writes broker/result keys. `POST /dev/reset-local-state` may **`FLUSHALL`** all Redis DBs in dev.
-10. **merged.log on `triage-logs`** — single **append-only** file (`MERGED_LOG_PATH=/var/log/triage/merged.log` in Compose). Each line is one JSON object (NDJSON): `ts`, `level`, `topic`, `message`, **`service`** (which container), plus optional fields (`reviewId`, `error`, …). All participating app containers mount the same Docker volume so **`GET /logs/search`** (Node) can scan one timeline across backend, Celery, gateway, mocks, and Django. See [ops_guide_central_logging.md](ops_guide_central_logging.md).
+5. **MongoDB** — one document per suspicious email review (body, status, findings).
+6. **PostgreSQL** — accounts and roles, time-series rows for analytics charts, mailbox client configuration.
+7. **Neo4j** — nodes and links for the **Graph** tab (campaigns, senders, URLs).
+8. **Elasticsearch** — searchable copy of reviews for the **Search** tab.
+9. **Redis** — fast in-memory store; three **kinds of use** in dev (same Redis container, different purposes):
+   - **Dev simulation switch (Node)** — one named setting: whether the API’s synthetic email timer is on and how fast it runs. Survives API restarts until you reset dev data.
+   - **Job inbox for analysis (Celery)** — short-lived messages like “please analyze review X.” The Kafka dispatcher drops work here; the ai-celery worker picks it up. You do not edit these keys by hand.
+   - **Job status scratchpad (Celery)** — optional “task finished” notes the worker framework stores briefly on a second logical slice of the same Redis server.
+   - **Dev reset** — “reset local state” in the admin UI can wipe all Redis contents at once.
+10. **merged.log (NDJSON)** — one text file shared by mounting the same Docker folder into each app container. **NDJSON** means: **each line is one complete JSON record** (like a row in a spreadsheet exported line-by-line). Typical fields: time, severity (`info` / `warn` / `error`), short message, and **`service`** (which app wrote the line — backend, ai-celery, ingest-gateway, django-admin, mock LLM, etc.). Node exposes **`GET /logs/search`** and the **#logs** tab read this file so you can search all services in one place without opening six separate `docker logs` streams. Details: [ops_guide_central_logging.md](ops_guide_central_logging.md).
 
 ---
 
