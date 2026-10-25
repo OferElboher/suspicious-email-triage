@@ -1,4 +1,6 @@
 flowchart TB
+  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+
   N["Node API (1)"]
   W["ai-celery (2)"]
   G["ingest-gateway (3)"]
@@ -27,3 +29,5 @@ flowchart TB
 
   DJ --> PG
   DJ --> LOG
+
+  class N,W,G,DJ flowEntry

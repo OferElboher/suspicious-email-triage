@@ -135,7 +135,8 @@ Open the triage app → **Phishing graph** tab (`#graph` in the URL hash).
    - **Pan**, **zoom**, **resize** (bottom + right edges); **Jump to date** for campaigns and reviews.
    - **Display rule:** the SVG canvas appears only when **`hasDisplayableGraph`** is true — at least one node **and** one edge after orphan filtering. A lone `Campaign` node with zero relationships (sync still running, or stale Neo4j row) shows a helpful message instead of an empty circle.
    - Orphan **Url** / **Domain** / **Campaign** rows with no incident edges are removed server-side (`filterConnectedSubgraph`) and again in the browser (`filterConnectedGraph`); the UI hint mentions when nodes were hidden.
-   - **Hover tooltips** on nodes and relationships (`frontend/src/lib/graphLayout.js`).
+   - **Hover tooltips** on nodes and relationships (`frontend/src/lib/graphLayout.js`). Each tooltip includes **Copy** (clipboard) and **Save to file** (plain-text download) so analysts can paste details into tickets without retyping.
+   - Interaction hints (pan, resize, hover, export) live in one paragraph above the canvas in `GraphView.jsx` — not duplicated under the SVG.
 
 Technology: plain **SVG** + React pointer events (no D3/vis-network) for a small bundle and predictable maintenance.
 

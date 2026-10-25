@@ -86,6 +86,32 @@ export default function CampaignGraphCanvas({ graph, zoom = 1 }) {
    */
   const resizeWidthRef = useRef(null);
 
+  /** Copy hover detail text to the clipboard (browser API; used from the tooltip action row). */
+  const copyHoverDetail = useCallback(async () => {
+    if (!hover?.text) {
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(hover.text);
+    } catch {
+      /* Clipboard may be denied outside secure context — save-to-file still works. */
+    }
+  }, [hover]);
+
+  /** Download hover detail as a plain-text file for tickets or runbooks. */
+  const saveHoverDetail = useCallback(() => {
+    if (!hover?.text) {
+      return;
+    }
+    const blob = new Blob([hover.text], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `graph-detail-${Date.now()}.txt`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }, [hover]);
+
   /**
    * When the parent switches to another campaign (different indicator or node count), snap pan
    * back to center so the new subgraph is not still offset from the previous drag.
@@ -402,18 +428,26 @@ export default function CampaignGraphCanvas({ graph, zoom = 1 }) {
       />
       {hover && (
         <div
-          className="graph-tooltip"
+          className="graph-tooltip graph-tooltip--with-actions"
           style={{ left: hover.x + 12, top: hover.y + 12 }}
           role="tooltip"
         >
           {hover.text.split("\n").map((line) => (
             <div key={line}>{line}</div>
           ))}
+          <div className="graph-tooltip-actions">
+            <button type="button" className="graph-tooltip-btn" onClick={() => copyHoverDetail()}>
+              Copy
+            </button>
+            <button type="button" className="graph-tooltip-btn" onClick={() => saveHoverDetail()}>
+              Save to file
+            </button>
+          </div>
         </div>
       )}
-      <p className="muted graph-canvas-hint">
-        Drag to pan · drag bottom or right edge to resize.{orphanNote}
-      </p>
+      {orphanNote ? (
+        <p className="muted graph-canvas-hint graph-canvas-hint--orphans">{orphanNote}</p>
+      ) : null}
     </div>
   );
 }

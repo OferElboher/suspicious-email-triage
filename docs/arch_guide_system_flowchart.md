@@ -36,6 +36,8 @@ For prose detail, see [arch_guide_overview.md](arch_guide_overview.md), [arch_gu
 
 Open any `.mmd` file in [Mermaid Live Editor](https://mermaid.live). In Markdown preview, render one fenced `mermaid` block at a time if the page feels slow.
 
+**Diagram conventions:** Solid arrows (`-->`) and dashed arrows (`-.->`) both end in an **arrowhead** at the destination. **Green-bordered boxes** (`flowEntry` style) mark where a flow **starts** (human or external trigger). Two-way relationships use separate one-way arrows when both directions matter (for example OAuth redirect out, callback back).
+
 ---
 
 ## Overall whole-project flow — dev stack (Docker Compose)
@@ -46,6 +48,8 @@ This diagram shows every major container group in the default **dev** Docker Com
 
 ```mermaid
 flowchart TB
+  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+
   subgraph clients [Clients]
     BROWSER["React UI port 3001 (1)<br/>triage analytics graph search logs admin"]
     MAIL["Mail platforms webhooks (2)"]
@@ -130,16 +134,16 @@ flowchart TB
   DISPATCH --> CELERY
   CELERY --> MONGO
   CELERY --> PG
-  CELERY --> NEO
-  CELERY --> ES
   CELERY --> MOCKLLM
   CELERY --> MOCKAGENT
   CELERY --> VERDICT
   CELERY --> LOGVOL
-  CELERY -.->|graph internal sync (K)| EXPRESS
+  CELERY -->|graph and search sync (K)| EXPRESS
 
   GW --> LOGVOL
   VERDICT -.-> MOCKCB
+
+  class BROWSER,MAIL flowEntry
 ```
 
 **What the numbered boxes mean**
@@ -180,7 +184,7 @@ flowchart TB
 - **H** — Production/staging email delivery when Mailpit is bypassed.
 - **I** — Containers fetch secrets (JWT key, DB passwords, tokens) before serving traffic.
 - **J** — Dispatcher reads `email.review.ingested` and schedules Celery tasks.
-- **K** — Celery invokes Node internal routes to sync Neo4j and Elasticsearch after scoring.
+- **K** — Celery calls Node to sync Neo4j and Elasticsearch after scoring (Node writes those stores).
 
 The partial charts below explain each area in more step-by-step detail.
 
@@ -194,6 +198,8 @@ This chart follows one manual review from the analyst UI through background scor
 
 ```mermaid
 flowchart TB
+  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+
   UI["React UI port 3001 (1)"]
   API["Node Express port 3000 (2)"]
   M[(MongoDB Review doc (3))]
@@ -215,6 +221,8 @@ flowchart TB
   W -->|"status_changed row (J)"| P
   W -->|"optional LLM call (K)"| LLM
   W -->|"graph and ES sync (L)"| API
+
+  class UI flowEntry
 ```
 
 **Comments**
@@ -260,6 +268,8 @@ This chart groups the Express surface by **URL family**. Every arrow is a class 
 
 ```mermaid
 flowchart LR
+  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+
   UI["React or curl client (1)"]
   API["Express createApp routes (2)"]
 
@@ -271,6 +281,8 @@ flowchart LR
   UI -->|"logs search (F)"| API
   UI -->|"ops backups prometheus (G)"| API
   UI -->|"dev simulation reset (H)"| API
+
+  class UI flowEntry
 ```
 
 **Comments**
@@ -297,6 +309,8 @@ Three independent **entry paths** converge on the same async pipeline. **Manual 
 
 ```mermaid
 flowchart TB
+  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+
   P1["JWT client POST /reviews (1)"]
   P2["Mail webhook (2)"]
   P3["Go simulation tick (3)"]
@@ -311,6 +325,8 @@ flowchart TB
   GW -->|"shared secret header (D)"| API
   API -->|"persist and publish (E)"| K
   K --> CEL
+
+  class P1,P2,P3 flowEntry
 ```
 
 **Comments**
@@ -339,6 +355,8 @@ Each arrow means **this service saves data there** (writes only — not every re
 
 ```mermaid
 flowchart TB
+  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+
   N["Node API (1)"]
   W["ai-celery (2)"]
   G["ingest-gateway (3)"]
@@ -367,6 +385,8 @@ flowchart TB
 
   DJ --> PG
   DJ --> LOG
+
+  class N,W,G,DJ flowEntry
 ```
 
 **Comments**
@@ -397,6 +417,8 @@ When a review reaches a **final state** (automated completion or analyst overrid
 
 ```mermaid
 flowchart LR
+  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+
   REV["Review completed or override (1)"]
   NODE["Node verdictDelivery (2)"]
   PG[(PostgreSQL ingest_clients (3))]
@@ -409,6 +431,8 @@ flowchart LR
   NODE -->|"HMAC POST (A)"| WH
   NODE -->|"publish (B)"| K
   REV -->|"export row (C)"| SF
+
+  class REV flowEntry
 ```
 
 **Comments**
@@ -434,6 +458,8 @@ Local dev replaces AWS and vendor APIs with **containers on fixed ports**. The g
 
 ```mermaid
 flowchart TB
+  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+
   SEC["mock-secrets-manager 4566 (1)"]
   DEV["backend/dev.secrets file (2)"]
   N["Node backend (3)"]
@@ -454,6 +480,8 @@ flowchart TB
   N --> MSF
   N --> MS3
   N -->|"password reset (B)"| MP
+
+  class DEV flowEntry
 ```
 
 **Comments**
@@ -482,6 +510,8 @@ The same application images run outside Docker Compose; only **configuration and
 
 ```mermaid
 flowchart TB
+  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+
   APP["Application containers (1)"]
   SM["AWS Secrets Manager (2)"]
   DATA["RDS Atlas OpenSearch Aura MSK ElastiCache (3)"]
@@ -492,6 +522,8 @@ flowchart TB
   APP --> DATA
   APP --> AI
   APP --> OUT
+
+  class APP flowEntry
 ```
 
 **Comments**
@@ -514,6 +546,8 @@ This chart covers the **Graph tab** only: the browser loads campaigns (A), Node 
 
 ```mermaid
 flowchart LR
+  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+
   UI["GraphView tab (1)"]
   API["Node graph routes (2)"]
   NEO[(Neo4j (3))]
@@ -526,6 +560,8 @@ flowchart LR
   API -->|"JSON nodes edges (C)"| CAN
   CAN -->|"circle x y (D)"| LAY
   LAY --> SVG
+
+  class UI flowEntry
 ```
 
 **Comments**

@@ -231,21 +231,17 @@ export default function AnalyticsView() {
 
       {error && <p className="status-failed">{error}</p>}
 
-      <div style={{ marginTop: "1.25rem", width: "100%", height: 340 }}>
+      <p className="muted" style={{ marginTop: "1.25rem", marginBottom: "0.35rem", fontSize: "0.9rem" }}>
+        <strong>{measureMeta.yAxisLabel}</strong> (vertical scale)
+      </p>
+      <div style={{ width: "100%", height: 340 }}>
         <ResponsiveContainer>
-          <LineChart data={series} margin={{ left: 16, right: 16, top: 16, bottom: 8 }}>
+          <LineChart data={series} margin={{ left: 8, right: 16, top: 8, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="label" minTickGap={24} tick={{ fontSize: 11 }}>
               <Label value="Time (local)" position="insideBottom" offset={-4} />
             </XAxis>
-            <YAxis allowDecimals={false} width={48}>
-              <Label
-                value={measureMeta.yAxisLabel}
-                angle={-90}
-                position="insideLeft"
-                style={{ textAnchor: "middle" }}
-              />
-            </YAxis>
+            <YAxis allowDecimals={false} width={56} />
             <Tooltip />
             <Legend verticalAlign="top" />
             <Line
@@ -267,21 +263,17 @@ export default function AnalyticsView() {
         Each bar is a pipeline status label; height is the count of <code>status_changed</code>{" "}
         events in the selected time window (not unique reviews).
       </p>
+      <p className="muted" style={{ marginTop: "0.75rem", marginBottom: "0.35rem", fontSize: "0.9rem" }}>
+        <strong>Status event count</strong> (vertical scale)
+      </p>
       <div style={{ width: "100%", height: 300 }}>
         <ResponsiveContainer>
-          <BarChart data={breakdown} margin={{ left: 16, right: 16, top: 16, bottom: 8 }}>
+          <BarChart data={breakdown} margin={{ left: 8, right: 16, top: 8, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="status">
               <Label value="Review pipeline status" position="insideBottom" offset={-4} />
             </XAxis>
-            <YAxis allowDecimals={false} width={48}>
-              <Label
-                value="Status event count"
-                angle={-90}
-                position="insideLeft"
-                style={{ textAnchor: "middle" }}
-              />
-            </YAxis>
+            <YAxis allowDecimals={false} width={56} />
             <Tooltip />
             <Legend verticalAlign="top" />
             <Bar dataKey="count" fill="#5b6b8c" name="Status transition events" />

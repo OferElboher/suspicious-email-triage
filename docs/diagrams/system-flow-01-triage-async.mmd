@@ -1,4 +1,6 @@
 flowchart TB
+  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+
   UI["React UI port 3001 (1)"]
   API["Node Express port 3000 (2)"]
   M[(MongoDB Review doc (3))]
@@ -20,3 +22,5 @@ flowchart TB
   W -->|"status_changed row (J)"| P
   W -->|"optional LLM call (K)"| LLM
   W -->|"graph and ES sync (L)"| API
+
+  class UI flowEntry

@@ -1,4 +1,6 @@
 flowchart TB
+  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+
   SEC["mock-secrets-manager 4566 (1)"]
   DEV["backend/dev.secrets file (2)"]
   N["Node backend (3)"]
@@ -19,3 +21,5 @@ flowchart TB
   N --> MSF
   N --> MS3
   N -->|"password reset (B)"| MP
+
+  class DEV flowEntry

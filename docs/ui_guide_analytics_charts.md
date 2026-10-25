@@ -54,10 +54,10 @@ The **`measure`** query parameter on the line chart selects which PostgreSQL `ev
 
 Both Recharts charts include a **Legend** (color key at the top) and **axis labels** so you know exactly what is plotted:
 
-| Chart | X-axis label | Y-axis label | Legend entry |
-|-------|--------------|--------------|--------------|
-| Line | **Time (local)** — bucket start in your browser timezone | **Count of new reviews** or **Count of status events** (depends on measure) | Blue line name matches selected measure |
-| Bar | **Review pipeline status** — `pending`, `processing`, etc. | **Status event count** | Gray bar: “Status transition events” |
+| Chart | X-axis label | Y-axis (vertical scale) | Legend entry |
+|-------|--------------|-------------------------|--------------|
+| Line | **Time (local)** — bucket start in your browser timezone | Title shown **above** the chart (e.g. **Count of new reviews**) so large tick numbers do not overlap the label | Blue line name matches selected measure |
+| Bar | **Review pipeline status** — `pending`, `processing`, etc. | **Status event count** — title above the chart | Gray bar: “Status transition events” |
 
 The phishing **graph** tab (`GraphView`) is not a Recharts chart — it is an SVG network with **no X/Y axes**. A **color legend** below the canvas explains node types (Sender, Review, Url, Domain, Campaign). See [graph_guide_neo4j_phishing.md](graph_guide_neo4j_phishing.md).
 

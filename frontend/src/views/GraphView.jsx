@@ -225,8 +225,10 @@ export default function GraphView() {
           </div>
           {jumpMessage && <p className="muted">{jumpMessage}</p>}
           <p className="muted">
-            Drag the graph to pan; drag the bottom edge to resize. Hover nodes or edges for details.
-            Neo4j subgraph via <code>GET /graph/campaign-subgraph</code>, SVG rendering (no D3).
+            Drag the graph background to pan; drag the <strong>bottom</strong> or <strong>right</strong> edge
+            to resize. Hover a node or edge for details — use <strong>Copy</strong> or{" "}
+            <strong>Save to file</strong> in the detail panel to export that text. Data comes from Neo4j via{" "}
+            <code>GET /graph/campaign-subgraph</code>; drawing uses plain SVG (no D3).
           </p>
           {subgraphLoading && <p className="muted">Loading campaign graph…</p>}
           {!subgraphLoading && !canShowGraph && (

@@ -1,4 +1,6 @@
 flowchart TB
+  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+
   APP["Application containers (1)"]
   SM["AWS Secrets Manager (2)"]
   DATA["RDS Atlas OpenSearch Aura MSK ElastiCache (3)"]
@@ -9,3 +11,5 @@ flowchart TB
   APP --> DATA
   APP --> AI
   APP --> OUT
+
+  class APP flowEntry

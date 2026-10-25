@@ -502,8 +502,10 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 
 **Implemented (dev free path):**
 
-- Per-campaign SVG with `role="img"`, native `<title>` on nodes/edges, mouse hover detail box
-- **Pan** (drag background), **zoom** toolbar, **resize** (bottom + right edges)
+- Per-campaign SVG with `role="img"`, native `<title>` on nodes/edges, mouse hover detail box with **Copy** and **Save to file** for node/edge text (`CampaignGraphCanvas.jsx`)
+- **Pan** (drag background), **zoom** toolbar, **resize** (bottom + right edges); single instruction block above the canvas (no duplicate hint under the SVG)
+- **Analytics charts:** line/bar Y-axis titles above the chart so tick labels do not overlap the vertical title (`AnalyticsView.jsx` + Recharts)
+- **Django admin login:** `TriageUser.get_session_auth_hash()` for session auth after `/admin/login/` (`backend/triage_auth/models.py`)
 - **First / Last / Prev / Next** campaign navigation; **Jump to date** by Neo4j `updatedAt`
 - **Connected subgraph only** — orphan Url/Domain nodes and **secondary disconnected components** filtered (`filterToPrimaryComponent` in `connectedGraphFilter.js`); **duplicate UI ids** collapsed when legacy Neo4j rows share the same email/URL/domain key (`dedupeNodesById`)
 - Dev route `POST /dev/prune-graph` **merges** duplicate Sender/Url/Domain Neo4j nodes then **DETACH DELETE**s zero-degree orphans (`graphMaintenance.js`)

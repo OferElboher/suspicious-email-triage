@@ -1,4 +1,6 @@
 flowchart LR
+  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+
   UI["GraphView tab (1)"]
   API["Node graph routes (2)"]
   NEO[(Neo4j (3))]
@@ -11,3 +13,5 @@ flowchart LR
   API -->|"JSON nodes edges (C)"| CAN
   CAN -->|"circle x y (D)"| LAY
   LAY --> SVG
+
+  class UI flowEntry

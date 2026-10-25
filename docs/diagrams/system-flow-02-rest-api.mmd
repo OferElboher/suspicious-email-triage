@@ -1,4 +1,6 @@
 flowchart LR
+  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+
   UI["React or curl client (1)"]
   API["Express createApp routes (2)"]
 
@@ -10,3 +12,5 @@ flowchart LR
   UI -->|"logs search (F)"| API
   UI -->|"ops backups prometheus (G)"| API
   UI -->|"dev simulation reset (H)"| API
+
+  class UI flowEntry

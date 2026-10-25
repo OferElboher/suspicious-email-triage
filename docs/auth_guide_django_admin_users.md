@@ -119,6 +119,8 @@ Use the **same email and password** as the triage app. Django admin only accepts
 
 **Automatic dev fix (implemented):** On every `django-admin` container start, the management command `ensure_dev_bootstrap_admin` syncs `AUTH_BOOTSTRAP_ADMIN_EMAIL` / `AUTH_BOOTSTRAP_ADMIN_PASSWORD` from secrets into PostgreSQL and assigns the `admin` role. This fixes login failures after Docker rebuilds when `postgres-data` still holds an old password hash.
 
+**Session login (implemented):** `TriageUser` implements Django’s `get_session_auth_hash()` using the stored `password_hash` (bcrypt from Node). Without this hook, `POST /admin/login/` raised `AttributeError` because our custom user is not `AbstractBaseUser` but still uses Django session authentication.
+
 If login still fails:
 
 1. Confirm bootstrap email is configured: `bash scripts/configure-dev-bootstrap-admin.sh YOUR_EMAIL@example.com`

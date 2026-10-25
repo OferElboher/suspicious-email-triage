@@ -38,6 +38,13 @@ def test_test_all_invokes_pytest_with_root_config():
     assert "integration_tests" in ini
 
 
+def test_triage_user_exposes_session_auth_hash():
+    """Django admin login() requires get_session_auth_hash on the custom user model."""
+    models_src = (ROOT / "backend/triage_auth/models.py").read_text(encoding="utf-8")
+    assert "def get_session_auth_hash" in models_src
+    assert "password_hash" in models_src
+
+
 def test_junction_models_use_composite_primary_key():
     """auth_user_roles has no id column — models must declare CompositePrimaryKey."""
     models_src = (ROOT / "backend/triage_auth/models.py").read_text(encoding="utf-8")

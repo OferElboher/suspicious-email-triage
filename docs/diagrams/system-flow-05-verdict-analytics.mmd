@@ -1,4 +1,6 @@
 flowchart LR
+  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+
   REV["Review completed or override (1)"]
   NODE["Node verdictDelivery (2)"]
   PG[(PostgreSQL ingest_clients (3))]
@@ -11,3 +13,5 @@ flowchart LR
   NODE -->|"HMAC POST (A)"| WH
   NODE -->|"publish (B)"| K
   REV -->|"export row (C)"| SF
+
+  class REV flowEntry

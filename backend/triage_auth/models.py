@@ -6,6 +6,7 @@ Django defaults assume an ``id`` AutoField — ``CompositePrimaryKey`` matches t
 """
 
 from django.db import models
+from django.utils.crypto import salted_hmac
 
 
 class TriageRole(models.Model):
@@ -127,6 +128,19 @@ class TriageUser(models.Model):
     def get_username(self):
         """Return email because USERNAME_FIELD is email."""
         return self.email
+
+    def get_session_auth_hash(self):
+        """
+        Django session hook: invalidate admin session when password_hash changes.
+
+        AbstractBaseUser hashes ``password``; we store bcrypt in ``password_hash`` instead.
+        """
+        key_salt = "django.contrib.auth.models.AbstractBaseUser.get_session_auth_hash"
+        return salted_hmac(
+            key_salt,
+            self.password_hash,
+            algorithm="sha256",
+        ).hexdigest()
 
     def __str__(self):
         return self.email

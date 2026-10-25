@@ -1,4 +1,6 @@
 flowchart TB
+  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+
   subgraph clients [Clients]
     BROWSER["React UI port 3001 (1)<br/>triage analytics graph search logs admin"]
     MAIL["Mail platforms webhooks (2)"]
@@ -83,13 +85,13 @@ flowchart TB
   DISPATCH --> CELERY
   CELERY --> MONGO
   CELERY --> PG
-  CELERY --> NEO
-  CELERY --> ES
   CELERY --> MOCKLLM
   CELERY --> MOCKAGENT
   CELERY --> VERDICT
   CELERY --> LOGVOL
-  CELERY -.->|graph internal sync (K)| EXPRESS
+  CELERY -->|graph and search sync (K)| EXPRESS
 
   GW --> LOGVOL
   VERDICT -.-> MOCKCB
+
+  class BROWSER,MAIL flowEntry
