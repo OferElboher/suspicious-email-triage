@@ -1,6 +1,6 @@
 # End-to-end system flowchart
 
-This guide opens with one **overall dev-stack diagram**, then **eight partial diagrams** that zoom into one topic each. Numbers on shapes and letters on arrows match the **numbered lists directly under each diagram**.
+One overall dev-stack diagram plus eight partial diagrams. Numbered shapes and lettered arrows match the comment lists under each chart.
 
 For prose detail, see [arch_guide_overview.md](arch_guide_overview.md), [arch_guide_system_comprehensive.md](arch_guide_system_comprehensive.md), and [arch_guide_features_catalog.md](arch_guide_features_catalog.md).
 
@@ -25,28 +25,30 @@ For prose detail, see [arch_guide_overview.md](arch_guide_overview.md), [arch_gu
 
 ---
 
-## Viewing on Windows 11
+## Diagram assets
 
-| Diagram | Editable source (`.mmd`) | **Rendered SVG (visible arrowheads)** |
-|---------|---------------------------|-------------------------------------|
-| **Overall dev stack** | [system-flow-main.mmd](diagrams/system-flow-main.mmd) | [system-flow-main.svg](diagrams/system-flow-main.svg) |
-| Partial chart 1–6 | [01 … 06 `.mmd` files](diagrams/system-flow-01-triage-async.mmd) | Matching `.svg` next to each `.mmd` |
-| Partial chart 7 staging/prod | [system-flow-staging-prod.mmd](diagrams/system-flow-staging-prod.mmd) | [system-flow-staging-prod.svg](diagrams/system-flow-staging-prod.svg) |
-| Partial chart 8 graph UI | [system-flow-graph-ui.mmd](diagrams/system-flow-graph-ui.mmd) | [system-flow-graph-ui.svg](diagrams/system-flow-graph-ui.svg) |
+| Chart | Mermaid source | Rendered SVG |
+|-------|----------------|--------------|
+| Overall dev stack | [system-flow-main.mmd](diagrams/system-flow-main.mmd) | [system-flow-main.svg](diagrams/system-flow-main.svg) |
+| Partial 1–6 | [system-flow-01-triage-async.mmd](diagrams/system-flow-01-triage-async.mmd) … [06](diagrams/system-flow-06-dev-mocks.mmd) | Matching `.svg` alongside each `.mmd` |
+| Partial 7 | [system-flow-staging-prod.mmd](diagrams/system-flow-staging-prod.mmd) | [system-flow-staging-prod.svg](diagrams/system-flow-staging-prod.svg) |
+| Partial 8 | [system-flow-graph-ui.mmd](diagrams/system-flow-graph-ui.mmd) | [system-flow-graph-ui.svg](diagrams/system-flow-graph-ui.svg) |
 
-**Why two formats:** Many IDE Markdown previews draw Mermaid **lines without arrowheads** (or fail to parse labels with parentheses). Each section below shows an **SVG image first** — generated with `@mermaid-js/mermaid-cli` from the `.mmd` source (`bash scripts/render-flow-diagrams.sh`). The fenced `mermaid` block remains for editing; edge labels use quoted text (`|"flow · A"|`) and database nodes use `[("Name · 3")]` so the CLI parser accepts them.
+SVG regeneration (after editing a `.mmd` source):
 
-Open any `.mmd` file in [Mermaid Live Editor](https://mermaid.live) for interactive editing. In Markdown preview, prefer the **SVG** if arrowheads are missing on the live block.
+```bash
+bash scripts/render-flow-diagrams.sh
+```
 
-**Diagram conventions (Mermaid):** Every connection uses a **directed** edge so the renderer draws an **arrowhead at the destination**:
+### Diagram notation
 
-| Syntax | Meaning |
-|--------|---------|
-| `A --> B` | Solid line; arrowhead points at **B** |
-| `A -->|"label · L"| B` | Same, with a lettered flow label on the edge |
-| `A -.-> B` | Dashed line; arrowhead still points at **B** (secrets, OAuth redirect, optional paths) |
+| Edge syntax | Semantics |
+|-------------|-----------|
+| `A --> B` | Directed solid edge; arrowhead at **B** |
+| `A -->|"label · L"| B` | Directed edge with flow letter **L** |
+| `A -.-> B` | Directed dashed edge (optional paths, secrets bootstrap) |
 
-When two services talk in both directions (for example browser OAuth), the chart uses **two** one-way arrows (each with its own arrowhead), not a single undirected line. **Green-bordered boxes** (`flowEntry` style) mark where a flow **starts**. Source files live under [diagrams/](diagrams/) — open in [Mermaid Live Editor](https://mermaid.live) if your Markdown preview omits arrowheads.
+**Entry shapes:** green border (`flowEntry` in source) marks flow origins. **Bidirectional** interactions use two directed edges (for example OAuth redirect and callback).
 
 ---
 
@@ -58,108 +60,22 @@ This diagram shows every major container group in the default **dev** Docker Com
 
 
 
-![Overall dev stack (directed arrows visible)](diagrams/system-flow-main.svg)
 
-*If the editable Mermaid block below shows lines without arrowheads in your IDE, use this SVG (rendered by `@mermaid-js/mermaid-cli` from the matching `.mmd` file).*
-```mermaid
-flowchart TB
-  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+<div markdown="0">
+<div style="border:1px solid #64748b;border-radius:8px;padding:10px 12px;margin:1rem 0;background:#f8fafc;">
+<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;margin-bottom:8px;font-size:0.875rem;">
+<button type="button" onclick="(function(){var el=document.getElementById('flow-main');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.max(50,w-10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-main-pct').textContent=el.dataset.scale+'%';})()">Zoom −</button>
+<button type="button" onclick="(function(){var el=document.getElementById('flow-main');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.min(300,w+10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-main-pct').textContent=el.dataset.scale+'%';})()">Zoom +</button>
+<button type="button" onclick="(function(){var el=document.getElementById('flow-main');el.dataset.scale=100;el.style.width='100%';document.getElementById('flow-main-pct').textContent='100%';})()">Reset</button>
+<span id="flow-main-pct">100%</span>
+</div>
+<div style="overflow:auto;max-height:min(85vh,920px);border:1px solid #cbd5e1;border-radius:4px;background:#fff;padding:6px;">
+<img id="flow-main" src="diagrams/system-flow-main.svg" alt="Overall dev stack (directed arrows visible)" data-scale="100" style="transform-origin:0 0;display:block;width:100%;" />
+</div>
+</div>
+</div>
 
-  subgraph clients [Clients]
-    BROWSER["React UI port 3001 (1)<br/>triage analytics graph search logs admin"]
-    MAIL["Mail platforms webhooks (2)"]
-  end
 
-  subgraph edge [Ingest edge]
-    GW["Go ingest-gateway port 8080 (3)<br/>webhooks and dev simulation"]
-  end
-
-  subgraph nodeApi [Node API port 3000]
-    EXPRESS["Express REST (4)<br/>auth reviews metrics graph search logs ops"]
-  end
-
-  subgraph adminOps [Admin and ops]
-    DJANGO["Django admin port 8000 (5)"]
-    LOGVOL["Docker volume triage-logs merged.log (6)"]
-  end
-
-  subgraph data [Databases and search stores]
-    MONGO[("MongoDB Review documents · 7")]
-    PG[("PostgreSQL auth stats ingest_clients · 8")]
-    NEO[("Neo4j phishing graph · 9")]
-    ES[("Elasticsearch search index · 10")]
-    REDIS[("Redis Celery broker · 11")]
-  end
-
-  subgraph events [Events]
-    KAFKA["Redpanda Kafka topics (12)"]
-  end
-
-  subgraph workers [Python workers]
-    DISPATCH["ai-kafka-dispatch (13)"]
-    CELERY["ai-celery scoring and sync (14)"]
-  end
-
-  subgraph outbound [Outbound integrations]
-    VERDICT["Verdict webhooks and Kafka (15)"]
-    SNOW["Snowflake export (16)"]
-  end
-
-  subgraph devMocks [Dev mocks]
-    MOCKSECR["mock-secrets-manager (17)"]
-    MOCKS3["mock-s3 backups (18)"]
-    MOCKLLM["mock-llm (19)"]
-    MOCKAGENT["mock-cloud-llm (20)"]
-    MOCKCB["mock-verdict-callback (21)"]
-    MAILPIT["Mailpit (22)"]
-  end
-
-  subgraph externalId [External identity and email]
-    GOOGLE["Google OAuth (23)"]
-    EMAILVENDOR["Gmail SES SMTP (24)"]
-  end
-
-  BROWSER -->|"JWT REST · A"| EXPRESS
-  BROWSER -.->|"OAuth redirect · B"| GOOGLE
-  GOOGLE -.->|"OAuth callback · C"| EXPRESS
-  MAIL -->|"webhook · D"| GW
-  GW -->|"internal ingest · E"| EXPRESS
-
-  EXPRESS --> MONGO
-  EXPRESS --> PG
-  EXPRESS --> NEO
-  EXPRESS --> ES
-  EXPRESS --> REDIS
-  EXPRESS --> KAFKA
-  EXPRESS --> VERDICT
-  EXPRESS --> SNOW
-  EXPRESS --> LOGVOL
-  EXPRESS -->|"backup upload · F"| MOCKS3
-  EXPRESS -.->|"reset email · G"| MAILPIT
-  EXPRESS -.->|"production mail · H"| EMAILVENDOR
-
-  DJANGO --> PG
-  DJANGO --> LOGVOL
-
-  MOCKSECR -.->|"startup secrets · I"| EXPRESS
-  MOCKSECR -.-> CELERY
-  MOCKSECR -.-> GW
-
-  KAFKA -->|"consume ingest · J"| DISPATCH
-  DISPATCH --> CELERY
-  CELERY --> MONGO
-  CELERY --> PG
-  CELERY --> MOCKLLM
-  CELERY --> MOCKAGENT
-  CELERY --> VERDICT
-  CELERY --> LOGVOL
-  CELERY -->|"graph and search sync · K"| EXPRESS
-
-  GW --> LOGVOL
-  VERDICT -.-> MOCKCB
-
-  class BROWSER,MAIL flowEntry
-```
 
 **What the numbered boxes mean**
 
@@ -213,37 +129,22 @@ This chart follows one manual review from the analyst UI through background scor
 
 
 
-![Partial chart 1 — triage and async scoring](diagrams/system-flow-01-triage-async.svg)
 
-*If the editable Mermaid block below shows lines without arrowheads in your IDE, use this SVG (rendered by `@mermaid-js/mermaid-cli` from the matching `.mmd` file).*
-```mermaid
-flowchart TB
-  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+<div markdown="0">
+<div style="border:1px solid #64748b;border-radius:8px;padding:10px 12px;margin:1rem 0;background:#f8fafc;">
+<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;margin-bottom:8px;font-size:0.875rem;">
+<button type="button" onclick="(function(){var el=document.getElementById('flow-01_triage_async');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.max(50,w-10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-01_triage_async-pct').textContent=el.dataset.scale+'%';})()">Zoom −</button>
+<button type="button" onclick="(function(){var el=document.getElementById('flow-01_triage_async');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.min(300,w+10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-01_triage_async-pct').textContent=el.dataset.scale+'%';})()">Zoom +</button>
+<button type="button" onclick="(function(){var el=document.getElementById('flow-01_triage_async');el.dataset.scale=100;el.style.width='100%';document.getElementById('flow-01_triage_async-pct').textContent='100%';})()">Reset</button>
+<span id="flow-01_triage_async-pct">100%</span>
+</div>
+<div style="overflow:auto;max-height:min(85vh,920px);border:1px solid #cbd5e1;border-radius:4px;background:#fff;padding:6px;">
+<img id="flow-01_triage_async" src="diagrams/system-flow-01-triage-async.svg" alt="Partial chart 1 — triage and async scoring" data-scale="100" style="transform-origin:0 0;display:block;width:100%;" />
+</div>
+</div>
+</div>
 
-  UI["React UI port 3001 (1)"]
-  API["Node Express port 3000 (2)"]
-  M[("MongoDB Review doc · 3")]
-  P[("PostgreSQL stats event · 4")]
-  K["Kafka email.review.ingested (5)"]
-  D["ai-kafka-dispatch (6)"]
-  W["ai-celery analyze_review (7)"]
-  LLM["mock-llm or rules engine (8)"]
 
-  UI -->|"JWT POST /reviews (A)"| API
-  API -->|"insert pending (B)"| M
-  API -->|"review_created row (C)"| P
-  API -->|"publish ingest (D)"| K
-  UI -->|"poll GET /reviews/id (E)"| API
-  API -->|"read status (F)"| M
-  K -->|"consume (G)"| D
-  D -->|"enqueue task (H)"| W
-  W -->|"load and save result (I)"| M
-  W -->|"status_changed row (J)"| P
-  W -->|"optional LLM call (K)"| LLM
-  W -->|"graph and ES sync (L)"| API
-
-  class UI flowEntry
-```
 
 **Comments**
 
@@ -288,27 +189,22 @@ This chart groups the Express surface by **URL family**. Every arrow is a class 
 
 
 
-![Partial chart 2 — REST API families](diagrams/system-flow-02-rest-api.svg)
 
-*If the editable Mermaid block below shows lines without arrowheads in your IDE, use this SVG (rendered by `@mermaid-js/mermaid-cli` from the matching `.mmd` file).*
-```mermaid
-flowchart LR
-  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+<div markdown="0">
+<div style="border:1px solid #64748b;border-radius:8px;padding:10px 12px;margin:1rem 0;background:#f8fafc;">
+<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;margin-bottom:8px;font-size:0.875rem;">
+<button type="button" onclick="(function(){var el=document.getElementById('flow-02_rest_api');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.max(50,w-10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-02_rest_api-pct').textContent=el.dataset.scale+'%';})()">Zoom −</button>
+<button type="button" onclick="(function(){var el=document.getElementById('flow-02_rest_api');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.min(300,w+10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-02_rest_api-pct').textContent=el.dataset.scale+'%';})()">Zoom +</button>
+<button type="button" onclick="(function(){var el=document.getElementById('flow-02_rest_api');el.dataset.scale=100;el.style.width='100%';document.getElementById('flow-02_rest_api-pct').textContent='100%';})()">Reset</button>
+<span id="flow-02_rest_api-pct">100%</span>
+</div>
+<div style="overflow:auto;max-height:min(85vh,920px);border:1px solid #cbd5e1;border-radius:4px;background:#fff;padding:6px;">
+<img id="flow-02_rest_api" src="diagrams/system-flow-02-rest-api.svg" alt="Partial chart 2 — REST API families" data-scale="100" style="transform-origin:0 0;display:block;width:100%;" />
+</div>
+</div>
+</div>
 
-  UI["React or curl client (1)"]
-  API["Express createApp routes (2)"]
 
-  UI -->|"auth login JWT (A)"| API
-  UI -->|"reviews CRUD override (B)"| API
-  UI -->|"metrics analytics charts (C)"| API
-  UI -->|"graph campaigns subgraph (D)"| API
-  UI -->|"search reviews (E)"| API
-  UI -->|"logs search (F)"| API
-  UI -->|"ops backups prometheus (G)"| API
-  UI -->|"dev simulation reset (H)"| API
-
-  class UI flowEntry
-```
 
 **Comments**
 
@@ -334,30 +230,22 @@ Three independent **entry paths** converge on the same async pipeline. **Manual 
 
 
 
-![Partial chart 3 — mailbox ingest paths](diagrams/system-flow-03-mailbox-ingest.svg)
 
-*If the editable Mermaid block below shows lines without arrowheads in your IDE, use this SVG (rendered by `@mermaid-js/mermaid-cli` from the matching `.mmd` file).*
-```mermaid
-flowchart TB
-  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+<div markdown="0">
+<div style="border:1px solid #64748b;border-radius:8px;padding:10px 12px;margin:1rem 0;background:#f8fafc;">
+<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;margin-bottom:8px;font-size:0.875rem;">
+<button type="button" onclick="(function(){var el=document.getElementById('flow-03_mailbox_ingest');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.max(50,w-10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-03_mailbox_ingest-pct').textContent=el.dataset.scale+'%';})()">Zoom −</button>
+<button type="button" onclick="(function(){var el=document.getElementById('flow-03_mailbox_ingest');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.min(300,w+10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-03_mailbox_ingest-pct').textContent=el.dataset.scale+'%';})()">Zoom +</button>
+<button type="button" onclick="(function(){var el=document.getElementById('flow-03_mailbox_ingest');el.dataset.scale=100;el.style.width='100%';document.getElementById('flow-03_mailbox_ingest-pct').textContent='100%';})()">Reset</button>
+<span id="flow-03_mailbox_ingest-pct">100%</span>
+</div>
+<div style="overflow:auto;max-height:min(85vh,920px);border:1px solid #cbd5e1;border-radius:4px;background:#fff;padding:6px;">
+<img id="flow-03_mailbox_ingest" src="diagrams/system-flow-03-mailbox-ingest.svg" alt="Partial chart 3 — mailbox ingest paths" data-scale="100" style="transform-origin:0 0;display:block;width:100%;" />
+</div>
+</div>
+</div>
 
-  P1["JWT client POST /reviews (1)"]
-  P2["Mail webhook (2)"]
-  P3["Go simulation tick (3)"]
-  API["Node POST /ingest/internal/mailbox (4)"]
-  GW["ingest-gateway port 8080 (5)"]
-  K["Kafka same ingest topic (6)"]
-  CEL["ai-celery same analyze path (7)"]
 
-  P1 -->|"POST /reviews JWT (A)"| API
-  P2 -->|"POST /v1/ingest/email (B)"| GW
-  P3 -->|"timer in gateway (C)"| GW
-  GW -->|"shared secret header (D)"| API
-  API -->|"persist and publish (E)"| K
-  K --> CEL
-
-  class P1,P2,P3 flowEntry
-```
 
 **Comments**
 
@@ -385,44 +273,22 @@ Each arrow means **this service saves data there** (writes only — not every re
 
 
 
-![Partial chart 4 — data stores and writers](diagrams/system-flow-04-data-stores.svg)
 
-*If the editable Mermaid block below shows lines without arrowheads in your IDE, use this SVG (rendered by `@mermaid-js/mermaid-cli` from the matching `.mmd` file).*
-```mermaid
-flowchart TB
-  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+<div markdown="0">
+<div style="border:1px solid #64748b;border-radius:8px;padding:10px 12px;margin:1rem 0;background:#f8fafc;">
+<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;margin-bottom:8px;font-size:0.875rem;">
+<button type="button" onclick="(function(){var el=document.getElementById('flow-04_data_stores');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.max(50,w-10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-04_data_stores-pct').textContent=el.dataset.scale+'%';})()">Zoom −</button>
+<button type="button" onclick="(function(){var el=document.getElementById('flow-04_data_stores');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.min(300,w+10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-04_data_stores-pct').textContent=el.dataset.scale+'%';})()">Zoom +</button>
+<button type="button" onclick="(function(){var el=document.getElementById('flow-04_data_stores');el.dataset.scale=100;el.style.width='100%';document.getElementById('flow-04_data_stores-pct').textContent='100%';})()">Reset</button>
+<span id="flow-04_data_stores-pct">100%</span>
+</div>
+<div style="overflow:auto;max-height:min(85vh,920px);border:1px solid #cbd5e1;border-radius:4px;background:#fff;padding:6px;">
+<img id="flow-04_data_stores" src="diagrams/system-flow-04-data-stores.svg" alt="Partial chart 4 — data stores and writers" data-scale="100" style="transform-origin:0 0;display:block;width:100%;" />
+</div>
+</div>
+</div>
 
-  N["Node API (1)"]
-  W["ai-celery (2)"]
-  G["ingest-gateway (3)"]
-  DJ["django-admin (4)"]
 
-  M[("MongoDB · 5")]
-  PG[("PostgreSQL · 6")]
-  NEO[("Neo4j · 7")]
-  ES[("Elasticsearch · 8")]
-  R[("Redis · 9")]
-  LOG["shared log file merged.log (10)"]
-
-  N --> M
-  N --> PG
-  N --> NEO
-  N --> ES
-  N --> R
-  N --> LOG
-
-  W --> M
-  W --> PG
-  W --> R
-  W --> LOG
-
-  G --> LOG
-
-  DJ --> PG
-  DJ --> LOG
-
-  class N,W,G,DJ flowEntry
-```
 
 **Comments**
 
@@ -452,28 +318,22 @@ When a review reaches a **final state** (automated completion or analyst overrid
 
 
 
-![Partial chart 5 — verdicts and analytics export](diagrams/system-flow-05-verdict-analytics.svg)
 
-*If the editable Mermaid block below shows lines without arrowheads in your IDE, use this SVG (rendered by `@mermaid-js/mermaid-cli` from the matching `.mmd` file).*
-```mermaid
-flowchart LR
-  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+<div markdown="0">
+<div style="border:1px solid #64748b;border-radius:8px;padding:10px 12px;margin:1rem 0;background:#f8fafc;">
+<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;margin-bottom:8px;font-size:0.875rem;">
+<button type="button" onclick="(function(){var el=document.getElementById('flow-05_verdict_analytics');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.max(50,w-10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-05_verdict_analytics-pct').textContent=el.dataset.scale+'%';})()">Zoom −</button>
+<button type="button" onclick="(function(){var el=document.getElementById('flow-05_verdict_analytics');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.min(300,w+10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-05_verdict_analytics-pct').textContent=el.dataset.scale+'%';})()">Zoom +</button>
+<button type="button" onclick="(function(){var el=document.getElementById('flow-05_verdict_analytics');el.dataset.scale=100;el.style.width='100%';document.getElementById('flow-05_verdict_analytics-pct').textContent='100%';})()">Reset</button>
+<span id="flow-05_verdict_analytics-pct">100%</span>
+</div>
+<div style="overflow:auto;max-height:min(85vh,920px);border:1px solid #cbd5e1;border-radius:4px;background:#fff;padding:6px;">
+<img id="flow-05_verdict_analytics" src="diagrams/system-flow-05-verdict-analytics.svg" alt="Partial chart 5 — verdicts and analytics export" data-scale="100" style="transform-origin:0 0;display:block;width:100%;" />
+</div>
+</div>
+</div>
 
-  REV["Review completed or override (1)"]
-  NODE["Node verdictDelivery (2)"]
-  PG[("PostgreSQL ingest_clients · 3")]
-  WH["Customer webhook URL (4)"]
-  K["Kafka email.review.completed (5)"]
-  SF["Snowflake or mock-snowflake (6)"]
 
-  REV --> NODE
-  NODE --> PG
-  NODE -->|"HMAC POST (A)"| WH
-  NODE -->|"publish (B)"| K
-  REV -->|"export row (C)"| SF
-
-  class REV flowEntry
-```
 
 **Comments**
 
@@ -498,36 +358,22 @@ Local dev replaces AWS and vendor APIs with **containers on fixed ports**. The g
 
 
 
-![Partial chart 6 — dev mocks and secrets](diagrams/system-flow-06-dev-mocks.svg)
 
-*If the editable Mermaid block below shows lines without arrowheads in your IDE, use this SVG (rendered by `@mermaid-js/mermaid-cli` from the matching `.mmd` file).*
-```mermaid
-flowchart TB
-  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+<div markdown="0">
+<div style="border:1px solid #64748b;border-radius:8px;padding:10px 12px;margin:1rem 0;background:#f8fafc;">
+<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;margin-bottom:8px;font-size:0.875rem;">
+<button type="button" onclick="(function(){var el=document.getElementById('flow-06_dev_mocks');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.max(50,w-10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-06_dev_mocks-pct').textContent=el.dataset.scale+'%';})()">Zoom −</button>
+<button type="button" onclick="(function(){var el=document.getElementById('flow-06_dev_mocks');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.min(300,w+10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-06_dev_mocks-pct').textContent=el.dataset.scale+'%';})()">Zoom +</button>
+<button type="button" onclick="(function(){var el=document.getElementById('flow-06_dev_mocks');el.dataset.scale=100;el.style.width='100%';document.getElementById('flow-06_dev_mocks-pct').textContent='100%';})()">Reset</button>
+<span id="flow-06_dev_mocks-pct">100%</span>
+</div>
+<div style="overflow:auto;max-height:min(85vh,920px);border:1px solid #cbd5e1;border-radius:4px;background:#fff;padding:6px;">
+<img id="flow-06_dev_mocks" src="diagrams/system-flow-06-dev-mocks.svg" alt="Partial chart 6 — dev mocks and secrets" data-scale="100" style="transform-origin:0 0;display:block;width:100%;" />
+</div>
+</div>
+</div>
 
-  SEC["mock-secrets-manager 4566 (1)"]
-  DEV["backend/dev.secrets file (2)"]
-  N["Node backend (3)"]
-  PY["ai-celery (4)"]
-  GW["ingest-gateway (5)"]
-  MLLM["mock-llm 8090 (6)"]
-  MCL["mock-cloud-llm 8091 (7)"]
-  MSF["mock-snowflake 4567 (8)"]
-  MS3["mock-s3 4568 (9)"]
-  MP["Mailpit SMTP (10)"]
 
-  DEV --> SEC
-  SEC -->|"GetSecretValue (A)"| N
-  SEC --> PY
-  SEC --> GW
-  PY --> MLLM
-  PY --> MCL
-  N --> MSF
-  N --> MS3
-  N -->|"password reset (B)"| MP
-
-  class DEV flowEntry
-```
 
 **Comments**
 
@@ -555,26 +401,22 @@ The same application images run outside Docker Compose; only **configuration and
 
 
 
-![Partial chart 7 — staging and production](diagrams/system-flow-staging-prod.svg)
 
-*If the editable Mermaid block below shows lines without arrowheads in your IDE, use this SVG (rendered by `@mermaid-js/mermaid-cli` from the matching `.mmd` file).*
-```mermaid
-flowchart TB
-  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+<div markdown="0">
+<div style="border:1px solid #64748b;border-radius:8px;padding:10px 12px;margin:1rem 0;background:#f8fafc;">
+<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;margin-bottom:8px;font-size:0.875rem;">
+<button type="button" onclick="(function(){var el=document.getElementById('flow-staging_prod');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.max(50,w-10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-staging_prod-pct').textContent=el.dataset.scale+'%';})()">Zoom −</button>
+<button type="button" onclick="(function(){var el=document.getElementById('flow-staging_prod');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.min(300,w+10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-staging_prod-pct').textContent=el.dataset.scale+'%';})()">Zoom +</button>
+<button type="button" onclick="(function(){var el=document.getElementById('flow-staging_prod');el.dataset.scale=100;el.style.width='100%';document.getElementById('flow-staging_prod-pct').textContent='100%';})()">Reset</button>
+<span id="flow-staging_prod-pct">100%</span>
+</div>
+<div style="overflow:auto;max-height:min(85vh,920px);border:1px solid #cbd5e1;border-radius:4px;background:#fff;padding:6px;">
+<img id="flow-staging_prod" src="diagrams/system-flow-staging-prod.svg" alt="Partial chart 7 — staging and production" data-scale="100" style="transform-origin:0 0;display:block;width:100%;" />
+</div>
+</div>
+</div>
 
-  APP["Application containers (1)"]
-  SM["AWS Secrets Manager (2)"]
-  DATA["RDS Atlas OpenSearch Aura MSK ElastiCache (3)"]
-  AI["OpenAI Bedrock Vertex (4)"]
-  OUT["SES S3 Snowflake (5)"]
 
-  APP -->|"secret bundle id (A)"| SM
-  APP --> DATA
-  APP --> AI
-  APP --> OUT
-
-  class APP flowEntry
-```
 
 **Comments**
 
@@ -596,28 +438,22 @@ This chart covers the **Graph tab** only: the browser loads campaigns (A), Node 
 
 
 
-![Partial chart 8 — phishing graph UI](diagrams/system-flow-graph-ui.svg)
 
-*If the editable Mermaid block below shows lines without arrowheads in your IDE, use this SVG (rendered by `@mermaid-js/mermaid-cli` from the matching `.mmd` file).*
-```mermaid
-flowchart LR
-  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+<div markdown="0">
+<div style="border:1px solid #64748b;border-radius:8px;padding:10px 12px;margin:1rem 0;background:#f8fafc;">
+<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;margin-bottom:8px;font-size:0.875rem;">
+<button type="button" onclick="(function(){var el=document.getElementById('flow-graph_ui');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.max(50,w-10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-graph_ui-pct').textContent=el.dataset.scale+'%';})()">Zoom −</button>
+<button type="button" onclick="(function(){var el=document.getElementById('flow-graph_ui');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.min(300,w+10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-graph_ui-pct').textContent=el.dataset.scale+'%';})()">Zoom +</button>
+<button type="button" onclick="(function(){var el=document.getElementById('flow-graph_ui');el.dataset.scale=100;el.style.width='100%';document.getElementById('flow-graph_ui-pct').textContent='100%';})()">Reset</button>
+<span id="flow-graph_ui-pct">100%</span>
+</div>
+<div style="overflow:auto;max-height:min(85vh,920px);border:1px solid #cbd5e1;border-radius:4px;background:#fff;padding:6px;">
+<img id="flow-graph_ui" src="diagrams/system-flow-graph-ui.svg" alt="Partial chart 8 — phishing graph UI" data-scale="100" style="transform-origin:0 0;display:block;width:100%;" />
+</div>
+</div>
+</div>
 
-  UI["GraphView tab (1)"]
-  API["Node graph routes (2)"]
-  NEO[("Neo4j · 3")]
-  CAN["CampaignGraphCanvas (4)"]
-  LAY["layoutNodesOnCircle (5)"]
-  SVG["SVG render (6)"]
 
-  UI -->|"GET /graph/campaigns (A)"| API
-  API -->|"Cypher read (B)"| NEO
-  API -->|"JSON nodes edges (C)"| CAN
-  CAN -->|"circle x y (D)"| LAY
-  LAY --> SVG
-
-  class UI flowEntry
-```
 
 **Comments**
 
@@ -646,18 +482,3 @@ flowchart LR
 | [data_guide_mailbox_ingest_gateway.md](data_guide_mailbox_ingest_gateway.md) | Go gateway |
 | [ops_guide_s3_backups.md](ops_guide_s3_backups.md) | S3 backups |
 
----
-
-## Command you can run (this guide) {#run-one-command}
-
-<div style="background:#eef1f5;padding:1rem 1.25rem;border-left:4px solid #64748b;margin:1rem 0;border-radius:4px;">
-
-<p><strong>Run in terminal</strong> — confirm API + graph path after stack is up</p>
-
-```bash
-cd ~/suspicious-email-triage
-curl -sS http://localhost:3000/health/live
-curl -sS -H "Authorization: Bearer YOUR_JWT" http://localhost:3000/graph/campaigns | python3 -m json.tool | head
-```
-
-</div>

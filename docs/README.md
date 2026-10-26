@@ -65,7 +65,7 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 
 - [arch_guide_features_catalog.md](arch_guide_features_catalog.md) — every implemented feature with technologies
 - [arch_guide_overview.md](arch_guide_overview.md) — component map
-- [arch_guide_system_flowchart.md](arch_guide_system_flowchart.md) — end-to-end Mermaid map (UI, API, gateway, Kafka, workers, stores)
+- [arch_guide_system_flowchart.md](arch_guide_system_flowchart.md) — end-to-end system flowcharts (SVG + `.mmd` sources; UI, API, gateway, Kafka, workers, stores)
 - [arch_guide_worker_pipeline.md](arch_guide_worker_pipeline.md) — Kafka / Celery workers
 - [arch_guide_system_comprehensive.md](arch_guide_system_comprehensive.md) — end-to-end deep dive
 - [arch_assignment_historical.md](arch_assignment_historical.md) — original assignment brief
