@@ -1,25 +1,25 @@
 flowchart TB
   classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
 
-  SEC["mock-secrets-manager 4566 (1)"]
-  DEV["backend/dev.secrets file (2)"]
-  N["Node backend (3)"]
-  PY["ai-celery (4)"]
-  GW["ingest-gateway (5)"]
-  MLLM["mock-llm 8090 (6)"]
-  MCL["mock-cloud-llm 8091 (7)"]
-  MSF["mock-snowflake 4567 (8)"]
-  MS3["mock-s3 4568 (9)"]
-  MP["Mailpit SMTP (10)"]
+  SEC["mock-secrets-manager 4566 · 1"]
+  DEV["backend/dev.secrets file · 2"]
+  N["Node backend · 3"]
+  PY["ai-celery · 4"]
+  GW["ingest-gateway · 5"]
+  MLLM["mock-llm 8090 · 6"]
+  MCL["mock-cloud-llm 8091 · 7"]
+  MSF["mock-snowflake 4567 · 8"]
+  MS3["mock-s3 4568 · 9"]
+  MP["Mailpit SMTP · 10"]
 
   DEV --> SEC
-  SEC -->|"GetSecretValue (A)"| N
+  SEC -->|GetSecretValue · A| N
   SEC --> PY
   SEC --> GW
   PY --> MLLM
   PY --> MCL
   N --> MSF
   N --> MS3
-  N -->|"password reset (B)"| MP
+  N -->|password reset · B| MP
 
   class DEV flowEntry

@@ -2,64 +2,64 @@ flowchart TB
   classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
 
   subgraph clients [Clients]
-    BROWSER["React UI port 3001 (1)<br/>triage analytics graph search logs admin"]
-    MAIL["Mail platforms webhooks (2)"]
+    BROWSER["React UI port 3001 · 1<br/>triage analytics graph search logs admin"]
+    MAIL["Mail platforms webhooks · 2"]
   end
 
   subgraph edge [Ingest edge]
-    GW["Go ingest-gateway port 8080 (3)<br/>webhooks and dev simulation"]
+    GW["Go ingest-gateway port 8080 · 3<br/>webhooks and dev simulation"]
   end
 
   subgraph nodeApi [Node API port 3000]
-    EXPRESS["Express REST (4)<br/>auth reviews metrics graph search logs ops"]
+    EXPRESS["Express REST · 4<br/>auth reviews metrics graph search logs ops"]
   end
 
   subgraph adminOps [Admin and ops]
-    DJANGO["Django admin port 8000 (5)"]
-    LOGVOL["Docker volume triage-logs merged.log (6)"]
+    DJANGO["Django admin port 8000 · 5"]
+    LOGVOL["Docker volume triage-logs merged.log · 6"]
   end
 
   subgraph data [Databases and search stores]
-    MONGO[("MongoDB Review documents · 7")]
-    PG[("PostgreSQL auth stats ingest_clients · 8")]
-    NEO[("Neo4j phishing graph · 9")]
-    ES[("Elasticsearch search index · 10")]
-    REDIS[("Redis Celery broker · 11")]
+    MONGO[(MongoDB Review documents · 7)]
+    PG[(PostgreSQL auth stats ingest_clients · 8)]
+    NEO[(Neo4j phishing graph · 9)]
+    ES[(Elasticsearch search index · 10)]
+    REDIS[(Redis Celery broker · 11)]
   end
 
   subgraph events [Events]
-    KAFKA["Redpanda Kafka topics (12)"]
+    KAFKA["Redpanda Kafka topics · 12"]
   end
 
   subgraph workers [Python workers]
-    DISPATCH["ai-kafka-dispatch (13)"]
-    CELERY["ai-celery scoring and sync (14)"]
+    DISPATCH["ai-kafka-dispatch · 13"]
+    CELERY["ai-celery scoring and sync · 14"]
   end
 
   subgraph outbound [Outbound integrations]
-    VERDICT["Verdict webhooks and Kafka (15)"]
-    SNOW["Snowflake export (16)"]
+    VERDICT["Verdict webhooks and Kafka · 15"]
+    SNOW["Snowflake export · 16"]
   end
 
   subgraph devMocks [Dev mocks]
-    MOCKSECR["mock-secrets-manager (17)"]
-    MOCKS3["mock-s3 backups (18)"]
-    MOCKLLM["mock-llm (19)"]
-    MOCKAGENT["mock-cloud-llm (20)"]
-    MOCKCB["mock-verdict-callback (21)"]
-    MAILPIT["Mailpit (22)"]
+    MOCKSECR["mock-secrets-manager · 17"]
+    MOCKS3["mock-s3 backups · 18"]
+    MOCKLLM["mock-llm · 19"]
+    MOCKAGENT["mock-cloud-llm · 20"]
+    MOCKCB["mock-verdict-callback · 21"]
+    MAILPIT["Mailpit · 22"]
   end
 
   subgraph externalId [External identity and email]
-    GOOGLE["Google OAuth (23)"]
-    EMAILVENDOR["Gmail SES SMTP (24)"]
+    GOOGLE["Google OAuth · 23"]
+    EMAILVENDOR["Gmail SES SMTP · 24"]
   end
 
-  BROWSER -->|"JWT REST · A"| EXPRESS
-  BROWSER -.->|"OAuth redirect · B"| GOOGLE
-  GOOGLE -.->|"OAuth callback · C"| EXPRESS
-  MAIL -->|"webhook · D"| GW
-  GW -->|"internal ingest · E"| EXPRESS
+  BROWSER -->|JWT REST · A| EXPRESS
+  BROWSER -.->|OAuth redirect · B| GOOGLE
+  GOOGLE -.->|OAuth callback · C| EXPRESS
+  MAIL -->|webhook · D| GW
+  GW -->|internal ingest · E| EXPRESS
 
   EXPRESS --> MONGO
   EXPRESS --> PG
@@ -70,18 +70,18 @@ flowchart TB
   EXPRESS --> VERDICT
   EXPRESS --> SNOW
   EXPRESS --> LOGVOL
-  EXPRESS -->|"backup upload · F"| MOCKS3
-  EXPRESS -.->|"reset email · G"| MAILPIT
-  EXPRESS -.->|"production mail · H"| EMAILVENDOR
+  EXPRESS -->|backup upload · F| MOCKS3
+  EXPRESS -.->|reset email · G| MAILPIT
+  EXPRESS -.->|production mail · H| EMAILVENDOR
 
   DJANGO --> PG
   DJANGO --> LOGVOL
 
-  MOCKSECR -.->|"startup secrets · I"| EXPRESS
+  MOCKSECR -.->|startup secrets · I| EXPRESS
   MOCKSECR -.-> CELERY
   MOCKSECR -.-> GW
 
-  KAFKA -->|"consume ingest · J"| DISPATCH
+  KAFKA -->|consume ingest · J| DISPATCH
   DISPATCH --> CELERY
   CELERY --> MONGO
   CELERY --> PG
@@ -89,7 +89,7 @@ flowchart TB
   CELERY --> MOCKAGENT
   CELERY --> VERDICT
   CELERY --> LOGVOL
-  CELERY -->|"graph and search sync · K"| EXPRESS
+  CELERY -->|graph and search sync · K| EXPRESS
 
   GW --> LOGVOL
   VERDICT -.-> MOCKCB

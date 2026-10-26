@@ -1,17 +1,17 @@
 flowchart LR
   classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
 
-  REV["Review completed or override (1)"]
-  NODE["Node verdictDelivery (2)"]
-  PG[("PostgreSQL ingest_clients · 3")]
-  WH["Customer webhook URL (4)"]
-  K["Kafka email.review.completed (5)"]
-  SF["Snowflake or mock-snowflake (6)"]
+  REV["Review completed or override · 1"]
+  NODE["Node verdictDelivery · 2"]
+  PG[(PostgreSQL ingest_clients · 3)]
+  WH["Customer webhook URL · 4"]
+  K["Kafka email.review.completed · 5"]
+  SF["Snowflake or mock-snowflake · 6"]
 
   REV --> NODE
   NODE --> PG
-  NODE -->|"HMAC POST (A)"| WH
-  NODE -->|"publish (B)"| K
-  REV -->|"export row (C)"| SF
+  NODE -->|HMAC POST · A| WH
+  NODE -->|publish · B| K
+  REV -->|export row · C| SF
 
   class REV flowEntry

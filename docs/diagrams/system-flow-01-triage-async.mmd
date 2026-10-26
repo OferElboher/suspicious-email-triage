@@ -1,26 +1,26 @@
 flowchart TB
   classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
 
-  UI["React UI port 3001 (1)"]
-  API["Node Express port 3000 (2)"]
-  M[("MongoDB Review doc · 3")]
-  P[("PostgreSQL stats event · 4")]
-  K["Kafka email.review.ingested (5)"]
-  D["ai-kafka-dispatch (6)"]
-  W["ai-celery analyze_review (7)"]
-  LLM["mock-llm or rules engine (8)"]
+  UI["React UI port 3001 · 1"]
+  API["Node Express port 3000 · 2"]
+  M[(MongoDB Review doc · 3)]
+  P[(PostgreSQL stats event · 4)]
+  K["Kafka email.review.ingested · 5"]
+  D["ai-kafka-dispatch · 6"]
+  W["ai-celery analyze_review · 7"]
+  LLM["mock-llm or rules engine · 8"]
 
-  UI -->|"JWT POST /reviews (A)"| API
-  API -->|"insert pending (B)"| M
-  API -->|"review_created row (C)"| P
-  API -->|"publish ingest (D)"| K
-  UI -->|"poll GET /reviews/id (E)"| API
-  API -->|"read status (F)"| M
-  K -->|"consume (G)"| D
-  D -->|"enqueue task (H)"| W
-  W -->|"load and save result (I)"| M
-  W -->|"status_changed row (J)"| P
-  W -->|"optional LLM call (K)"| LLM
-  W -->|"graph and ES sync (L)"| API
+  UI -->|JWT POST /reviews · A| API
+  API -->|insert pending · B| M
+  API -->|review_created row · C| P
+  API -->|publish ingest · D| K
+  UI -->|poll GET /reviews/id · E| API
+  API -->|read status · F| M
+  K -->|consume · G| D
+  D -->|enqueue task · H| W
+  W -->|load and save result · I| M
+  W -->|status_changed row · J| P
+  W -->|optional LLM call · K| LLM
+  W -->|graph and ES sync · L| API
 
   class UI flowEntry

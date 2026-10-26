@@ -27,7 +27,7 @@ For prose detail, see [arch_guide_overview.md](arch_guide_overview.md), [arch_gu
 
 ## Diagram sources and notation
 
-Editable Mermaid lives under [diagrams/](diagrams/) (`system-flow-*.mmd`). Each chart below is embedded from that source (quoted edge labels and database cylinder shapes so arrowheads render reliably). If your Markdown preview hides arrowheads, open the same `.mmd` in [Mermaid Live Editor](https://mermaid.live) or regenerate committed `.svg` copies:
+Editable Mermaid lives under [diagrams/](diagrams/) (`system-flow-*.mmd`). Each chart below uses the same Mermaid edge style as [arch_guide_system_comprehensive.md](arch_guide_system_comprehensive.md): `-->` / `-.->` with `|label|` text and `[(store)]` cylinder nodes so preview renders visible arrowheads. If your Markdown preview hides arrowheads, open the same `.mmd` in [Mermaid Live Editor](https://mermaid.live) or regenerate committed `.svg` copies:
 
 ```bash
 bash scripts/render-flow-diagrams.sh
@@ -38,7 +38,7 @@ bash scripts/render-flow-diagrams.sh
 | Edge syntax | Semantics |
 |-------------|-----------|
 | `A --> B` | Directed solid edge; arrowhead at **B** |
-| `A -->|"label · L"| B` | Directed edge with flow letter **L** |
+| `A -->|label · L| B` | Directed edge with flow letter **L** |
 | `A -.-> B` | Directed dashed edge (optional paths, secrets bootstrap) |
 
 **Entry shapes:** green border (`flowEntry` in source) marks flow origins. **Bidirectional** interactions use two directed edges (for example OAuth redirect and callback).
@@ -57,64 +57,64 @@ flowchart TB
   classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
 
   subgraph clients [Clients]
-    BROWSER["React UI port 3001 (1)<br/>triage analytics graph search logs admin"]
-    MAIL["Mail platforms webhooks (2)"]
+    BROWSER["React UI port 3001 · 1<br/>triage analytics graph search logs admin"]
+    MAIL["Mail platforms webhooks · 2"]
   end
 
   subgraph edge [Ingest edge]
-    GW["Go ingest-gateway port 8080 (3)<br/>webhooks and dev simulation"]
+    GW["Go ingest-gateway port 8080 · 3<br/>webhooks and dev simulation"]
   end
 
   subgraph nodeApi [Node API port 3000]
-    EXPRESS["Express REST (4)<br/>auth reviews metrics graph search logs ops"]
+    EXPRESS["Express REST · 4<br/>auth reviews metrics graph search logs ops"]
   end
 
   subgraph adminOps [Admin and ops]
-    DJANGO["Django admin port 8000 (5)"]
-    LOGVOL["Docker volume triage-logs merged.log (6)"]
+    DJANGO["Django admin port 8000 · 5"]
+    LOGVOL["Docker volume triage-logs merged.log · 6"]
   end
 
   subgraph data [Databases and search stores]
-    MONGO[("MongoDB Review documents · 7")]
-    PG[("PostgreSQL auth stats ingest_clients · 8")]
-    NEO[("Neo4j phishing graph · 9")]
-    ES[("Elasticsearch search index · 10")]
-    REDIS[("Redis Celery broker · 11")]
+    MONGO[(MongoDB Review documents · 7)]
+    PG[(PostgreSQL auth stats ingest_clients · 8)]
+    NEO[(Neo4j phishing graph · 9)]
+    ES[(Elasticsearch search index · 10)]
+    REDIS[(Redis Celery broker · 11)]
   end
 
   subgraph events [Events]
-    KAFKA["Redpanda Kafka topics (12)"]
+    KAFKA["Redpanda Kafka topics · 12"]
   end
 
   subgraph workers [Python workers]
-    DISPATCH["ai-kafka-dispatch (13)"]
-    CELERY["ai-celery scoring and sync (14)"]
+    DISPATCH["ai-kafka-dispatch · 13"]
+    CELERY["ai-celery scoring and sync · 14"]
   end
 
   subgraph outbound [Outbound integrations]
-    VERDICT["Verdict webhooks and Kafka (15)"]
-    SNOW["Snowflake export (16)"]
+    VERDICT["Verdict webhooks and Kafka · 15"]
+    SNOW["Snowflake export · 16"]
   end
 
   subgraph devMocks [Dev mocks]
-    MOCKSECR["mock-secrets-manager (17)"]
-    MOCKS3["mock-s3 backups (18)"]
-    MOCKLLM["mock-llm (19)"]
-    MOCKAGENT["mock-cloud-llm (20)"]
-    MOCKCB["mock-verdict-callback (21)"]
-    MAILPIT["Mailpit (22)"]
+    MOCKSECR["mock-secrets-manager · 17"]
+    MOCKS3["mock-s3 backups · 18"]
+    MOCKLLM["mock-llm · 19"]
+    MOCKAGENT["mock-cloud-llm · 20"]
+    MOCKCB["mock-verdict-callback · 21"]
+    MAILPIT["Mailpit · 22"]
   end
 
   subgraph externalId [External identity and email]
-    GOOGLE["Google OAuth (23)"]
-    EMAILVENDOR["Gmail SES SMTP (24)"]
+    GOOGLE["Google OAuth · 23"]
+    EMAILVENDOR["Gmail SES SMTP · 24"]
   end
 
-  BROWSER -->|"JWT REST · A"| EXPRESS
-  BROWSER -.->|"OAuth redirect · B"| GOOGLE
-  GOOGLE -.->|"OAuth callback · C"| EXPRESS
-  MAIL -->|"webhook · D"| GW
-  GW -->|"internal ingest · E"| EXPRESS
+  BROWSER -->|JWT REST · A| EXPRESS
+  BROWSER -.->|OAuth redirect · B| GOOGLE
+  GOOGLE -.->|OAuth callback · C| EXPRESS
+  MAIL -->|webhook · D| GW
+  GW -->|internal ingest · E| EXPRESS
 
   EXPRESS --> MONGO
   EXPRESS --> PG
@@ -125,18 +125,18 @@ flowchart TB
   EXPRESS --> VERDICT
   EXPRESS --> SNOW
   EXPRESS --> LOGVOL
-  EXPRESS -->|"backup upload · F"| MOCKS3
-  EXPRESS -.->|"reset email · G"| MAILPIT
-  EXPRESS -.->|"production mail · H"| EMAILVENDOR
+  EXPRESS -->|backup upload · F| MOCKS3
+  EXPRESS -.->|reset email · G| MAILPIT
+  EXPRESS -.->|production mail · H| EMAILVENDOR
 
   DJANGO --> PG
   DJANGO --> LOGVOL
 
-  MOCKSECR -.->|"startup secrets · I"| EXPRESS
+  MOCKSECR -.->|startup secrets · I| EXPRESS
   MOCKSECR -.-> CELERY
   MOCKSECR -.-> GW
 
-  KAFKA -->|"consume ingest · J"| DISPATCH
+  KAFKA -->|consume ingest · J| DISPATCH
   DISPATCH --> CELERY
   CELERY --> MONGO
   CELERY --> PG
@@ -144,7 +144,7 @@ flowchart TB
   CELERY --> MOCKAGENT
   CELERY --> VERDICT
   CELERY --> LOGVOL
-  CELERY -->|"graph and search sync · K"| EXPRESS
+  CELERY -->|graph and search sync · K| EXPRESS
 
   GW --> LOGVOL
   VERDICT -.-> MOCKCB
@@ -207,27 +207,27 @@ This chart follows one manual review from the analyst UI through background scor
 flowchart TB
   classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
 
-  UI["React UI port 3001 (1)"]
-  API["Node Express port 3000 (2)"]
-  M[("MongoDB Review doc · 3")]
-  P[("PostgreSQL stats event · 4")]
-  K["Kafka email.review.ingested (5)"]
-  D["ai-kafka-dispatch (6)"]
-  W["ai-celery analyze_review (7)"]
-  LLM["mock-llm or rules engine (8)"]
+  UI["React UI port 3001 · 1"]
+  API["Node Express port 3000 · 2"]
+  M[(MongoDB Review doc · 3)]
+  P[(PostgreSQL stats event · 4)]
+  K["Kafka email.review.ingested · 5"]
+  D["ai-kafka-dispatch · 6"]
+  W["ai-celery analyze_review · 7"]
+  LLM["mock-llm or rules engine · 8"]
 
-  UI -->|"JWT POST /reviews (A)"| API
-  API -->|"insert pending (B)"| M
-  API -->|"review_created row (C)"| P
-  API -->|"publish ingest (D)"| K
-  UI -->|"poll GET /reviews/id (E)"| API
-  API -->|"read status (F)"| M
-  K -->|"consume (G)"| D
-  D -->|"enqueue task (H)"| W
-  W -->|"load and save result (I)"| M
-  W -->|"status_changed row (J)"| P
-  W -->|"optional LLM call (K)"| LLM
-  W -->|"graph and ES sync (L)"| API
+  UI -->|JWT POST /reviews · A| API
+  API -->|insert pending · B| M
+  API -->|review_created row · C| P
+  API -->|publish ingest · D| K
+  UI -->|poll GET /reviews/id · E| API
+  API -->|read status · F| M
+  K -->|consume · G| D
+  D -->|enqueue task · H| W
+  W -->|load and save result · I| M
+  W -->|status_changed row · J| P
+  W -->|optional LLM call · K| LLM
+  W -->|graph and ES sync · L| API
 
   class UI flowEntry
 ```
@@ -278,17 +278,17 @@ This chart groups the Express surface by **URL family**. Every arrow is a class 
 flowchart LR
   classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
 
-  UI["React or curl client (1)"]
-  API["Express createApp routes (2)"]
+  UI["React or curl client · 1"]
+  API["Express createApp routes · 2"]
 
-  UI -->|"auth login JWT (A)"| API
-  UI -->|"reviews CRUD override (B)"| API
-  UI -->|"metrics analytics charts (C)"| API
-  UI -->|"graph campaigns subgraph (D)"| API
-  UI -->|"search reviews (E)"| API
-  UI -->|"logs search (F)"| API
-  UI -->|"ops backups prometheus (G)"| API
-  UI -->|"dev simulation reset (H)"| API
+  UI -->|auth login JWT · A| API
+  UI -->|reviews CRUD override · B| API
+  UI -->|metrics analytics charts · C| API
+  UI -->|graph campaigns subgraph · D| API
+  UI -->|search reviews · E| API
+  UI -->|logs search · F| API
+  UI -->|ops backups prometheus · G| API
+  UI -->|dev simulation reset · H| API
 
   class UI flowEntry
 ```
@@ -320,19 +320,19 @@ Three independent **entry paths** converge on the same async pipeline. **Manual 
 flowchart TB
   classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
 
-  P1["JWT client POST /reviews (1)"]
-  P2["Mail webhook (2)"]
-  P3["Go simulation tick (3)"]
-  API["Node POST /ingest/internal/mailbox (4)"]
-  GW["ingest-gateway port 8080 (5)"]
-  K["Kafka same ingest topic (6)"]
-  CEL["ai-celery same analyze path (7)"]
+  P1["JWT client POST /reviews · 1"]
+  P2["Mail webhook · 2"]
+  P3["Go simulation tick · 3"]
+  API["Node POST /ingest/internal/mailbox · 4"]
+  GW["ingest-gateway port 8080 · 5"]
+  K["Kafka same ingest topic · 6"]
+  CEL["ai-celery same analyze path · 7"]
 
-  P1 -->|"POST /reviews JWT (A)"| API
-  P2 -->|"POST /v1/ingest/email (B)"| GW
-  P3 -->|"timer in gateway (C)"| GW
-  GW -->|"shared secret header (D)"| API
-  API -->|"persist and publish (E)"| K
+  P1 -->|POST /reviews JWT · A| API
+  P2 -->|POST /v1/ingest/email · B| GW
+  P3 -->|timer in gateway · C| GW
+  GW -->|shared secret header · D| API
+  API -->|persist and publish · E| K
   K --> CEL
 
   class P1,P2,P3 flowEntry
@@ -367,17 +367,17 @@ Each arrow means **this service saves data there** (writes only — not every re
 flowchart TB
   classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
 
-  N["Node API (1)"]
-  W["ai-celery (2)"]
-  G["ingest-gateway (3)"]
-  DJ["django-admin (4)"]
+  N["Node API · 1"]
+  W["ai-celery · 2"]
+  G["ingest-gateway · 3"]
+  DJ["django-admin · 4"]
 
-  M[("MongoDB · 5")]
-  PG[("PostgreSQL · 6")]
-  NEO[("Neo4j · 7")]
-  ES[("Elasticsearch · 8")]
-  R[("Redis · 9")]
-  LOG["shared log file merged.log (10)"]
+  M[(MongoDB · 5)]
+  PG[(PostgreSQL · 6)]
+  NEO[(Neo4j · 7)]
+  ES[(Elasticsearch · 8)]
+  R[(Redis · 9)]
+  LOG["shared log file merged.log · 10"]
 
   N --> M
   N --> PG
@@ -430,18 +430,18 @@ When a review reaches a **final state** (automated completion or analyst overrid
 flowchart LR
   classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
 
-  REV["Review completed or override (1)"]
-  NODE["Node verdictDelivery (2)"]
-  PG[("PostgreSQL ingest_clients · 3")]
-  WH["Customer webhook URL (4)"]
-  K["Kafka email.review.completed (5)"]
-  SF["Snowflake or mock-snowflake (6)"]
+  REV["Review completed or override · 1"]
+  NODE["Node verdictDelivery · 2"]
+  PG[(PostgreSQL ingest_clients · 3)]
+  WH["Customer webhook URL · 4"]
+  K["Kafka email.review.completed · 5"]
+  SF["Snowflake or mock-snowflake · 6"]
 
   REV --> NODE
   NODE --> PG
-  NODE -->|"HMAC POST (A)"| WH
-  NODE -->|"publish (B)"| K
-  REV -->|"export row (C)"| SF
+  NODE -->|HMAC POST · A| WH
+  NODE -->|publish · B| K
+  REV -->|export row · C| SF
 
   class REV flowEntry
 ```
@@ -472,26 +472,26 @@ Local dev replaces AWS and vendor APIs with **containers on fixed ports**. The g
 flowchart TB
   classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
 
-  SEC["mock-secrets-manager 4566 (1)"]
-  DEV["backend/dev.secrets file (2)"]
-  N["Node backend (3)"]
-  PY["ai-celery (4)"]
-  GW["ingest-gateway (5)"]
-  MLLM["mock-llm 8090 (6)"]
-  MCL["mock-cloud-llm 8091 (7)"]
-  MSF["mock-snowflake 4567 (8)"]
-  MS3["mock-s3 4568 (9)"]
-  MP["Mailpit SMTP (10)"]
+  SEC["mock-secrets-manager 4566 · 1"]
+  DEV["backend/dev.secrets file · 2"]
+  N["Node backend · 3"]
+  PY["ai-celery · 4"]
+  GW["ingest-gateway · 5"]
+  MLLM["mock-llm 8090 · 6"]
+  MCL["mock-cloud-llm 8091 · 7"]
+  MSF["mock-snowflake 4567 · 8"]
+  MS3["mock-s3 4568 · 9"]
+  MP["Mailpit SMTP · 10"]
 
   DEV --> SEC
-  SEC -->|"GetSecretValue (A)"| N
+  SEC -->|GetSecretValue · A| N
   SEC --> PY
   SEC --> GW
   PY --> MLLM
   PY --> MCL
   N --> MSF
   N --> MS3
-  N -->|"password reset (B)"| MP
+  N -->|password reset · B| MP
 
   class DEV flowEntry
 ```
@@ -525,13 +525,13 @@ The same application images run outside Docker Compose; only **configuration and
 flowchart TB
   classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
 
-  APP["Application containers (1)"]
-  SM["AWS Secrets Manager (2)"]
-  DATA["RDS Atlas OpenSearch Aura MSK ElastiCache (3)"]
-  AI["OpenAI Bedrock Vertex (4)"]
-  OUT["SES S3 Snowflake (5)"]
+  APP["Application containers · 1"]
+  SM["AWS Secrets Manager · 2"]
+  DATA["RDS Atlas OpenSearch Aura MSK ElastiCache · 3"]
+  AI["OpenAI Bedrock Vertex · 4"]
+  OUT["SES S3 Snowflake · 5"]
 
-  APP -->|"secret bundle id (A)"| SM
+  APP -->|secret bundle id · A| SM
   APP --> DATA
   APP --> AI
   APP --> OUT
@@ -562,17 +562,17 @@ This chart covers the **Graph tab** only: the browser loads campaigns (A), Node 
 flowchart LR
   classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
 
-  UI["GraphView tab (1)"]
-  API["Node graph routes (2)"]
-  NEO[("Neo4j · 3")]
-  CAN["CampaignGraphCanvas (4)"]
-  LAY["layoutNodesOnCircle (5)"]
-  SVG["SVG render (6)"]
+  UI["GraphView tab · 1"]
+  API["Node graph routes · 2"]
+  NEO[(Neo4j · 3)]
+  CAN["CampaignGraphCanvas · 4"]
+  LAY["layoutNodesOnCircle · 5"]
+  SVG["SVG render · 6"]
 
-  UI -->|"GET /graph/campaigns (A)"| API
-  API -->|"Cypher read (B)"| NEO
-  API -->|"JSON nodes edges (C)"| CAN
-  CAN -->|"circle x y (D)"| LAY
+  UI -->|GET /graph/campaigns · A| API
+  API -->|Cypher read · B| NEO
+  API -->|JSON nodes edges · C| CAN
+  CAN -->|circle x y · D| LAY
   LAY --> SVG
 
   class UI flowEntry

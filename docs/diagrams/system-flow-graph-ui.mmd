@@ -1,17 +1,17 @@
 flowchart LR
   classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
 
-  UI["GraphView tab (1)"]
-  API["Node graph routes (2)"]
-  NEO[("Neo4j · 3")]
-  CAN["CampaignGraphCanvas (4)"]
-  LAY["layoutNodesOnCircle (5)"]
-  SVG["SVG render (6)"]
+  UI["GraphView tab · 1"]
+  API["Node graph routes · 2"]
+  NEO[(Neo4j · 3)]
+  CAN["CampaignGraphCanvas · 4"]
+  LAY["layoutNodesOnCircle · 5"]
+  SVG["SVG render · 6"]
 
-  UI -->|"GET /graph/campaigns (A)"| API
-  API -->|"Cypher read (B)"| NEO
-  API -->|"JSON nodes edges (C)"| CAN
-  CAN -->|"circle x y (D)"| LAY
+  UI -->|GET /graph/campaigns · A| API
+  API -->|Cypher read · B| NEO
+  API -->|JSON nodes edges · C| CAN
+  CAN -->|circle x y · D| LAY
   LAY --> SVG
 
   class UI flowEntry

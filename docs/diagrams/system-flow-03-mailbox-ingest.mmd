@@ -1,19 +1,19 @@
 flowchart TB
   classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
 
-  P1["JWT client POST /reviews (1)"]
-  P2["Mail webhook (2)"]
-  P3["Go simulation tick (3)"]
-  API["Node POST /ingest/internal/mailbox (4)"]
-  GW["ingest-gateway port 8080 (5)"]
-  K["Kafka same ingest topic (6)"]
-  CEL["ai-celery same analyze path (7)"]
+  P1["JWT client POST /reviews · 1"]
+  P2["Mail webhook · 2"]
+  P3["Go simulation tick · 3"]
+  API["Node POST /ingest/internal/mailbox · 4"]
+  GW["ingest-gateway port 8080 · 5"]
+  K["Kafka same ingest topic · 6"]
+  CEL["ai-celery same analyze path · 7"]
 
-  P1 -->|"POST /reviews JWT (A)"| API
-  P2 -->|"POST /v1/ingest/email (B)"| GW
-  P3 -->|"timer in gateway (C)"| GW
-  GW -->|"shared secret header (D)"| API
-  API -->|"persist and publish (E)"| K
+  P1 -->|POST /reviews JWT · A| API
+  P2 -->|POST /v1/ingest/email · B| GW
+  P3 -->|timer in gateway · C| GW
+  GW -->|shared secret header · D| API
+  API -->|persist and publish · E| K
   K --> CEL
 
   class P1,P2,P3 flowEntry
