@@ -20,11 +20,11 @@ flowchart TB
   end
 
   subgraph data [Databases and search stores]
-    MONGO[(MongoDB Review documents (7))]
-    PG[(PostgreSQL auth stats ingest_clients (8))]
-    NEO[(Neo4j phishing graph (9))]
-    ES[(Elasticsearch search index (10))]
-    REDIS[(Redis Celery broker (11))]
+    MONGO[("MongoDB Review documents · 7")]
+    PG[("PostgreSQL auth stats ingest_clients · 8")]
+    NEO[("Neo4j phishing graph · 9")]
+    ES[("Elasticsearch search index · 10")]
+    REDIS[("Redis Celery broker · 11")]
   end
 
   subgraph events [Events]
@@ -55,11 +55,11 @@ flowchart TB
     EMAILVENDOR["Gmail SES SMTP (24)"]
   end
 
-  BROWSER -->|JWT REST (A)| EXPRESS
-  BROWSER -.->|OAuth redirect (B)| GOOGLE
-  GOOGLE -.->|OAuth callback (C)| EXPRESS
-  MAIL -->|webhook (D)| GW
-  GW -->|internal ingest (E)| EXPRESS
+  BROWSER -->|"JWT REST · A"| EXPRESS
+  BROWSER -.->|"OAuth redirect · B"| GOOGLE
+  GOOGLE -.->|"OAuth callback · C"| EXPRESS
+  MAIL -->|"webhook · D"| GW
+  GW -->|"internal ingest · E"| EXPRESS
 
   EXPRESS --> MONGO
   EXPRESS --> PG
@@ -70,18 +70,18 @@ flowchart TB
   EXPRESS --> VERDICT
   EXPRESS --> SNOW
   EXPRESS --> LOGVOL
-  EXPRESS -->|backup upload (F)| MOCKS3
-  EXPRESS -.->|reset email (G)| MAILPIT
-  EXPRESS -.->|production mail (H)| EMAILVENDOR
+  EXPRESS -->|"backup upload · F"| MOCKS3
+  EXPRESS -.->|"reset email · G"| MAILPIT
+  EXPRESS -.->|"production mail · H"| EMAILVENDOR
 
   DJANGO --> PG
   DJANGO --> LOGVOL
 
-  MOCKSECR -.->|startup secrets (I)| EXPRESS
+  MOCKSECR -.->|"startup secrets · I"| EXPRESS
   MOCKSECR -.-> CELERY
   MOCKSECR -.-> GW
 
-  KAFKA -->|consume ingest (J)| DISPATCH
+  KAFKA -->|"consume ingest · J"| DISPATCH
   DISPATCH --> CELERY
   CELERY --> MONGO
   CELERY --> PG
@@ -89,7 +89,7 @@ flowchart TB
   CELERY --> MOCKAGENT
   CELERY --> VERDICT
   CELERY --> LOGVOL
-  CELERY -->|graph and search sync (K)| EXPRESS
+  CELERY -->|"graph and search sync · K"| EXPRESS
 
   GW --> LOGVOL
   VERDICT -.-> MOCKCB

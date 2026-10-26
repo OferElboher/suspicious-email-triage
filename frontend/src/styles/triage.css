@@ -785,36 +785,30 @@ button.danger {
   opacity: 0.85;
 }
 
-.graph-detail-panel {
-  margin: 0.75rem 0;
-  padding: 0.65rem 0.85rem;
+.graph-context-menu {
+  position: fixed;
+  z-index: 1100;
+  min-width: 10rem;
+  padding: 0.35rem 0;
+  background: #fff;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: var(--card-bg, #f8f9fc);
-  max-height: 12rem;
-  overflow: auto;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
 }
 
-.graph-detail-panel__header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-bottom: 0.35rem;
+.graph-context-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.45rem 0.85rem;
+  border: none;
+  background: transparent;
+  font-size: 0.85rem;
+  cursor: pointer;
 }
 
-.graph-detail-panel__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.graph-detail-panel__body {
-  margin: 0;
-  font-size: 0.8rem;
-  white-space: pre-wrap;
-  font-family: inherit;
+.graph-context-menu button:hover {
+  background: #eef4ff;
 }
 
 .review-row-toggle.active-campaign {

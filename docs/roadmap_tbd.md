@@ -502,7 +502,8 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 
 **Implemented (dev free path):**
 
-- Per-campaign SVG with `role="img"`, native `<title>` on nodes/edges; **hover** preview + **click-to-pin** detail panel with **Copy** / **Save to file** (`GraphView.jsx`, `graphDetailExport.js`, `CampaignGraphCanvas.jsx`)
+- Per-campaign SVG with `role="img"`, native `<title>` on nodes/edges; **hover** preview + **right-click context menu** (**Copy** / **Save to file…**) exporting full tooltip text; visual **selection** highlight (`CampaignGraphCanvas.jsx`, `graphDetailExport.js`)
+- **Architecture flowchart SVGs** — `docs/diagrams/*.svg` rendered from `.mmd` via `scripts/render-flow-diagrams.sh` so arrowheads are visible in IDE Markdown preview ([arch_guide_system_flowchart.md](arch_guide_system_flowchart.md))
 - **Pan** (drag background), **zoom** toolbar, **resize** (bottom + right edges); single instruction block above the canvas (orphan-node note inline — no clipped footer under SVG)
 - **Analytics charts:** line/bar Y-axis titles above the chart so tick labels do not overlap the vertical title (`AnalyticsView.jsx` + Recharts)
 - **Django admin login:** `TriageUser.get_session_auth_hash()` for session auth after `/admin/login/` (`backend/triage_auth/models.py`)

@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import CampaignGraphCanvas from "./CampaignGraphCanvas";
+import * as exportLib from "../lib/graphDetailExport";
 
 const SAMPLE_GRAPH = {
   indicator: "evil.example",
@@ -11,25 +12,32 @@ const SAMPLE_GRAPH = {
 };
 
 describe("CampaignGraphCanvas", () => {
-  it("calls onSelectDetail when a node is clicked", () => {
-    const onSelectDetail = jest.fn();
-    render(
-      <CampaignGraphCanvas graph={SAMPLE_GRAPH} zoom={1} onSelectDetail={onSelectDetail} />
-    );
-    const label = screen.getAllByText(/Review abc/)[0];
-    // eslint-disable-next-line testing-library/no-node-access -- SVG groups lack roles
-    fireEvent.click(label.parentElement);
-    expect(onSelectDetail).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: "node", text: expect.stringContaining("Review") })
-    );
+  beforeEach(() => {
+    jest.spyOn(exportLib, "copyGraphDetailText").mockResolvedValue(undefined);
+    jest.spyOn(exportLib, "saveGraphDetailTextWithPicker").mockResolvedValue(undefined);
   });
 
-  it("shows hover preview without action buttons", () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it("opens context menu on node right-click", () => {
     render(<CampaignGraphCanvas graph={SAMPLE_GRAPH} zoom={1} />);
     const label = screen.getAllByText(/Review abc/)[0];
     // eslint-disable-next-line testing-library/no-node-access
-    fireEvent.mouseEnter(label.parentElement);
-    expect(screen.getByRole("tooltip")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /copy/i })).not.toBeInTheDocument();
+    fireEvent.contextMenu(label.parentElement);
+    expect(screen.getByTestId("graph-context-menu")).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: /copy/i })).toBeInTheDocument();
+  });
+
+  it("copy menu item sends full tooltip text to clipboard helper", () => {
+    render(<CampaignGraphCanvas graph={SAMPLE_GRAPH} zoom={1} />);
+    const label = screen.getAllByText(/Review abc/)[0];
+    // eslint-disable-next-line testing-library/no-node-access
+    fireEvent.contextMenu(label.parentElement);
+    fireEvent.click(screen.getByRole("menuitem", { name: /^Copy$/i }));
+    expect(exportLib.copyGraphDetailText).toHaveBeenCalledWith(
+      expect.stringContaining("Review")
+    );
   });
 });

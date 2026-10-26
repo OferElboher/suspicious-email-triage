@@ -135,9 +135,10 @@ Open the triage app → **Phishing graph** tab (`#graph` in the URL hash).
    - **Pan**, **zoom**, **resize** (bottom + right edges); **Jump to date** for campaigns and reviews.
    - **Display rule:** the SVG canvas appears only when **`hasDisplayableGraph`** is true — at least one node **and** one edge after orphan filtering. A lone `Campaign` node with zero relationships (sync still running, or stale Neo4j row) shows a helpful message instead of an empty circle.
    - Orphan **Url** / **Domain** / **Campaign** rows with no incident edges are removed server-side (`filterConnectedSubgraph`) and again in the browser (`filterConnectedGraph`); the UI hint mentions when nodes were hidden.
-   - **Hover** shows a lightweight preview tooltip (follows the cursor; no buttons — moving toward buttons used to dismiss the old design).
-   - **Click** a node or edge to **pin** full detail text in a panel **above** the SVG (`GraphView.jsx`). **Copy** and **Save to file** use `frontend/src/lib/graphDetailExport.js` (Clipboard API + download blob) so actions stay clickable.
-   - Pan, resize, hover, click-to-pin, and orphan-node notes live in **one** instruction paragraph above the chart — nothing is placed under the canvas where resize handles can clip it.
+   - **Hover** shows a lightweight preview (follows the cursor).
+   - **Right-click** a node or edge opens a **context menu** with **Copy** and **Save to file…** — both export the **same multi-line text** as the hover tooltip (`describeNode` / `describeEdge` in `graphLayout.js`). **Save** uses the browser File System Access API when available so the analyst picks the path; otherwise a default `.txt` download runs (`graphDetailExport.js`).
+   - The **selected** node (orange ring) or edge (thick blue line) stays highlighted until you click the graph background.
+   - Pan, resize, hover, right-click export, and orphan-node notes live in **one** instruction paragraph above the chart — nothing is placed under the canvas where resize handles can clip it.
 
 Technology: plain **SVG** + React pointer events (no D3/vis-network) for a small bundle and predictable maintenance.
 

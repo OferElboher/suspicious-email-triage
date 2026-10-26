@@ -27,21 +27,23 @@ For prose detail, see [arch_guide_overview.md](arch_guide_overview.md), [arch_gu
 
 ## Viewing on Windows 11
 
-| Diagram | Standalone `.mmd` file |
-|---------|-------------------------|
-| **Overall dev stack** | [diagrams/system-flow-main.mmd](diagrams/system-flow-main.mmd) |
-| Partial chart 1–6 | [diagrams/system-flow-01-triage-async.mmd](diagrams/system-flow-01-triage-async.mmd) … [06](diagrams/system-flow-06-dev-mocks.mmd) |
-| Partial chart 7 staging/prod | [diagrams/system-flow-staging-prod.mmd](diagrams/system-flow-staging-prod.mmd) |
-| Partial chart 8 graph UI | [diagrams/system-flow-graph-ui.mmd](diagrams/system-flow-graph-ui.mmd) |
+| Diagram | Editable source (`.mmd`) | **Rendered SVG (visible arrowheads)** |
+|---------|---------------------------|-------------------------------------|
+| **Overall dev stack** | [system-flow-main.mmd](diagrams/system-flow-main.mmd) | [system-flow-main.svg](diagrams/system-flow-main.svg) |
+| Partial chart 1–6 | [01 … 06 `.mmd` files](diagrams/system-flow-01-triage-async.mmd) | Matching `.svg` next to each `.mmd` |
+| Partial chart 7 staging/prod | [system-flow-staging-prod.mmd](diagrams/system-flow-staging-prod.mmd) | [system-flow-staging-prod.svg](diagrams/system-flow-staging-prod.svg) |
+| Partial chart 8 graph UI | [system-flow-graph-ui.mmd](diagrams/system-flow-graph-ui.mmd) | [system-flow-graph-ui.svg](diagrams/system-flow-graph-ui.svg) |
 
-Open any `.mmd` file in [Mermaid Live Editor](https://mermaid.live). In Markdown preview, render one fenced `mermaid` block at a time if the page feels slow.
+**Why two formats:** Many IDE Markdown previews draw Mermaid **lines without arrowheads** (or fail to parse labels with parentheses). Each section below shows an **SVG image first** — generated with `@mermaid-js/mermaid-cli` from the `.mmd` source (`bash scripts/render-flow-diagrams.sh`). The fenced `mermaid` block remains for editing; edge labels use quoted text (`|"flow · A"|`) and database nodes use `[("Name · 3")]` so the CLI parser accepts them.
+
+Open any `.mmd` file in [Mermaid Live Editor](https://mermaid.live) for interactive editing. In Markdown preview, prefer the **SVG** if arrowheads are missing on the live block.
 
 **Diagram conventions (Mermaid):** Every connection uses a **directed** edge so the renderer draws an **arrowhead at the destination**:
 
 | Syntax | Meaning |
 |--------|---------|
 | `A --> B` | Solid line; arrowhead points at **B** |
-| `A -->|label (L)| B` | Same, with a lettered flow label on the edge |
+| `A -->|"label · L"| B` | Same, with a lettered flow label on the edge |
 | `A -.-> B` | Dashed line; arrowhead still points at **B** (secrets, OAuth redirect, optional paths) |
 
 When two services talk in both directions (for example browser OAuth), the chart uses **two** one-way arrows (each with its own arrowhead), not a single undirected line. **Green-bordered boxes** (`flowEntry` style) mark where a flow **starts**. Source files live under [diagrams/](diagrams/) — open in [Mermaid Live Editor](https://mermaid.live) if your Markdown preview omits arrowheads.
@@ -54,6 +56,11 @@ Same source as [diagrams/system-flow-main.mmd](diagrams/system-flow-main.mmd).
 
 This diagram shows every major container group in the default **dev** Docker Compose stack and how traffic moves between them: analysts and mail platforms on the left, Node and Go services in the middle, databases and Kafka in the center, Python workers on the right, plus dev mocks and optional external OAuth/email at the edges.
 
+
+
+![Overall dev stack (directed arrows visible)](diagrams/system-flow-main.svg)
+
+*If the editable Mermaid block below shows lines without arrowheads in your IDE, use this SVG (rendered by `@mermaid-js/mermaid-cli` from the matching `.mmd` file).*
 ```mermaid
 flowchart TB
   classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
@@ -77,11 +84,11 @@ flowchart TB
   end
 
   subgraph data [Databases and search stores]
-    MONGO[(MongoDB Review documents (7))]
-    PG[(PostgreSQL auth stats ingest_clients (8))]
-    NEO[(Neo4j phishing graph (9))]
-    ES[(Elasticsearch search index (10))]
-    REDIS[(Redis Celery broker (11))]
+    MONGO[("MongoDB Review documents · 7")]
+    PG[("PostgreSQL auth stats ingest_clients · 8")]
+    NEO[("Neo4j phishing graph · 9")]
+    ES[("Elasticsearch search index · 10")]
+    REDIS[("Redis Celery broker · 11")]
   end
 
   subgraph events [Events]
@@ -112,11 +119,11 @@ flowchart TB
     EMAILVENDOR["Gmail SES SMTP (24)"]
   end
 
-  BROWSER -->|JWT REST (A)| EXPRESS
-  BROWSER -.->|OAuth redirect (B)| GOOGLE
-  GOOGLE -.->|OAuth callback (C)| EXPRESS
-  MAIL -->|webhook (D)| GW
-  GW -->|internal ingest (E)| EXPRESS
+  BROWSER -->|"JWT REST · A"| EXPRESS
+  BROWSER -.->|"OAuth redirect · B"| GOOGLE
+  GOOGLE -.->|"OAuth callback · C"| EXPRESS
+  MAIL -->|"webhook · D"| GW
+  GW -->|"internal ingest · E"| EXPRESS
 
   EXPRESS --> MONGO
   EXPRESS --> PG
@@ -127,18 +134,18 @@ flowchart TB
   EXPRESS --> VERDICT
   EXPRESS --> SNOW
   EXPRESS --> LOGVOL
-  EXPRESS -->|backup upload (F)| MOCKS3
-  EXPRESS -.->|reset email (G)| MAILPIT
-  EXPRESS -.->|production mail (H)| EMAILVENDOR
+  EXPRESS -->|"backup upload · F"| MOCKS3
+  EXPRESS -.->|"reset email · G"| MAILPIT
+  EXPRESS -.->|"production mail · H"| EMAILVENDOR
 
   DJANGO --> PG
   DJANGO --> LOGVOL
 
-  MOCKSECR -.->|startup secrets (I)| EXPRESS
+  MOCKSECR -.->|"startup secrets · I"| EXPRESS
   MOCKSECR -.-> CELERY
   MOCKSECR -.-> GW
 
-  KAFKA -->|consume ingest (J)| DISPATCH
+  KAFKA -->|"consume ingest · J"| DISPATCH
   DISPATCH --> CELERY
   CELERY --> MONGO
   CELERY --> PG
@@ -146,7 +153,7 @@ flowchart TB
   CELERY --> MOCKAGENT
   CELERY --> VERDICT
   CELERY --> LOGVOL
-  CELERY -->|graph and search sync (K)| EXPRESS
+  CELERY -->|"graph and search sync · K"| EXPRESS
 
   GW --> LOGVOL
   VERDICT -.-> MOCKCB
@@ -204,14 +211,19 @@ Source: [diagrams/system-flow-01-triage-async.mmd](diagrams/system-flow-01-triag
 
 This chart follows one manual review from the analyst UI through background scoring. The **submit flow** (steps A–D) writes MongoDB, records a chart event, and publishes Kafka. The **polling flow** (E–F) lets the UI watch status until analysis finishes. The **worker flow** (G–L) consumes Kafka, runs Celery, optionally calls the LLM mock, updates MongoDB and PostgreSQL again, and triggers graph/search sync back through Node.
 
+
+
+![Partial chart 1 — triage and async scoring](diagrams/system-flow-01-triage-async.svg)
+
+*If the editable Mermaid block below shows lines without arrowheads in your IDE, use this SVG (rendered by `@mermaid-js/mermaid-cli` from the matching `.mmd` file).*
 ```mermaid
 flowchart TB
   classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
 
   UI["React UI port 3001 (1)"]
   API["Node Express port 3000 (2)"]
-  M[(MongoDB Review doc (3))]
-  P[(PostgreSQL stats event (4))]
+  M[("MongoDB Review doc · 3")]
+  P[("PostgreSQL stats event · 4")]
   K["Kafka email.review.ingested (5)"]
   D["ai-kafka-dispatch (6)"]
   W["ai-celery analyze_review (7)"]
@@ -274,6 +286,11 @@ This chart groups the Express surface by **URL family**. Every arrow is a class 
 - **Ops (G)** — Operations: S3 Postgres backups (`/ops/backups/*`), Prometheus scrape text (`/ops/prometheus`), alert JSON (`/ops/alerts`), health probes.
 - **Dev (H)** — Local-only helpers: simulation start/stop, `POST /dev/reset-local-state`, bootstrap password reset, feature flags (`/dev/features`).
 
+
+
+![Partial chart 2 — REST API families](diagrams/system-flow-02-rest-api.svg)
+
+*If the editable Mermaid block below shows lines without arrowheads in your IDE, use this SVG (rendered by `@mermaid-js/mermaid-cli` from the matching `.mmd` file).*
 ```mermaid
 flowchart LR
   classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
@@ -315,6 +332,11 @@ Source: [diagrams/system-flow-03-mailbox-ingest.mmd](diagrams/system-flow-03-mai
 
 Three independent **entry paths** converge on the same async pipeline. **Manual triage (A)** is always `POST /reviews` on Node with a JWT (`reviews.write`) — the React **Submit email** modal is just one client; `curl`, Postman, or an integration script with an analyst token hits the same route and does not use ingest-gateway. **Mailbox ingest (B–E)** is different: mail platforms or dev simulation call Go on **8080**, Go forwards to `POST /ingest/internal/mailbox` with a shared secret (D), then Node persists and publishes Kafka (E) so Celery runs the same analyze path.
 
+
+
+![Partial chart 3 — mailbox ingest paths](diagrams/system-flow-03-mailbox-ingest.svg)
+
+*If the editable Mermaid block below shows lines without arrowheads in your IDE, use this SVG (rendered by `@mermaid-js/mermaid-cli` from the matching `.mmd` file).*
 ```mermaid
 flowchart TB
   classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
@@ -361,6 +383,11 @@ Source: [diagrams/system-flow-04-data-stores.mmd](diagrams/system-flow-04-data-s
 
 Each arrow means **this service saves data there** (writes only — not every read). Follow one box on the left to its outgoing arrows only; there are no shared “bus” lines. After background scoring, the Python worker updates MongoDB and chart stats, then **asks Node** to refresh the phishing graph and search index — so **Neo4j and Elasticsearch arrows start at Node only**, not at ai-celery.
 
+
+
+![Partial chart 4 — data stores and writers](diagrams/system-flow-04-data-stores.svg)
+
+*If the editable Mermaid block below shows lines without arrowheads in your IDE, use this SVG (rendered by `@mermaid-js/mermaid-cli` from the matching `.mmd` file).*
 ```mermaid
 flowchart TB
   classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
@@ -370,11 +397,11 @@ flowchart TB
   G["ingest-gateway (3)"]
   DJ["django-admin (4)"]
 
-  M[(MongoDB (5))]
-  PG[(PostgreSQL (6))]
-  NEO[(Neo4j (7))]
-  ES[(Elasticsearch (8))]
-  R[(Redis (9))]
+  M[("MongoDB · 5")]
+  PG[("PostgreSQL · 6")]
+  NEO[("Neo4j · 7")]
+  ES[("Elasticsearch · 8")]
+  R[("Redis · 9")]
   LOG["shared log file merged.log (10)"]
 
   N --> M
@@ -423,13 +450,18 @@ Source: [diagrams/system-flow-05-verdict-analytics.mmd](diagrams/system-flow-05-
 
 When a review reaches a **final state** (automated completion or analyst override), two outbound tracks can run in parallel. Node **verdict delivery** loads per-client settings from PostgreSQL, then either posts a signed webhook (A) or publishes to Kafka (B). Separately, an analytics mapper can push a warehouse row to Snowflake or the dev mock (C).
 
+
+
+![Partial chart 5 — verdicts and analytics export](diagrams/system-flow-05-verdict-analytics.svg)
+
+*If the editable Mermaid block below shows lines without arrowheads in your IDE, use this SVG (rendered by `@mermaid-js/mermaid-cli` from the matching `.mmd` file).*
 ```mermaid
 flowchart LR
   classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
 
   REV["Review completed or override (1)"]
   NODE["Node verdictDelivery (2)"]
-  PG[(PostgreSQL ingest_clients (3))]
+  PG[("PostgreSQL ingest_clients · 3")]
   WH["Customer webhook URL (4)"]
   K["Kafka email.review.completed (5)"]
   SF["Snowflake or mock-snowflake (6)"]
@@ -464,6 +496,11 @@ Source: [diagrams/system-flow-06-dev-mocks.mmd](diagrams/system-flow-06-dev-mock
 
 Local dev replaces AWS and vendor APIs with **containers on fixed ports**. The gitignored `dev.secrets` file seeds mock Secrets Manager; entrypoints fetch bundle **A** before Node, Celery, and the gateway start. Celery calls mock LLM services for scoring and agent triage. Node talks to mock Snowflake and mock S3 for analytics export and backups, and sends password-reset mail to Mailpit **B** instead of the public internet.
 
+
+
+![Partial chart 6 — dev mocks and secrets](diagrams/system-flow-06-dev-mocks.svg)
+
+*If the editable Mermaid block below shows lines without arrowheads in your IDE, use this SVG (rendered by `@mermaid-js/mermaid-cli` from the matching `.mmd` file).*
 ```mermaid
 flowchart TB
   classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
@@ -516,6 +553,11 @@ See [stack_guide_staging_production_services.md](stack_guide_staging_production_
 
 The same application images run outside Docker Compose; only **configuration and endpoints** change. Containers pull secrets from real AWS Secrets Manager (A), connect to managed databases and messaging, call commercial LLM APIs for scoring, and use SES, S3, and Snowflake for mail, backups, and analytics. This chart is intentionally high level — it does not repeat every dev mock from partial chart 6.
 
+
+
+![Partial chart 7 — staging and production](diagrams/system-flow-staging-prod.svg)
+
+*If the editable Mermaid block below shows lines without arrowheads in your IDE, use this SVG (rendered by `@mermaid-js/mermaid-cli` from the matching `.mmd` file).*
 ```mermaid
 flowchart TB
   classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
@@ -552,13 +594,18 @@ See [graph_guide_neo4j_phishing.md](graph_guide_neo4j_phishing.md). Source: [dia
 
 This chart covers the **Graph tab** only: the browser loads campaigns (A), Node runs Cypher against Neo4j (B) and returns nodes and edges (C), then `CampaignGraphCanvas` assigns circle coordinates via `layoutNodesOnCircle` (D) and draws the subgraph in SVG.
 
+
+
+![Partial chart 8 — phishing graph UI](diagrams/system-flow-graph-ui.svg)
+
+*If the editable Mermaid block below shows lines without arrowheads in your IDE, use this SVG (rendered by `@mermaid-js/mermaid-cli` from the matching `.mmd` file).*
 ```mermaid
 flowchart LR
   classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
 
   UI["GraphView tab (1)"]
   API["Node graph routes (2)"]
-  NEO[(Neo4j (3))]
+  NEO[("Neo4j · 3")]
   CAN["CampaignGraphCanvas (4)"]
   LAY["layoutNodesOnCircle (5)"]
   SVG["SVG render (6)"]

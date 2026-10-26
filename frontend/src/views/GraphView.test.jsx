@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import GraphView from "./GraphView";
 
 jest.mock("../api/client", () => ({
@@ -71,34 +71,6 @@ describe("GraphView", () => {
       "/graph/campaign-subgraph?indicator=evil.test"
     );
     expect(screen.getByText(/1 \/ 1: evil.test/)).toBeInTheDocument();
-  });
-
-  it("shows pinned detail panel with copy after node click", async () => {
-    getJson
-      .mockResolvedValueOnce({
-        campaigns: [{ indicator: "evil.test", reviewCount: 3, kind: "shared_domain" }],
-      })
-      .mockResolvedValueOnce({
-        nodes: [
-          { id: "review:1", label: "Phish", type: "Review", properties: { id: "review:1" } },
-          { id: "campaign:evil.test", label: "evil.test", type: "Campaign", properties: {} },
-        ],
-        edges: [{ source: "review:1", target: "campaign:evil.test", label: "PART_OF_CAMPAIGN" }],
-        indicator: "evil.test",
-        reviewCount: 3,
-      });
-    render(<GraphView />);
-    await waitFor(() => {
-      expect(screen.getByRole("img", { name: /campaign relationship graph/i })).toBeInTheDocument();
-    });
-    const svg = screen.getByRole("img", { name: /campaign relationship graph/i });
-    // eslint-disable-next-line testing-library/no-node-access -- click review node circle in SVG
-    const circles = svg.querySelectorAll("circle");
-    fireEvent.click(circles[circles.length - 1]);
-    await waitFor(() => {
-      expect(screen.getByTestId("graph-detail-panel")).toBeInTheDocument();
-    });
-    expect(screen.getByRole("button", { name: /^Copy$/i })).toBeInTheDocument();
   });
 
   it("does not render SVG when subgraph has nodes but no edges", async () => {

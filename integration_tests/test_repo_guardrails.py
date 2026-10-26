@@ -38,6 +38,15 @@ def test_test_all_invokes_pytest_with_root_config():
     assert "integration_tests" in ini
 
 
+def test_flowchart_svgs_exist_for_mermaid_sources():
+    """Each system-flow .mmd must have a committed .svg with visible arrowheads for doc preview."""
+    diag = ROOT / "docs" / "diagrams"
+    mmds = sorted(diag.glob("system-flow*.mmd"))
+    assert mmds, "expected docs/diagrams/system-flow-*.mmd"
+    missing = [p.name for p in mmds if not p.with_suffix(".svg").is_file()]
+    assert not missing, f"run bash scripts/render-flow-diagrams.sh — missing SVG for: {missing}"
+
+
 def test_triage_user_exposes_session_auth_hash():
     """Django admin login() requires get_session_auth_hash on the custom user model."""
     models_src = (ROOT / "backend/triage_auth/models.py").read_text(encoding="utf-8")

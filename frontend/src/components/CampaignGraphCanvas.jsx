@@ -22,6 +22,7 @@ import {
   describeNode,
   describeEdge,
 } from "../lib/graphLayout";
+import { copyGraphDetailText, saveGraphDetailTextWithPicker } from "../lib/graphDetailExport";
 
 /**
  * Width of the invisible line drawn on top of each relationship. The visible stroke is only 2px,
@@ -41,15 +42,19 @@ const EDGE_STROKE_WIDTH = 2;
  *   Neo4j subgraph for one campaign: nodes (Sender, Review, Url, …), edges between them, optional
  *   count of nodes dropped as orphans, and campaign indicator string used to reset pan on switch.
  * @param {number} props.zoom — scale factor from parent toolbar (1 = default, clamped in parent)
- * @param {(detail: { text: string, kind: 'node'|'edge' }) => void} [props.onSelectDetail]
- *   Parent callback when the analyst clicks a node or edge (pin panel with Copy/Save lives in GraphView).
  */
-export default function CampaignGraphCanvas({ graph, zoom = 1, onSelectDetail }) {
+export default function CampaignGraphCanvas({ graph, zoom = 1 }) {
   /**
    * What the analyst is hovering: either a node or an edge, plus screen coordinates for the
    * floating tooltip and the preformatted multi-line description text.
    */
   const [hover, setHover] = useState(null);
+
+  /** Right-click menu: full tooltip text plus screen position (Copy / Save act on `text`). */
+  const [contextMenu, setContextMenu] = useState(null);
+
+  /** Visual selection after context menu — persists until background click or campaign change. */
+  const [selected, setSelected] = useState(null);
 
   /**
    * How far the entire graph group has been dragged from its default centered position (pixels).
@@ -94,7 +99,28 @@ export default function CampaignGraphCanvas({ graph, zoom = 1, onSelectDetail })
    */
   useEffect(() => {
     setPan({ x: 0, y: 0 });
+    setContextMenu(null);
+    setSelected(null);
   }, [graph.indicator, graph.nodes?.length]);
+
+  /** Close context menu on outside click or Escape. */
+  useEffect(() => {
+    if (!contextMenu) {
+      return undefined;
+    }
+    const onDocClick = () => setContextMenu(null);
+    const onKey = (event) => {
+      if (event.key === "Escape") {
+        setContextMenu(null);
+      }
+    };
+    document.addEventListener("click", onDocClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("click", onDocClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [contextMenu]);
 
   /**
    * Nodes and edges actually drawn. The API usually returns one connected component, but cached
@@ -161,17 +187,29 @@ export default function CampaignGraphCanvas({ graph, zoom = 1, onSelectDetail })
   const clearHover = () => setHover(null);
 
   /**
-   * Click pins detail in the parent panel (Copy/Save buttons). stopPropagation keeps pan from starting.
+   * Right-click opens export menu and marks the node selected (orange ring until cleared).
    */
-  const handleNodeClick = (node) => (event) => {
+  const openNodeContextMenu = (node) => (event) => {
+    event.preventDefault();
     event.stopPropagation();
-    onSelectDetail?.({ kind: "node", text: describeNode(node) });
+    const text = describeNode(node);
+    setSelected({ kind: "node", nodeId: node.id });
+    setContextMenu({ x: event.clientX, y: event.clientY, text, kind: "node" });
   };
 
-  /** Same as handleNodeClick but for a relationship row from Neo4j. */
-  const handleEdgeClick = (edge) => (event) => {
+  /** Right-click on relationship — same menu pattern as nodes. */
+  const openEdgeContextMenu = (edge, edgeKey) => (event) => {
+    event.preventDefault();
     event.stopPropagation();
-    onSelectDetail?.({ kind: "edge", text: describeEdge(edge) });
+    const text = describeEdge(edge);
+    setSelected({ kind: "edge", edgeKey });
+    setContextMenu({ x: event.clientX, y: event.clientY, text, kind: "edge" });
+  };
+
+  /** Left-click empty canvas clears selection (nodes stop propagation so they stay selected). */
+  const clearSelection = () => {
+    setSelected(null);
+    setContextMenu(null);
   };
 
   /** Horizontal center of the SVG — used as the fixed point for zoom scaling. */
@@ -195,6 +233,7 @@ export default function CampaignGraphCanvas({ graph, zoom = 1, onSelectDetail })
     if (event.button !== 0) {
       return;
     }
+    clearSelection();
     event.currentTarget.setPointerCapture(event.pointerId);
     dragPanRef.current = {
       startX: event.clientX,
@@ -334,11 +373,13 @@ export default function CampaignGraphCanvas({ graph, zoom = 1, onSelectDetail })
             const edgeKey = `${edge.source}-${edge.target}-${idx}`;
             /** True when the floating tooltip is currently describing this edge. */
             const highlighted = hover?.kind === "edge" && hover.edgeKey === edgeKey;
+            const selectedEdge =
+              selected?.kind === "edge" && selected.edgeKey === edgeKey;
             return (
               <g
                 key={edgeKey}
-                onClick={handleEdgeClick(edge)}
-                style={{ cursor: "pointer" }}
+                onContextMenu={openEdgeContextMenu(edge, edgeKey)}
+                style={{ cursor: "context-menu" }}
               >
                 {/* Wide invisible stroke — target for mouse hover to show edge tooltip. */}
                 <line
@@ -358,22 +399,26 @@ export default function CampaignGraphCanvas({ graph, zoom = 1, onSelectDetail })
                   y1={from.y}
                   x2={to.x}
                   y2={to.y}
-                  stroke={highlighted ? "#2f6fed" : "#555"}
-                  strokeWidth={EDGE_STROKE_WIDTH}
+                  stroke={selectedEdge || highlighted ? "#2f6fed" : "#555"}
+                  strokeWidth={selectedEdge ? 4 : EDGE_STROKE_WIDTH}
                   pointerEvents="none"
                 />
                 <title>{describeEdge(edge)}</title>
               </g>
             );
           })}
-          {positioned.map((node) => (
+          {positioned.map((node) => {
+            const selectedNode =
+              selected?.kind === "node" && selected.nodeId === node.id;
+            const hoverNode = hover?.kind === "node" && hover.nodeId === node.id;
+            return (
             <g
               key={node.id}
               onMouseEnter={handleNodeEnter(node)}
               onMouseMove={handleNodeEnter(node)}
               onMouseLeave={clearHover}
-              onClick={handleNodeClick(node)}
-              style={{ cursor: "pointer" }}
+              onContextMenu={openNodeContextMenu(node)}
+              style={{ cursor: "context-menu" }}
               onPointerDown={(e) => e.stopPropagation()}
             >
               <circle
@@ -381,15 +426,16 @@ export default function CampaignGraphCanvas({ graph, zoom = 1, onSelectDetail })
                 cy={node.y}
                 r="16"
                 fill={NODE_COLORS[node.type] || NODE_COLORS.Unknown}
-                stroke={hover?.kind === "node" && hover.nodeId === node.id ? "#1a1a1a" : "none"}
-                strokeWidth="2"
+                stroke={selectedNode ? "#c2410c" : hoverNode ? "#1a1a1a" : "none"}
+                strokeWidth={selectedNode ? 4 : 2}
               />
               <text x={node.x} y={node.y + 30} textAnchor="middle" className="graph-label">
                 {node.label.length > 24 ? `${node.label.slice(0, 21)}…` : node.label}
               </text>
               <title>{describeNode(node)}</title>
             </g>
-          ))}
+          );
+          })}
         </g>
       </svg>
       {/* East handle: drag right edge to change canvasWidth. */}
@@ -421,7 +467,37 @@ export default function CampaignGraphCanvas({ graph, zoom = 1, onSelectDetail })
           {hover.text.split("\n").map((line) => (
             <div key={line}>{line}</div>
           ))}
-          <div className="graph-tooltip-hint muted">Click to pin · then Copy or Save above chart</div>
+          <div className="graph-tooltip-hint muted">Right-click for Copy or Save to file</div>
+        </div>
+      )}
+      {contextMenu && (
+        <div
+          className="graph-context-menu"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          role="menu"
+          data-testid="graph-context-menu"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              copyGraphDetailText(contextMenu.text);
+              setContextMenu(null);
+            }}
+          >
+            Copy
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              saveGraphDetailTextWithPicker(contextMenu.text);
+              setContextMenu(null);
+            }}
+          >
+            Save to file…
+          </button>
         </div>
       )}
     </div>

@@ -1,4 +1,8 @@
-import { copyGraphDetailText, saveGraphDetailText } from "./graphDetailExport";
+import {
+  copyGraphDetailText,
+  saveGraphDetailText,
+  saveGraphDetailTextWithPicker,
+} from "./graphDetailExport";
 
 describe("graphDetailExport", () => {
   beforeEach(() => {
@@ -10,6 +14,18 @@ describe("graphDetailExport", () => {
   it("copyGraphDetailText writes to clipboard", async () => {
     await copyGraphDetailText("line1\nline2");
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith("line1\nline2");
+  });
+
+  it("saveGraphDetailTextWithPicker uses showSaveFilePicker when available", async () => {
+    const write = jest.fn();
+    const close = jest.fn();
+    window.showSaveFilePicker = jest.fn().mockResolvedValue({
+      createWritable: () => Promise.resolve({ write, close }),
+    });
+    await saveGraphDetailTextWithPicker("export me");
+    expect(window.showSaveFilePicker).toHaveBeenCalled();
+    expect(write).toHaveBeenCalledWith("export me");
+    delete window.showSaveFilePicker;
   });
 
   it("saveGraphDetailText triggers download anchor", () => {
