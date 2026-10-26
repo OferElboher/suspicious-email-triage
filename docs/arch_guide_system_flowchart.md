@@ -25,16 +25,9 @@ For prose detail, see [arch_guide_overview.md](arch_guide_overview.md), [arch_gu
 
 ---
 
-## Diagram assets
+## Diagram sources and notation
 
-| Chart | Mermaid source | Rendered SVG |
-|-------|----------------|--------------|
-| Overall dev stack | [system-flow-main.mmd](diagrams/system-flow-main.mmd) | [system-flow-main.svg](diagrams/system-flow-main.svg) |
-| Partial 1–6 | [system-flow-01-triage-async.mmd](diagrams/system-flow-01-triage-async.mmd) … [06](diagrams/system-flow-06-dev-mocks.mmd) | Matching `.svg` alongside each `.mmd` |
-| Partial 7 | [system-flow-staging-prod.mmd](diagrams/system-flow-staging-prod.mmd) | [system-flow-staging-prod.svg](diagrams/system-flow-staging-prod.svg) |
-| Partial 8 | [system-flow-graph-ui.mmd](diagrams/system-flow-graph-ui.mmd) | [system-flow-graph-ui.svg](diagrams/system-flow-graph-ui.svg) |
-
-SVG regeneration (after editing a `.mmd` source):
+Editable Mermaid lives under [diagrams/](diagrams/) (`system-flow-*.mmd`). Each chart below is embedded from that source (quoted edge labels and database cylinder shapes so arrowheads render reliably). If your Markdown preview hides arrowheads, open the same `.mmd` in [Mermaid Live Editor](https://mermaid.live) or regenerate committed `.svg` copies:
 
 ```bash
 bash scripts/render-flow-diagrams.sh
@@ -59,15 +52,105 @@ Same source as [diagrams/system-flow-main.mmd](diagrams/system-flow-main.mmd).
 This diagram shows every major container group in the default **dev** Docker Compose stack and how traffic moves between them: analysts and mail platforms on the left, Node and Go services in the middle, databases and Kafka in the center, Python workers on the right, plus dev mocks and optional external OAuth/email at the edges.
 
 
+```mermaid
+flowchart TB
+  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
 
+  subgraph clients [Clients]
+    BROWSER["React UI port 3001 (1)<br/>triage analytics graph search logs admin"]
+    MAIL["Mail platforms webhooks (2)"]
+  end
 
+  subgraph edge [Ingest edge]
+    GW["Go ingest-gateway port 8080 (3)<br/>webhooks and dev simulation"]
+  end
 
+  subgraph nodeApi [Node API port 3000]
+    EXPRESS["Express REST (4)<br/>auth reviews metrics graph search logs ops"]
+  end
 
-![Overall dev stack (directed arrows visible)](diagrams/system-flow-main.svg)
+  subgraph adminOps [Admin and ops]
+    DJANGO["Django admin port 8000 (5)"]
+    LOGVOL["Docker volume triage-logs merged.log (6)"]
+  end
 
+  subgraph data [Databases and search stores]
+    MONGO[("MongoDB Review documents · 7")]
+    PG[("PostgreSQL auth stats ingest_clients · 8")]
+    NEO[("Neo4j phishing graph · 9")]
+    ES[("Elasticsearch search index · 10")]
+    REDIS[("Redis Celery broker · 11")]
+  end
 
+  subgraph events [Events]
+    KAFKA["Redpanda Kafka topics (12)"]
+  end
 
+  subgraph workers [Python workers]
+    DISPATCH["ai-kafka-dispatch (13)"]
+    CELERY["ai-celery scoring and sync (14)"]
+  end
 
+  subgraph outbound [Outbound integrations]
+    VERDICT["Verdict webhooks and Kafka (15)"]
+    SNOW["Snowflake export (16)"]
+  end
+
+  subgraph devMocks [Dev mocks]
+    MOCKSECR["mock-secrets-manager (17)"]
+    MOCKS3["mock-s3 backups (18)"]
+    MOCKLLM["mock-llm (19)"]
+    MOCKAGENT["mock-cloud-llm (20)"]
+    MOCKCB["mock-verdict-callback (21)"]
+    MAILPIT["Mailpit (22)"]
+  end
+
+  subgraph externalId [External identity and email]
+    GOOGLE["Google OAuth (23)"]
+    EMAILVENDOR["Gmail SES SMTP (24)"]
+  end
+
+  BROWSER -->|"JWT REST · A"| EXPRESS
+  BROWSER -.->|"OAuth redirect · B"| GOOGLE
+  GOOGLE -.->|"OAuth callback · C"| EXPRESS
+  MAIL -->|"webhook · D"| GW
+  GW -->|"internal ingest · E"| EXPRESS
+
+  EXPRESS --> MONGO
+  EXPRESS --> PG
+  EXPRESS --> NEO
+  EXPRESS --> ES
+  EXPRESS --> REDIS
+  EXPRESS --> KAFKA
+  EXPRESS --> VERDICT
+  EXPRESS --> SNOW
+  EXPRESS --> LOGVOL
+  EXPRESS -->|"backup upload · F"| MOCKS3
+  EXPRESS -.->|"reset email · G"| MAILPIT
+  EXPRESS -.->|"production mail · H"| EMAILVENDOR
+
+  DJANGO --> PG
+  DJANGO --> LOGVOL
+
+  MOCKSECR -.->|"startup secrets · I"| EXPRESS
+  MOCKSECR -.-> CELERY
+  MOCKSECR -.-> GW
+
+  KAFKA -->|"consume ingest · J"| DISPATCH
+  DISPATCH --> CELERY
+  CELERY --> MONGO
+  CELERY --> PG
+  CELERY --> MOCKLLM
+  CELERY --> MOCKAGENT
+  CELERY --> VERDICT
+  CELERY --> LOGVOL
+  CELERY -->|"graph and search sync · K"| EXPRESS
+
+  GW --> LOGVOL
+  VERDICT -.-> MOCKCB
+
+  class BROWSER,MAIL flowEntry
+```
 
 **What the numbered boxes mean**
 
@@ -120,15 +203,34 @@ Source: [diagrams/system-flow-01-triage-async.mmd](diagrams/system-flow-01-triag
 This chart follows one manual review from the analyst UI through background scoring. The **submit flow** (steps A–D) writes MongoDB, records a chart event, and publishes Kafka. The **polling flow** (E–F) lets the UI watch status until analysis finishes. The **worker flow** (G–L) consumes Kafka, runs Celery, optionally calls the LLM mock, updates MongoDB and PostgreSQL again, and triggers graph/search sync back through Node.
 
 
+```mermaid
+flowchart TB
+  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
 
+  UI["React UI port 3001 (1)"]
+  API["Node Express port 3000 (2)"]
+  M[("MongoDB Review doc · 3")]
+  P[("PostgreSQL stats event · 4")]
+  K["Kafka email.review.ingested (5)"]
+  D["ai-kafka-dispatch (6)"]
+  W["ai-celery analyze_review (7)"]
+  LLM["mock-llm or rules engine (8)"]
 
+  UI -->|"JWT POST /reviews (A)"| API
+  API -->|"insert pending (B)"| M
+  API -->|"review_created row (C)"| P
+  API -->|"publish ingest (D)"| K
+  UI -->|"poll GET /reviews/id (E)"| API
+  API -->|"read status (F)"| M
+  K -->|"consume (G)"| D
+  D -->|"enqueue task (H)"| W
+  W -->|"load and save result (I)"| M
+  W -->|"status_changed row (J)"| P
+  W -->|"optional LLM call (K)"| LLM
+  W -->|"graph and ES sync (L)"| API
 
-
-![Partial chart 1 — triage and async scoring](diagrams/system-flow-01-triage-async.svg)
-
-
-
-
+  class UI flowEntry
+```
 
 **Comments**
 
@@ -172,15 +274,24 @@ This chart groups the Express surface by **URL family**. Every arrow is a class 
 - **Dev (H)** — Local-only helpers: simulation start/stop, `POST /dev/reset-local-state`, bootstrap password reset, feature flags (`/dev/features`).
 
 
+```mermaid
+flowchart LR
+  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
 
+  UI["React or curl client (1)"]
+  API["Express createApp routes (2)"]
 
+  UI -->|"auth login JWT (A)"| API
+  UI -->|"reviews CRUD override (B)"| API
+  UI -->|"metrics analytics charts (C)"| API
+  UI -->|"graph campaigns subgraph (D)"| API
+  UI -->|"search reviews (E)"| API
+  UI -->|"logs search (F)"| API
+  UI -->|"ops backups prometheus (G)"| API
+  UI -->|"dev simulation reset (H)"| API
 
-
-![Partial chart 2 — REST API families](diagrams/system-flow-02-rest-api.svg)
-
-
-
-
+  class UI flowEntry
+```
 
 **Comments**
 
@@ -205,15 +316,27 @@ Source: [diagrams/system-flow-03-mailbox-ingest.mmd](diagrams/system-flow-03-mai
 Three independent **entry paths** converge on the same async pipeline. **Manual triage (A)** is always `POST /reviews` on Node with a JWT (`reviews.write`) — the React **Submit email** modal is just one client; `curl`, Postman, or an integration script with an analyst token hits the same route and does not use ingest-gateway. **Mailbox ingest (B–E)** is different: mail platforms or dev simulation call Go on **8080**, Go forwards to `POST /ingest/internal/mailbox` with a shared secret (D), then Node persists and publishes Kafka (E) so Celery runs the same analyze path.
 
 
+```mermaid
+flowchart TB
+  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
 
+  P1["JWT client POST /reviews (1)"]
+  P2["Mail webhook (2)"]
+  P3["Go simulation tick (3)"]
+  API["Node POST /ingest/internal/mailbox (4)"]
+  GW["ingest-gateway port 8080 (5)"]
+  K["Kafka same ingest topic (6)"]
+  CEL["ai-celery same analyze path (7)"]
 
+  P1 -->|"POST /reviews JWT (A)"| API
+  P2 -->|"POST /v1/ingest/email (B)"| GW
+  P3 -->|"timer in gateway (C)"| GW
+  GW -->|"shared secret header (D)"| API
+  API -->|"persist and publish (E)"| K
+  K --> CEL
 
-
-![Partial chart 3 — mailbox ingest paths](diagrams/system-flow-03-mailbox-ingest.svg)
-
-
-
-
+  class P1,P2,P3 flowEntry
+```
 
 **Comments**
 
@@ -240,15 +363,41 @@ Source: [diagrams/system-flow-04-data-stores.mmd](diagrams/system-flow-04-data-s
 Each arrow means **this service saves data there** (writes only — not every read). Follow one box on the left to its outgoing arrows only; there are no shared “bus” lines. After background scoring, the Python worker updates MongoDB and chart stats, then **asks Node** to refresh the phishing graph and search index — so **Neo4j and Elasticsearch arrows start at Node only**, not at ai-celery.
 
 
+```mermaid
+flowchart TB
+  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
 
+  N["Node API (1)"]
+  W["ai-celery (2)"]
+  G["ingest-gateway (3)"]
+  DJ["django-admin (4)"]
 
+  M[("MongoDB · 5")]
+  PG[("PostgreSQL · 6")]
+  NEO[("Neo4j · 7")]
+  ES[("Elasticsearch · 8")]
+  R[("Redis · 9")]
+  LOG["shared log file merged.log (10)"]
 
+  N --> M
+  N --> PG
+  N --> NEO
+  N --> ES
+  N --> R
+  N --> LOG
 
-![Partial chart 4 — data stores and writers](diagrams/system-flow-04-data-stores.svg)
+  W --> M
+  W --> PG
+  W --> R
+  W --> LOG
 
+  G --> LOG
 
+  DJ --> PG
+  DJ --> LOG
 
-
+  class N,W,G,DJ flowEntry
+```
 
 **Comments**
 
@@ -277,15 +426,25 @@ Source: [diagrams/system-flow-05-verdict-analytics.mmd](diagrams/system-flow-05-
 When a review reaches a **final state** (automated completion or analyst override), two outbound tracks can run in parallel. Node **verdict delivery** loads per-client settings from PostgreSQL, then either posts a signed webhook (A) or publishes to Kafka (B). Separately, an analytics mapper can push a warehouse row to Snowflake or the dev mock (C).
 
 
+```mermaid
+flowchart LR
+  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
 
+  REV["Review completed or override (1)"]
+  NODE["Node verdictDelivery (2)"]
+  PG[("PostgreSQL ingest_clients · 3")]
+  WH["Customer webhook URL (4)"]
+  K["Kafka email.review.completed (5)"]
+  SF["Snowflake or mock-snowflake (6)"]
 
+  REV --> NODE
+  NODE --> PG
+  NODE -->|"HMAC POST (A)"| WH
+  NODE -->|"publish (B)"| K
+  REV -->|"export row (C)"| SF
 
-
-![Partial chart 5 — verdicts and analytics export](diagrams/system-flow-05-verdict-analytics.svg)
-
-
-
-
+  class REV flowEntry
+```
 
 **Comments**
 
@@ -309,15 +468,33 @@ Source: [diagrams/system-flow-06-dev-mocks.mmd](diagrams/system-flow-06-dev-mock
 Local dev replaces AWS and vendor APIs with **containers on fixed ports**. The gitignored `dev.secrets` file seeds mock Secrets Manager; entrypoints fetch bundle **A** before Node, Celery, and the gateway start. Celery calls mock LLM services for scoring and agent triage. Node talks to mock Snowflake and mock S3 for analytics export and backups, and sends password-reset mail to Mailpit **B** instead of the public internet.
 
 
+```mermaid
+flowchart TB
+  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
 
+  SEC["mock-secrets-manager 4566 (1)"]
+  DEV["backend/dev.secrets file (2)"]
+  N["Node backend (3)"]
+  PY["ai-celery (4)"]
+  GW["ingest-gateway (5)"]
+  MLLM["mock-llm 8090 (6)"]
+  MCL["mock-cloud-llm 8091 (7)"]
+  MSF["mock-snowflake 4567 (8)"]
+  MS3["mock-s3 4568 (9)"]
+  MP["Mailpit SMTP (10)"]
 
+  DEV --> SEC
+  SEC -->|"GetSecretValue (A)"| N
+  SEC --> PY
+  SEC --> GW
+  PY --> MLLM
+  PY --> MCL
+  N --> MSF
+  N --> MS3
+  N -->|"password reset (B)"| MP
 
-
-![Partial chart 6 — dev mocks and secrets](diagrams/system-flow-06-dev-mocks.svg)
-
-
-
-
+  class DEV flowEntry
+```
 
 **Comments**
 
@@ -344,15 +521,23 @@ See [stack_guide_staging_production_services.md](stack_guide_staging_production_
 The same application images run outside Docker Compose; only **configuration and endpoints** change. Containers pull secrets from real AWS Secrets Manager (A), connect to managed databases and messaging, call commercial LLM APIs for scoring, and use SES, S3, and Snowflake for mail, backups, and analytics. This chart is intentionally high level — it does not repeat every dev mock from partial chart 6.
 
 
+```mermaid
+flowchart TB
+  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
 
+  APP["Application containers (1)"]
+  SM["AWS Secrets Manager (2)"]
+  DATA["RDS Atlas OpenSearch Aura MSK ElastiCache (3)"]
+  AI["OpenAI Bedrock Vertex (4)"]
+  OUT["SES S3 Snowflake (5)"]
 
+  APP -->|"secret bundle id (A)"| SM
+  APP --> DATA
+  APP --> AI
+  APP --> OUT
 
-
-![Partial chart 7 — staging and production](diagrams/system-flow-staging-prod.svg)
-
-
-
-
+  class APP flowEntry
+```
 
 **Comments**
 
@@ -373,15 +558,25 @@ See [graph_guide_neo4j_phishing.md](graph_guide_neo4j_phishing.md). Source: [dia
 This chart covers the **Graph tab** only: the browser loads campaigns (A), Node runs Cypher against Neo4j (B) and returns nodes and edges (C), then `CampaignGraphCanvas` assigns circle coordinates via `layoutNodesOnCircle` (D) and draws the subgraph in SVG.
 
 
+```mermaid
+flowchart LR
+  classDef flowEntry fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
 
+  UI["GraphView tab (1)"]
+  API["Node graph routes (2)"]
+  NEO[("Neo4j · 3")]
+  CAN["CampaignGraphCanvas (4)"]
+  LAY["layoutNodesOnCircle (5)"]
+  SVG["SVG render (6)"]
 
+  UI -->|"GET /graph/campaigns (A)"| API
+  API -->|"Cypher read (B)"| NEO
+  API -->|"JSON nodes edges (C)"| CAN
+  CAN -->|"circle x y (D)"| LAY
+  LAY --> SVG
 
-
-![Partial chart 8 — phishing graph UI](diagrams/system-flow-graph-ui.svg)
-
-
-
-
+  class UI flowEntry
+```
 
 **Comments**
 
