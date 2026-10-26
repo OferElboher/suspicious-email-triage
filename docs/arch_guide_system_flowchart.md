@@ -61,19 +61,11 @@ This diagram shows every major container group in the default **dev** Docker Com
 
 
 
-<div markdown="0">
-<div style="border:1px solid #64748b;border-radius:8px;padding:10px 12px;margin:1rem 0;background:#f8fafc;">
-<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;margin-bottom:8px;font-size:0.875rem;">
-<button type="button" onclick="(function(){var el=document.getElementById('flow-main');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.max(50,w-10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-main-pct').textContent=el.dataset.scale+'%';})()">Zoom −</button>
-<button type="button" onclick="(function(){var el=document.getElementById('flow-main');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.min(300,w+10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-main-pct').textContent=el.dataset.scale+'%';})()">Zoom +</button>
-<button type="button" onclick="(function(){var el=document.getElementById('flow-main');el.dataset.scale=100;el.style.width='100%';document.getElementById('flow-main-pct').textContent='100%';})()">Reset</button>
-<span id="flow-main-pct">100%</span>
-</div>
-<div style="overflow:auto;max-height:min(85vh,920px);border:1px solid #cbd5e1;border-radius:4px;background:#fff;padding:6px;">
-<img id="flow-main" src="diagrams/system-flow-main.svg" alt="Overall dev stack (directed arrows visible)" data-scale="100" style="transform-origin:0 0;display:block;width:100%;" />
-</div>
-</div>
-</div>
+
+
+![Overall dev stack (directed arrows visible)](diagrams/system-flow-main.svg)
+
+
 
 
 
@@ -130,19 +122,11 @@ This chart follows one manual review from the analyst UI through background scor
 
 
 
-<div markdown="0">
-<div style="border:1px solid #64748b;border-radius:8px;padding:10px 12px;margin:1rem 0;background:#f8fafc;">
-<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;margin-bottom:8px;font-size:0.875rem;">
-<button type="button" onclick="(function(){var el=document.getElementById('flow-01_triage_async');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.max(50,w-10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-01_triage_async-pct').textContent=el.dataset.scale+'%';})()">Zoom −</button>
-<button type="button" onclick="(function(){var el=document.getElementById('flow-01_triage_async');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.min(300,w+10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-01_triage_async-pct').textContent=el.dataset.scale+'%';})()">Zoom +</button>
-<button type="button" onclick="(function(){var el=document.getElementById('flow-01_triage_async');el.dataset.scale=100;el.style.width='100%';document.getElementById('flow-01_triage_async-pct').textContent='100%';})()">Reset</button>
-<span id="flow-01_triage_async-pct">100%</span>
-</div>
-<div style="overflow:auto;max-height:min(85vh,920px);border:1px solid #cbd5e1;border-radius:4px;background:#fff;padding:6px;">
-<img id="flow-01_triage_async" src="diagrams/system-flow-01-triage-async.svg" alt="Partial chart 1 — triage and async scoring" data-scale="100" style="transform-origin:0 0;display:block;width:100%;" />
-</div>
-</div>
-</div>
+
+
+![Partial chart 1 — triage and async scoring](diagrams/system-flow-01-triage-async.svg)
+
+
 
 
 
@@ -190,19 +174,11 @@ This chart groups the Express surface by **URL family**. Every arrow is a class 
 
 
 
-<div markdown="0">
-<div style="border:1px solid #64748b;border-radius:8px;padding:10px 12px;margin:1rem 0;background:#f8fafc;">
-<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;margin-bottom:8px;font-size:0.875rem;">
-<button type="button" onclick="(function(){var el=document.getElementById('flow-02_rest_api');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.max(50,w-10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-02_rest_api-pct').textContent=el.dataset.scale+'%';})()">Zoom −</button>
-<button type="button" onclick="(function(){var el=document.getElementById('flow-02_rest_api');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.min(300,w+10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-02_rest_api-pct').textContent=el.dataset.scale+'%';})()">Zoom +</button>
-<button type="button" onclick="(function(){var el=document.getElementById('flow-02_rest_api');el.dataset.scale=100;el.style.width='100%';document.getElementById('flow-02_rest_api-pct').textContent='100%';})()">Reset</button>
-<span id="flow-02_rest_api-pct">100%</span>
-</div>
-<div style="overflow:auto;max-height:min(85vh,920px);border:1px solid #cbd5e1;border-radius:4px;background:#fff;padding:6px;">
-<img id="flow-02_rest_api" src="diagrams/system-flow-02-rest-api.svg" alt="Partial chart 2 — REST API families" data-scale="100" style="transform-origin:0 0;display:block;width:100%;" />
-</div>
-</div>
-</div>
+
+
+![Partial chart 2 — REST API families](diagrams/system-flow-02-rest-api.svg)
+
+
 
 
 
@@ -231,19 +207,11 @@ Three independent **entry paths** converge on the same async pipeline. **Manual 
 
 
 
-<div markdown="0">
-<div style="border:1px solid #64748b;border-radius:8px;padding:10px 12px;margin:1rem 0;background:#f8fafc;">
-<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;margin-bottom:8px;font-size:0.875rem;">
-<button type="button" onclick="(function(){var el=document.getElementById('flow-03_mailbox_ingest');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.max(50,w-10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-03_mailbox_ingest-pct').textContent=el.dataset.scale+'%';})()">Zoom −</button>
-<button type="button" onclick="(function(){var el=document.getElementById('flow-03_mailbox_ingest');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.min(300,w+10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-03_mailbox_ingest-pct').textContent=el.dataset.scale+'%';})()">Zoom +</button>
-<button type="button" onclick="(function(){var el=document.getElementById('flow-03_mailbox_ingest');el.dataset.scale=100;el.style.width='100%';document.getElementById('flow-03_mailbox_ingest-pct').textContent='100%';})()">Reset</button>
-<span id="flow-03_mailbox_ingest-pct">100%</span>
-</div>
-<div style="overflow:auto;max-height:min(85vh,920px);border:1px solid #cbd5e1;border-radius:4px;background:#fff;padding:6px;">
-<img id="flow-03_mailbox_ingest" src="diagrams/system-flow-03-mailbox-ingest.svg" alt="Partial chart 3 — mailbox ingest paths" data-scale="100" style="transform-origin:0 0;display:block;width:100%;" />
-</div>
-</div>
-</div>
+
+
+![Partial chart 3 — mailbox ingest paths](diagrams/system-flow-03-mailbox-ingest.svg)
+
+
 
 
 
@@ -274,19 +242,11 @@ Each arrow means **this service saves data there** (writes only — not every re
 
 
 
-<div markdown="0">
-<div style="border:1px solid #64748b;border-radius:8px;padding:10px 12px;margin:1rem 0;background:#f8fafc;">
-<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;margin-bottom:8px;font-size:0.875rem;">
-<button type="button" onclick="(function(){var el=document.getElementById('flow-04_data_stores');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.max(50,w-10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-04_data_stores-pct').textContent=el.dataset.scale+'%';})()">Zoom −</button>
-<button type="button" onclick="(function(){var el=document.getElementById('flow-04_data_stores');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.min(300,w+10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-04_data_stores-pct').textContent=el.dataset.scale+'%';})()">Zoom +</button>
-<button type="button" onclick="(function(){var el=document.getElementById('flow-04_data_stores');el.dataset.scale=100;el.style.width='100%';document.getElementById('flow-04_data_stores-pct').textContent='100%';})()">Reset</button>
-<span id="flow-04_data_stores-pct">100%</span>
-</div>
-<div style="overflow:auto;max-height:min(85vh,920px);border:1px solid #cbd5e1;border-radius:4px;background:#fff;padding:6px;">
-<img id="flow-04_data_stores" src="diagrams/system-flow-04-data-stores.svg" alt="Partial chart 4 — data stores and writers" data-scale="100" style="transform-origin:0 0;display:block;width:100%;" />
-</div>
-</div>
-</div>
+
+
+![Partial chart 4 — data stores and writers](diagrams/system-flow-04-data-stores.svg)
+
+
 
 
 
@@ -319,19 +279,11 @@ When a review reaches a **final state** (automated completion or analyst overrid
 
 
 
-<div markdown="0">
-<div style="border:1px solid #64748b;border-radius:8px;padding:10px 12px;margin:1rem 0;background:#f8fafc;">
-<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;margin-bottom:8px;font-size:0.875rem;">
-<button type="button" onclick="(function(){var el=document.getElementById('flow-05_verdict_analytics');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.max(50,w-10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-05_verdict_analytics-pct').textContent=el.dataset.scale+'%';})()">Zoom −</button>
-<button type="button" onclick="(function(){var el=document.getElementById('flow-05_verdict_analytics');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.min(300,w+10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-05_verdict_analytics-pct').textContent=el.dataset.scale+'%';})()">Zoom +</button>
-<button type="button" onclick="(function(){var el=document.getElementById('flow-05_verdict_analytics');el.dataset.scale=100;el.style.width='100%';document.getElementById('flow-05_verdict_analytics-pct').textContent='100%';})()">Reset</button>
-<span id="flow-05_verdict_analytics-pct">100%</span>
-</div>
-<div style="overflow:auto;max-height:min(85vh,920px);border:1px solid #cbd5e1;border-radius:4px;background:#fff;padding:6px;">
-<img id="flow-05_verdict_analytics" src="diagrams/system-flow-05-verdict-analytics.svg" alt="Partial chart 5 — verdicts and analytics export" data-scale="100" style="transform-origin:0 0;display:block;width:100%;" />
-</div>
-</div>
-</div>
+
+
+![Partial chart 5 — verdicts and analytics export](diagrams/system-flow-05-verdict-analytics.svg)
+
+
 
 
 
@@ -359,19 +311,11 @@ Local dev replaces AWS and vendor APIs with **containers on fixed ports**. The g
 
 
 
-<div markdown="0">
-<div style="border:1px solid #64748b;border-radius:8px;padding:10px 12px;margin:1rem 0;background:#f8fafc;">
-<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;margin-bottom:8px;font-size:0.875rem;">
-<button type="button" onclick="(function(){var el=document.getElementById('flow-06_dev_mocks');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.max(50,w-10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-06_dev_mocks-pct').textContent=el.dataset.scale+'%';})()">Zoom −</button>
-<button type="button" onclick="(function(){var el=document.getElementById('flow-06_dev_mocks');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.min(300,w+10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-06_dev_mocks-pct').textContent=el.dataset.scale+'%';})()">Zoom +</button>
-<button type="button" onclick="(function(){var el=document.getElementById('flow-06_dev_mocks');el.dataset.scale=100;el.style.width='100%';document.getElementById('flow-06_dev_mocks-pct').textContent='100%';})()">Reset</button>
-<span id="flow-06_dev_mocks-pct">100%</span>
-</div>
-<div style="overflow:auto;max-height:min(85vh,920px);border:1px solid #cbd5e1;border-radius:4px;background:#fff;padding:6px;">
-<img id="flow-06_dev_mocks" src="diagrams/system-flow-06-dev-mocks.svg" alt="Partial chart 6 — dev mocks and secrets" data-scale="100" style="transform-origin:0 0;display:block;width:100%;" />
-</div>
-</div>
-</div>
+
+
+![Partial chart 6 — dev mocks and secrets](diagrams/system-flow-06-dev-mocks.svg)
+
+
 
 
 
@@ -402,19 +346,11 @@ The same application images run outside Docker Compose; only **configuration and
 
 
 
-<div markdown="0">
-<div style="border:1px solid #64748b;border-radius:8px;padding:10px 12px;margin:1rem 0;background:#f8fafc;">
-<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;margin-bottom:8px;font-size:0.875rem;">
-<button type="button" onclick="(function(){var el=document.getElementById('flow-staging_prod');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.max(50,w-10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-staging_prod-pct').textContent=el.dataset.scale+'%';})()">Zoom −</button>
-<button type="button" onclick="(function(){var el=document.getElementById('flow-staging_prod');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.min(300,w+10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-staging_prod-pct').textContent=el.dataset.scale+'%';})()">Zoom +</button>
-<button type="button" onclick="(function(){var el=document.getElementById('flow-staging_prod');el.dataset.scale=100;el.style.width='100%';document.getElementById('flow-staging_prod-pct').textContent='100%';})()">Reset</button>
-<span id="flow-staging_prod-pct">100%</span>
-</div>
-<div style="overflow:auto;max-height:min(85vh,920px);border:1px solid #cbd5e1;border-radius:4px;background:#fff;padding:6px;">
-<img id="flow-staging_prod" src="diagrams/system-flow-staging-prod.svg" alt="Partial chart 7 — staging and production" data-scale="100" style="transform-origin:0 0;display:block;width:100%;" />
-</div>
-</div>
-</div>
+
+
+![Partial chart 7 — staging and production](diagrams/system-flow-staging-prod.svg)
+
+
 
 
 
@@ -439,19 +375,11 @@ This chart covers the **Graph tab** only: the browser loads campaigns (A), Node 
 
 
 
-<div markdown="0">
-<div style="border:1px solid #64748b;border-radius:8px;padding:10px 12px;margin:1rem 0;background:#f8fafc;">
-<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;margin-bottom:8px;font-size:0.875rem;">
-<button type="button" onclick="(function(){var el=document.getElementById('flow-graph_ui');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.max(50,w-10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-graph_ui-pct').textContent=el.dataset.scale+'%';})()">Zoom −</button>
-<button type="button" onclick="(function(){var el=document.getElementById('flow-graph_ui');var w=parseFloat(el.dataset.scale||100);el.dataset.scale=Math.min(300,w+10);el.style.width=el.dataset.scale+'%';document.getElementById('flow-graph_ui-pct').textContent=el.dataset.scale+'%';})()">Zoom +</button>
-<button type="button" onclick="(function(){var el=document.getElementById('flow-graph_ui');el.dataset.scale=100;el.style.width='100%';document.getElementById('flow-graph_ui-pct').textContent='100%';})()">Reset</button>
-<span id="flow-graph_ui-pct">100%</span>
-</div>
-<div style="overflow:auto;max-height:min(85vh,920px);border:1px solid #cbd5e1;border-radius:4px;background:#fff;padding:6px;">
-<img id="flow-graph_ui" src="diagrams/system-flow-graph-ui.svg" alt="Partial chart 8 — phishing graph UI" data-scale="100" style="transform-origin:0 0;display:block;width:100%;" />
-</div>
-</div>
-</div>
+
+
+![Partial chart 8 — phishing graph UI](diagrams/system-flow-graph-ui.svg)
+
+
 
 
 
