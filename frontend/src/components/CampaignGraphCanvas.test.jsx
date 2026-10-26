@@ -11,18 +11,25 @@ const SAMPLE_GRAPH = {
 };
 
 describe("CampaignGraphCanvas", () => {
-  beforeEach(() => {
-    global.URL.createObjectURL = jest.fn(() => "blob:mock");
-    global.URL.revokeObjectURL = jest.fn();
+  it("calls onSelectDetail when a node is clicked", () => {
+    const onSelectDetail = jest.fn();
+    render(
+      <CampaignGraphCanvas graph={SAMPLE_GRAPH} zoom={1} onSelectDetail={onSelectDetail} />
+    );
+    const label = screen.getAllByText(/Review abc/)[0];
+    // eslint-disable-next-line testing-library/no-node-access -- SVG groups lack roles
+    fireEvent.click(label.parentElement);
+    expect(onSelectDetail).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: "node", text: expect.stringContaining("Review") })
+    );
   });
 
-  it("shows copy and save actions when hovering a node", () => {
+  it("shows hover preview without action buttons", () => {
     render(<CampaignGraphCanvas graph={SAMPLE_GRAPH} zoom={1} />);
-    // Hover the node label group (SVG has no Testing Library roles per circle).
     const label = screen.getAllByText(/Review abc/)[0];
-    // eslint-disable-next-line testing-library/no-node-access -- SVG node groups lack ARIA roles
+    // eslint-disable-next-line testing-library/no-node-access
     fireEvent.mouseEnter(label.parentElement);
-    expect(screen.getByRole("button", { name: /copy/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /save to file/i })).toBeInTheDocument();
+    expect(screen.getByRole("tooltip")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /copy/i })).not.toBeInTheDocument();
   });
 });

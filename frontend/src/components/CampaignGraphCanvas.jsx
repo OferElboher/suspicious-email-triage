@@ -41,8 +41,10 @@ const EDGE_STROKE_WIDTH = 2;
  *   Neo4j subgraph for one campaign: nodes (Sender, Review, Url, …), edges between them, optional
  *   count of nodes dropped as orphans, and campaign indicator string used to reset pan on switch.
  * @param {number} props.zoom — scale factor from parent toolbar (1 = default, clamped in parent)
+ * @param {(detail: { text: string, kind: 'node'|'edge' }) => void} [props.onSelectDetail]
+ *   Parent callback when the analyst clicks a node or edge (pin panel with Copy/Save lives in GraphView).
  */
-export default function CampaignGraphCanvas({ graph, zoom = 1 }) {
+export default function CampaignGraphCanvas({ graph, zoom = 1, onSelectDetail }) {
   /**
    * What the analyst is hovering: either a node or an edge, plus screen coordinates for the
    * floating tooltip and the preformatted multi-line description text.
@@ -85,32 +87,6 @@ export default function CampaignGraphCanvas({ graph, zoom = 1 }) {
    * was pressed. Null when not resizing.
    */
   const resizeWidthRef = useRef(null);
-
-  /** Copy hover detail text to the clipboard (browser API; used from the tooltip action row). */
-  const copyHoverDetail = useCallback(async () => {
-    if (!hover?.text) {
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(hover.text);
-    } catch {
-      /* Clipboard may be denied outside secure context — save-to-file still works. */
-    }
-  }, [hover]);
-
-  /** Download hover detail as a plain-text file for tickets or runbooks. */
-  const saveHoverDetail = useCallback(() => {
-    if (!hover?.text) {
-      return;
-    }
-    const blob = new Blob([hover.text], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `graph-detail-${Date.now()}.txt`;
-    anchor.click();
-    URL.revokeObjectURL(url);
-  }, [hover]);
 
   /**
    * When the parent switches to another campaign (different indicator or node count), snap pan
@@ -181,8 +157,22 @@ export default function CampaignGraphCanvas({ graph, zoom = 1 }) {
     });
   };
 
-  /** Clears the tooltip when the pointer leaves a node, edge, or the SVG. */
+  /** Clears the lightweight hover preview when the pointer leaves a node, edge, or the SVG. */
   const clearHover = () => setHover(null);
+
+  /**
+   * Click pins detail in the parent panel (Copy/Save buttons). stopPropagation keeps pan from starting.
+   */
+  const handleNodeClick = (node) => (event) => {
+    event.stopPropagation();
+    onSelectDetail?.({ kind: "node", text: describeNode(node) });
+  };
+
+  /** Same as handleNodeClick but for a relationship row from Neo4j. */
+  const handleEdgeClick = (edge) => (event) => {
+    event.stopPropagation();
+    onSelectDetail?.({ kind: "edge", text: describeEdge(edge) });
+  };
 
   /** Horizontal center of the SVG — used as the fixed point for zoom scaling. */
   const originX = canvasWidth / 2;
@@ -308,15 +298,6 @@ export default function CampaignGraphCanvas({ graph, zoom = 1 }) {
     }
   };
 
-  /**
-   * Optional footnote shown under the graph when the backend or client-side filter removed nodes
-   * that were not connected to the campaign — explains why the count might look smaller than expected.
-   */
-  const orphanNote =
-    (graph.droppedOrphanCount || 0) > 0 || displayGraph.droppedOrphanCount > 0
-      ? " Unconnected nodes were hidden (stale graph data or missing relationships)."
-      : "";
-
   return (
     <div className="graph-canvas-wrap" style={{ width: canvasWidth, maxWidth: "100%" }}>
       <svg
@@ -354,7 +335,11 @@ export default function CampaignGraphCanvas({ graph, zoom = 1 }) {
             /** True when the floating tooltip is currently describing this edge. */
             const highlighted = hover?.kind === "edge" && hover.edgeKey === edgeKey;
             return (
-              <g key={edgeKey}>
+              <g
+                key={edgeKey}
+                onClick={handleEdgeClick(edge)}
+                style={{ cursor: "pointer" }}
+              >
                 {/* Wide invisible stroke — target for mouse hover to show edge tooltip. */}
                 <line
                   x1={from.x}
@@ -387,6 +372,7 @@ export default function CampaignGraphCanvas({ graph, zoom = 1 }) {
               onMouseEnter={handleNodeEnter(node)}
               onMouseMove={handleNodeEnter(node)}
               onMouseLeave={clearHover}
+              onClick={handleNodeClick(node)}
               style={{ cursor: "pointer" }}
               onPointerDown={(e) => e.stopPropagation()}
             >
@@ -428,26 +414,16 @@ export default function CampaignGraphCanvas({ graph, zoom = 1 }) {
       />
       {hover && (
         <div
-          className="graph-tooltip graph-tooltip--with-actions"
+          className="graph-tooltip"
           style={{ left: hover.x + 12, top: hover.y + 12 }}
           role="tooltip"
         >
           {hover.text.split("\n").map((line) => (
             <div key={line}>{line}</div>
           ))}
-          <div className="graph-tooltip-actions">
-            <button type="button" className="graph-tooltip-btn" onClick={() => copyHoverDetail()}>
-              Copy
-            </button>
-            <button type="button" className="graph-tooltip-btn" onClick={() => saveHoverDetail()}>
-              Save to file
-            </button>
-          </div>
+          <div className="graph-tooltip-hint muted">Click to pin · then Copy or Save above chart</div>
         </div>
       )}
-      {orphanNote ? (
-        <p className="muted graph-canvas-hint graph-canvas-hint--orphans">{orphanNote}</p>
-      ) : null}
     </div>
   );
 }

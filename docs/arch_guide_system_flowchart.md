@@ -36,7 +36,15 @@ For prose detail, see [arch_guide_overview.md](arch_guide_overview.md), [arch_gu
 
 Open any `.mmd` file in [Mermaid Live Editor](https://mermaid.live). In Markdown preview, render one fenced `mermaid` block at a time if the page feels slow.
 
-**Diagram conventions:** Solid arrows (`-->`) and dashed arrows (`-.->`) both end in an **arrowhead** at the destination. **Green-bordered boxes** (`flowEntry` style) mark where a flow **starts** (human or external trigger). Two-way relationships use separate one-way arrows when both directions matter (for example OAuth redirect out, callback back).
+**Diagram conventions (Mermaid):** Every connection uses a **directed** edge so the renderer draws an **arrowhead at the destination**:
+
+| Syntax | Meaning |
+|--------|---------|
+| `A --> B` | Solid line; arrowhead points at **B** |
+| `A -->|label (L)| B` | Same, with a lettered flow label on the edge |
+| `A -.-> B` | Dashed line; arrowhead still points at **B** (secrets, OAuth redirect, optional paths) |
+
+When two services talk in both directions (for example browser OAuth), the chart uses **two** one-way arrows (each with its own arrowhead), not a single undirected line. **Green-bordered boxes** (`flowEntry` style) mark where a flow **starts**. Source files live under [diagrams/](diagrams/) — open in [Mermaid Live Editor](https://mermaid.live) if your Markdown preview omits arrowheads.
 
 ---
 

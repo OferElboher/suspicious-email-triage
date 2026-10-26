@@ -13,6 +13,7 @@ import {
   sortCampaignsBySize,
   ZOOM_STEP,
 } from "../lib/graphLayout";
+import { copyGraphDetailText, saveGraphDetailText } from "../lib/graphDetailExport";
 
 /** Empty subgraph placeholder before fetch completes. */
 const EMPTY_GRAPH = { nodes: [], edges: [], indicator: "", reviewCount: 0 };
@@ -28,6 +29,8 @@ export default function GraphView() {
   const [viewEpoch, setViewEpoch] = useState(0);
   const [jumpDate, setJumpDate] = useState("");
   const [jumpMessage, setJumpMessage] = useState("");
+  /** Pinned node/edge detail — Copy/Save live here so buttons stay clickable (not on moving hover). */
+  const [pinnedDetail, setPinnedDetail] = useState(null);
 
   const sortedCampaigns = useMemo(() => sortCampaignsBySize(campaigns), [campaigns]);
   const selectedCampaign = sortedCampaigns[selectedIndex] || null;
@@ -80,6 +83,7 @@ export default function GraphView() {
     } else {
       setSubgraph(EMPTY_GRAPH);
     }
+    setPinnedDetail(null);
   }, [selectedCampaign?.indicator, loadSubgraph]);
 
   const goFirst = () => {
@@ -226,10 +230,35 @@ export default function GraphView() {
           {jumpMessage && <p className="muted">{jumpMessage}</p>}
           <p className="muted">
             Drag the graph background to pan; drag the <strong>bottom</strong> or <strong>right</strong> edge
-            to resize. Hover a node or edge for details — use <strong>Copy</strong> or{" "}
-            <strong>Save to file</strong> in the detail panel to export that text. Data comes from Neo4j via{" "}
-            <code>GET /graph/campaign-subgraph</code>; drawing uses plain SVG (no D3).
+            to resize. <strong>Hover</strong> a node or edge for a quick preview; <strong>click</strong> to pin
+            full details in the panel below (use <strong>Copy</strong> or <strong>Save to file</strong> there).
+            Data comes from Neo4j via <code>GET /graph/campaign-subgraph</code>; drawing uses plain SVG (no D3).
+            {(subgraph.droppedOrphanCount || 0) > 0
+              ? " Some unconnected nodes were hidden (stale graph data or missing relationships)."
+              : ""}
           </p>
+          {pinnedDetail && (
+            <div className="graph-detail-panel" data-testid="graph-detail-panel">
+              <div className="graph-detail-panel__header">
+                <strong>Pinned {pinnedDetail.kind === "node" ? "node" : "relationship"} details</strong>
+                <div className="graph-detail-panel__actions">
+                  <button
+                    type="button"
+                    onClick={() => copyGraphDetailText(pinnedDetail.text)}
+                  >
+                    Copy
+                  </button>
+                  <button type="button" onClick={() => saveGraphDetailText(pinnedDetail.text)}>
+                    Save to file
+                  </button>
+                  <button type="button" className="muted" onClick={() => setPinnedDetail(null)}>
+                    Clear
+                  </button>
+                </div>
+              </div>
+              <pre className="graph-detail-panel__body">{pinnedDetail.text}</pre>
+            </div>
+          )}
           {subgraphLoading && <p className="muted">Loading campaign graph…</p>}
           {!subgraphLoading && !canShowGraph && (
             <p className="muted">
@@ -243,6 +272,7 @@ export default function GraphView() {
                 key={`${selectedCampaign?.indicator}-${viewEpoch}`}
                 graph={subgraph}
                 zoom={zoom}
+                onSelectDetail={setPinnedDetail}
               />
               <GraphLegend />
             </>

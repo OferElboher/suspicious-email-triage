@@ -779,27 +779,42 @@ button.danger {
   white-space: pre-wrap;
 }
 
-.graph-tooltip--with-actions {
-  pointer-events: auto;
-}
-
-.graph-tooltip-actions {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-  padding-top: 0.35rem;
-  border-top: 1px solid var(--border);
-}
-
-.graph-tooltip-btn {
-  font-size: 0.75rem;
-  padding: 0.2rem 0.5rem;
-  cursor: pointer;
-}
-
-.graph-canvas-hint--orphans {
+.graph-tooltip-hint {
   margin-top: 0.35rem;
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+.graph-detail-panel {
+  margin: 0.75rem 0;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card-bg, #f8f9fc);
+  max-height: 12rem;
+  overflow: auto;
+}
+
+.graph-detail-panel__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.graph-detail-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.graph-detail-panel__body {
+  margin: 0;
   font-size: 0.8rem;
+  white-space: pre-wrap;
+  font-family: inherit;
 }
 
 .review-row-toggle.active-campaign {
