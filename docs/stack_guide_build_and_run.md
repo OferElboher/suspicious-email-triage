@@ -194,6 +194,21 @@ DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --for
 
 ---
 
+### Recreate django-admin after `triage_auth` updates (or admin login errors)
+
+Option C’s `up -d --build` rebuilds images on a **full** stack start, but an **already running** `django-admin` container may still serve an old image until you recreate it. Dev Compose also **bind-mounts** `backend/triage_auth` so Python model fixes (for example `TriageUser.get_session_auth_hash()` for `/admin/login/`) apply without rebuilding the whole stack.
+
+Run this after `git pull`, after editing files under `backend/triage_auth`, or if Django admin login raises `AttributeError: ... get_session_auth_hash`:
+
+```bash
+cd ~/suspicious-email-triage
+DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --force-recreate django-admin
+```
+
+**Guide:** [auth_guide_django_admin_users.md](auth_guide_django_admin_users.md)
+
+---
+
 
 
 ## Part 3 — Bootstrap admin (first time or after rebuild)
