@@ -281,3 +281,19 @@ The sign-in form shows a **masked** hint (`yo***@example.com`) from `GET /auth/c
 
 ---
 
+## Full dev checklist (commands only)
+
+1. `cd ~/suspicious-email-triage`
+2. `bash scripts/setup-and-build-dev.sh`
+3. `bash scripts/ensure-dev-secrets.sh`
+4. `bash scripts/configure-dev-bootstrap-admin.sh YOUR_EMAIL@example.com`
+5. `DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --build mongo postgres redis neo4j redpanda elasticsearch mock-snowflake mock-secrets-manager mock-s3 mailpit mock-verdict-callback ingest-gateway backend django-admin ai-celery ai-kafka-dispatch mock-llm mock-cloud-llm`
+6. `bash scripts/bootstrap-auth-admin.sh --reset-password`
+7. `DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --force-recreate backend`
+8. `DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --force-recreate django-admin`
+9. `curl -sS -X POST "http://localhost:3000/auth/login" -H "content-type: application/json" -d '{"email":"YOUR_EMAIL@example.com","password":"temp-admin-pswd"}' | python3 -m json.tool`
+10. `PORT=3001 npm start --prefix frontend`
+11. Open `http://localhost:3001` and sign in.
+
+---
+

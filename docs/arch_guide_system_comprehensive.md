@@ -245,6 +245,80 @@ Paths below are **relative to the repository root**.
 
 - `infra/docker/docker-compose.yml` — dev stack: databases, mocks, Node, Go, Python workers, Django admin, Mailpit.
 
+### AWS Secrets Manager (production) / `mock-secrets-manager` (dev)
+
+- `backend/src/secrets/secretsProvider.js` — Node `GetSecretValue` client (AWS SDK or mock URL).
+- `ai_service/app/secrets_provider.py` — Python equivalent for Celery and dispatcher entrypoints.
+- `scripts/docker-entrypoint-with-secrets.sh` — container boot: fetch bundle, export env vars.
+- `backend/scripts/preload-secrets.js` — Node preload before `server.js` listens.
+- `infra/mock-aws-secrets-manager/server.js` — dev HTTP mock (:4566); reads gitignored `backend/dev.secrets`.
+
+### Amazon S3 (production) / `mock-s3` (dev)
+
+- `backend/src/backups/s3BackupProvider.js` — `PutObject` / list / get for Postgres backup JSON.
+- `backend/src/api/ops.js` — `GET/POST /ops/backups/*` routes.
+- `backend/src/backups/backupService.js` — logical Postgres snapshot upload orchestration.
+- `frontend/src/components/S3BackupsPanel.jsx` — Admin tab backup UI.
+- `infra/mock-aws-s3/server.js` — in-memory S3 API mock (:4568).
+
+### Snowflake (production warehouse API) / `mock-snowflake` (dev)
+
+- `backend/src/analytics/snowflakeClient.js` — HTTP client for warehouse insert/report APIs.
+- `backend/src/analytics/snowflakeExport.js` — maps completed reviews to export rows.
+- `backend/src/api/analytics.js` — `/analytics/*` reporting endpoints.
+- `infra/mock-aws-snowflake/server.js` — dev REST mock (:4567).
+
+### OpenAI-compatible LLM (production) / `mock-llm` (dev)
+
+- `ai_service/app/llm_client.py` — `analyze_with_llm`, `analyze_with_mock_commercial` (uses `LLM_BASE_URL`).
+- `ai_service/app/tasks.py` — invokes LLM step inside `analyze_review`.
+- `ai_service/mock_commercial_llm/server.py` — `POST /v1/chat/completions` mock (:8090).
+- `ai_service/mock_commercial_llm/responses.py` — deterministic canned completions.
+
+### AWS Bedrock / Google Vertex (production) / `mock-cloud-llm` (dev)
+
+- `ai_service/app/agent/orchestrator.py` — agent FSM triage loop.
+- `ai_service/app/agent/providers/factory.py` — selects Bedrock, Vertex, or mock client.
+- `ai_service/app/agent/providers/bedrock_client.py` — boto3 `bedrock-runtime` Converse.
+- `ai_service/app/agent/providers/mock_client.py` — HTTP to `MOCK_CLOUD_LLM_URL`.
+- `ai_service/mock_cloud_llm/server.py` — Converse-shaped dev mock (:8091).
+
+### Google OAuth (production / optional dev)
+
+- `backend/src/auth/googleLogin.js` — OAuth start/callback, JWT issuance for SPA.
+- `backend/src/api/auth.js` — `/auth/google/*`, login, bootstrap reset routes.
+- `frontend/src/views/AuthViews.jsx` — email login and Google sign-in link when configured.
+
+### Gmail API / Amazon SES / SMTP (production) / Mailpit (dev)
+
+- `backend/src/auth/email.js` — password-reset message build + transport (SMTP / OAuth mail).
+- `infra/docker/docker-compose.yml` — `mailpit` service (:1025 SMTP, :8025 web UI).
+
+### Customer mail platform webhooks (production) / `ingest-gateway` (dev)
+
+- `ingest-gateway/cmd/ingest-gateway/main.go` — Go HTTP server (:8080).
+- `ingest-gateway/internal/handlers/` — webhook, simulation, stats handlers.
+- `ingest-gateway/internal/backend/client.go` — forwards to Node with `X-Ingest-Internal-Token`.
+- `backend/src/api/ingestInternal.js` — `POST /ingest/internal/mailbox`.
+- `backend/src/lib/ingestGatewayClient.js` — Node proxy metrics for `#ingest` UI.
+- `frontend/src/views/IngestDashboardView.jsx` — ingest simulation and dashboard tab.
+
+### Customer verdict callback (production HTTPS) / `mock-verdict-callback` (dev)
+
+- `backend/src/services/verdictDelivery.js` — signed webhook POST and Kafka fan-out.
+- `backend/src/ingest/ingestClientsPg.js` — per-client callback URL registry.
+- `backend/src/api/ingestRegister.js`, `backend/src/api/ingestClients.js` — registration APIs.
+- `infra/mock-verdict-callback/server.js` — dev receiver for test verdict POSTs.
+
+### Managed data plane (production) / local Docker databases (dev)
+
+- **MongoDB:** `backend/src/models/Review.js`, `backend/src/lib/mongoConnect.js`
+- **PostgreSQL:** `backend/src/auth/authPg.js`, `backend/src/stats/statsPg.js`
+- **Redis:** `backend/src/dev/simulationState.js`, Celery broker via `ai_service/app/celery_app.py`
+- **Kafka/Redpanda:** `backend/src/kafka/reviewIngestProducer.js`, `ai_service/kafka_dispatcher.py`
+- **Neo4j:** `backend/src/graph/neo4jClient.js`, `backend/src/api/graph.js`, `backend/src/api/graphInternal.js`
+- **Elasticsearch:** `backend/src/search/elasticClient.js`, `backend/src/search/reviewSearchIndex.js`, `backend/src/api/search.js`, `backend/src/services/reviewSearchSync.js`
+
 ---
 
 ## Control-flow (function-level) for scoring (Python path)
