@@ -121,6 +121,8 @@ Use the **same email and password** as the triage app. Django admin only accepts
 
 **Session login (implemented):** `TriageUser` implements Django’s `get_session_auth_hash()` using the stored `password_hash` (bcrypt from Node). Without this hook, `POST /admin/login/` raised `AttributeError` because our custom user is not `AbstractBaseUser` but still uses Django session authentication.
 
+**After pulling this fix:** recreate the `django-admin` container so it loads current `backend/triage_auth` (dev Compose bind-mounts that folder). Example: `DEPLOYMENT_ENV=dev docker compose -f infra/docker/docker-compose.yml up -d --force-recreate django-admin`.
+
 If login still fails:
 
 1. Confirm bootstrap email is configured: `bash scripts/configure-dev-bootstrap-admin.sh YOUR_EMAIL@example.com`

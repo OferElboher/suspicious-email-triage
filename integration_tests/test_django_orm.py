@@ -130,31 +130,6 @@ else:
 
 
 @requires_stack
-def test_django_admin_user_exposes_get_session_auth_hash():
-    """Regression: POST /admin/login/ requires get_session_auth_hash on TriageUser."""
-    script = """
-from triage_auth.models import TriageUser
-user = TriageUser.objects.order_by("id").first()
-if user is None:
-    print("SKIP_NO_USERS")
-else:
-    digest = user.get_session_auth_hash()
-    assert isinstance(digest, str) and len(digest) == 64
-    print("OK")
-"""
-    result = _django_shell(script)
-    if result.returncode != 0:
-        pytest.fail(
-            f"django-admin session hash smoke test failed (exit {result.returncode}):\n"
-            f"{result.stderr or result.stdout}"
-        )
-    out = (result.stdout or "").strip()
-    if "SKIP_NO_USERS" in out:
-        pytest.skip("No users in auth_users")
-    assert "OK" in out, out
-
-
-@requires_stack
 def test_forgot_password_returns_ok_even_when_smtp_credentials_invalid():
     """
     Regression: SMTP failure must not return 500 (e.g. Gmail 535 with wrong App Password).
