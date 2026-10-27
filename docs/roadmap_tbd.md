@@ -505,8 +505,9 @@ At the bottom, features that **cannot** be done for free are listed under **Requ
 - Per-campaign SVG with `role="img"`, native `<title>` on nodes/edges; **hover** preview + **right-click context menu** (**Copy** / **Save to file…**) exporting full tooltip text; visual **selection** highlight (`CampaignGraphCanvas.jsx`, `graphDetailExport.js`)
 - **Architecture flowchart SVGs** — `docs/diagrams/*.svg` rendered from `.mmd` via `scripts/render-flow-diagrams.sh` so arrowheads are visible in IDE Markdown preview ([arch_guide_system_flowchart.md](arch_guide_system_flowchart.md))
 - **Pan** (drag background), **zoom** toolbar, **resize** (bottom + right edges); single instruction block above the canvas (orphan-node note inline — no clipped footer under SVG)
-- **Analytics charts:** line/bar Y-axis titles above the chart so tick labels do not overlap the vertical title (`AnalyticsView.jsx` + Recharts)
-- **Django admin login:** `TriageUser.get_session_auth_hash()` for session auth after `/admin/login/` (`backend/triage_auth/models.py`)
+- **Analytics charts:** line/bar/dbt Y-axis titles above charts; status bar chart width capped; **auto-refresh on by default** (30 s) for PostgreSQL metrics **and** Prefect/dbt panel (`AnalyticsView.jsx`, `PipelineOrchestrationPanel.jsx`, Recharts)
+- **Central logs UI:** **Plain-language search** blurb on `#logs` (NDJSON `merged.log` via Node — not Elasticsearch) — `LogSearchPanel.jsx`
+- **Django admin login:** `TriageUser.get_session_auth_hash()` for session auth after `/admin/login/` (`backend/triage_auth/models.py`); dev Compose bind-mounts `backend/triage_auth` into `django-admin` so model fixes apply without rebuilding the image
 - **First / Last / Prev / Next** campaign navigation; **Jump to date** by Neo4j `updatedAt`
 - **Connected subgraph only** — orphan Url/Domain nodes and **secondary disconnected components** filtered (`filterToPrimaryComponent` in `connectedGraphFilter.js`); **duplicate UI ids** collapsed when legacy Neo4j rows share the same email/URL/domain key (`dedupeNodesById`)
 - Dev route `POST /dev/prune-graph` **merges** duplicate Sender/Url/Domain Neo4j nodes then **DETACH DELETE**s zero-degree orphans (`graphMaintenance.js`)

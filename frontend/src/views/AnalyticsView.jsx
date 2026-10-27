@@ -70,8 +70,8 @@ export default function AnalyticsView() {
   const [bucket, setBucket] = useState("1h");
   /** lineMeasure: which event_type the line chart aggregates. */
   const [lineMeasure, setLineMeasure] = useState("ingests");
-  /** autoRefresh: when true, poll PostgreSQL for the rolling last-24-hours window. */
-  const [autoRefresh, setAutoRefresh] = useState(false);
+  /** autoRefresh: when true, poll PostgreSQL (and pipeline panel) for the rolling last-24-hours window. */
+  const [autoRefresh, setAutoRefresh] = useState(true);
   const [series, setSeries] = useState([]);
   const [breakdown, setBreakdown] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -266,22 +266,28 @@ export default function AnalyticsView() {
       <p className="muted" style={{ marginTop: "0.75rem", marginBottom: "0.35rem", fontSize: "0.9rem" }}>
         <strong>Status event count</strong> (vertical scale)
       </p>
-      <div style={{ width: "100%", height: 300 }}>
-        <ResponsiveContainer>
-          <BarChart data={breakdown} margin={{ left: 8, right: 16, top: 8, bottom: 8 }}>
+      <div className="analytics-status-breakdown" style={{ height: 300 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={breakdown}
+            margin={{ left: 12, right: 12, top: 8, bottom: 8 }}
+            barCategoryGap="28%"
+          >
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="status">
+            <XAxis dataKey="status" tick={{ fontSize: 11 }}>
               <Label value="Review pipeline status" position="insideBottom" offset={-4} />
             </XAxis>
-            <YAxis allowDecimals={false} width={56} />
+            <YAxis allowDecimals={false} width={48} />
             <Tooltip />
             <Legend verticalAlign="top" />
-            <Bar dataKey="count" fill="#5b6b8c" name="Status transition events" />
+            <Bar dataKey="count" fill="#5b6b8c" name="Status transition events" maxBarSize={72} />
           </BarChart>
         </ResponsiveContainer>
       </div>
     </section>
-    <PipelineOrchestrationPanel />
+    <PipelineOrchestrationPanel
+      refreshIntervalMs={autoRefresh ? AUTO_REFRESH_MS : 0}
+    />
     </>
   );
 }

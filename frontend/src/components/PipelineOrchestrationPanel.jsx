@@ -29,8 +29,13 @@ function statusClass(status) {
   return "muted";
 }
 
-/** Panel showing data-platform orchestration wired into the triage analytics screen. */
-export default function PipelineOrchestrationPanel() {
+/**
+ * Panel showing data-platform orchestration wired into the triage analytics screen.
+ *
+ * @param {object} [props]
+ * @param {number} [props.refreshIntervalMs=0] — when &gt; 0, poll Prefect/dbt APIs on this interval (matches Analytics auto-refresh).
+ */
+export default function PipelineOrchestrationPanel({ refreshIntervalMs = 0 }) {
   const [prefect, setPrefect] = useState(null);
   const [dbt, setDbt] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -59,6 +64,16 @@ export default function PipelineOrchestrationPanel() {
   useEffect(() => {
     load().catch(() => {});
   }, [load]);
+
+  useEffect(() => {
+    if (!refreshIntervalMs || refreshIntervalMs <= 0) {
+      return undefined;
+    }
+    const timerId = window.setInterval(() => {
+      load().catch(() => {});
+    }, refreshIntervalMs);
+    return () => window.clearInterval(timerId);
+  }, [load, refreshIntervalMs]);
 
   return (
     <section className="card pipeline-panel" style={{ marginTop: "1.5rem" }}>
@@ -119,21 +134,23 @@ export default function PipelineOrchestrationPanel() {
                 Project <code>{dbt.project}</code> · materialization{" "}
                 <code>{dbt.materialization}</code>
               </p>
+              <p
+                className="muted"
+                style={{ marginTop: "0.75rem", marginBottom: "0.35rem", fontSize: "0.9rem" }}
+              >
+                <strong>Event count (dbt event_count)</strong> (vertical scale)
+              </p>
               <div style={{ width: "100%", height: 260 }}>
                 <ResponsiveContainer>
-                  <BarChart data={dbt.chartRows || []} margin={{ left: 12, right: 12, top: 12, bottom: 8 }}>
+                  <BarChart
+                    data={dbt.chartRows || []}
+                    margin={{ left: 12, right: 12, top: 8, bottom: 8 }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="label" minTickGap={8} tick={{ fontSize: 10 }}>
                       <Label value="Calendar day (dbt stats_day)" position="insideBottom" offset={-4} />
                     </XAxis>
-                    <YAxis allowDecimals={false} width={44}>
-                      <Label
-                        value="Event count (dbt event_count)"
-                        angle={-90}
-                        position="insideLeft"
-                        style={{ textAnchor: "middle" }}
-                      />
-                    </YAxis>
+                    <YAxis allowDecimals={false} width={52} />
                     <Tooltip />
                     <Legend verticalAlign="top" />
                     <Bar

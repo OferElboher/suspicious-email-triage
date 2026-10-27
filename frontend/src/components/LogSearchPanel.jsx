@@ -59,6 +59,17 @@ export default function LogSearchPanel({ standalone = false }) {
         <h2>Search unified logs</h2>
       </HoverHelp>
 
+      <p className="muted" style={{ fontSize: "0.9rem" }}>
+        <strong>Plain-language search:</strong> type everyday words in <strong>Keyword</strong> — for
+        example &quot;graph sync failed&quot; or &quot;ingest mailbox&quot;. The Node API scans the
+        shared <code>merged.log</code> file (NDJSON — one JSON object per line) on the Docker volume{" "}
+        <code>triage-logs</code>; this is <strong>not</strong> Elasticsearch. Filters map to{" "}
+        <code>GET /logs/search</code>: keyword or regex on the message, plus optional{" "}
+        <code>service</code> (backend, ai-celery, ingest-gateway, …), <code>topic</code>,{" "}
+        <code>level</code>, and UTC date range. See{" "}
+        <code>docs/ops_guide_central_logging.md</code>.
+      </p>
+
       <div className="search-form-grid">
         <HoverHelp text="Plain text or regex match against log message bodies.">
           <label className="field">

@@ -96,7 +96,7 @@ Requires `Authorization: Bearer <JWT>` after login. Only the **backend** reads t
 
 ### React UI
 
-Signed-in users with **`logs.read`** open **Search unified logs** (`#logs` in the navigation bar). The panel exposes the same filters, including **Service**. See [ui_guide_app_navigation.md](ui_guide_app_navigation.md).
+Signed-in users with **`logs.read`** open **Search unified logs** (`#logs` in the navigation bar). At the top of the page, a **Plain-language search** blurb explains that you type everyday words into **Keyword** (this is **not** Elasticsearch — it is a line-by-line scan of `merged.log` via Node `GET /logs/search`). The panel exposes the same filters as the API, including **Service** (backend, ai-celery, ingest-gateway, …). See [ui_guide_app_navigation.md](ui_guide_app_navigation.md).
 
 ### Examples
 

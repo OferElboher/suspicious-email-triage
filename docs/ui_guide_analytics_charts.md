@@ -57,7 +57,8 @@ Both Recharts charts include a **Legend** (color key at the top) and **axis labe
 | Chart | X-axis label | Y-axis (vertical scale) | Legend entry |
 |-------|--------------|-------------------------|--------------|
 | Line | **Time (local)** — bucket start in your browser timezone | Title shown **above** the chart (e.g. **Count of new reviews**) so large tick numbers do not overlap the label | Blue line name matches selected measure |
-| Bar | **Review pipeline status** — `pending`, `processing`, etc. | **Status event count** — title above the chart | Gray bar: “Status transition events” |
+| Bar | **Review pipeline status** — `pending`, `processing`, etc. | **Status event count** — title above the chart | Gray bar: “Status transition events” (chart width capped for readability) |
+| dbt bar | **Calendar day (dbt stats_day)** | **Event count (dbt event_count)** — title **above** the chart (not rotated on the Y axis) | Green bar: daily events from the dbt model |
 
 The phishing **graph** tab (`GraphView`) is not a Recharts chart — it is an SVG network with **no X/Y axes**. A **color legend** below the canvas explains node types (Sender, Review, Url, Domain, Campaign). See [graph_guide_neo4j_phishing.md](graph_guide_neo4j_phishing.md).
 
@@ -81,10 +82,10 @@ Deep dive: [data_guide_prefect_dbt_demo.md](data_guide_prefect_dbt_demo.md).
 | **From / To** | Time window (local datetime). Disabled while auto-refresh is on. |
 | **Line chart measure** | Switch line chart between **new ingests** (`review_created`) and **status transitions** (`status_changed`). |
 | **Time bucket (X-axis grouping)** | Groups the line chart: `15m`, `1h`, or `1d`. |
-| **Auto-refresh: on** | Shows rolling **last 24 hours**, polls every **30 seconds**. |
-| **Auto-refresh: off** + **Apply range** | Uses your custom From/To window. |
+| **Auto-refresh: on** (default) | Shows rolling **last 24 hours** on the line and bar charts, and refreshes the **Prefect / dbt** panel on the same **30 second** interval. |
+| **Auto-refresh: off** + **Apply range** | Uses your custom From/To window; pipeline panel refreshes only when you click **Refresh pipeline data**. |
 
-Default manual range on first load: **last 7 days**, bucket **1 hour**.
+On first load, **auto-refresh is on** (rolling 24 hours, bucket **1 hour**). Turn it off to explore a custom From/To window (for example the last 7 days).
 
 ---
 

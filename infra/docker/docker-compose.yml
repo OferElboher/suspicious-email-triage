@@ -219,6 +219,8 @@ services:
     volumes:
       - django-admin-state:/app/backend/data
       - triage-logs:/var/log/triage
+      # Dev bind-mount: pick up triage_auth fixes (e.g. get_session_auth_hash) without rebuilding the image.
+      - ../../backend/triage_auth:/app/backend/triage_auth:ro
     depends_on:
       - mock-secrets-manager
       - postgres

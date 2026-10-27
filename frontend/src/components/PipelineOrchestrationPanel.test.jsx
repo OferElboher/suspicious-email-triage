@@ -37,5 +37,17 @@ describe("PipelineOrchestrationPanel", () => {
     expect(await screen.findByText("5")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /dbt — review_stats_daily model/i })).toBeInTheDocument();
     expect(screen.getByText("prefect-flow")).toBeInTheDocument();
+    expect(screen.getByText(/Event count \(dbt event_count\)/i)).toBeInTheDocument();
+  });
+
+  it("polls pipeline APIs when refreshIntervalMs is set", async () => {
+    jest.useFakeTimers();
+    render(<PipelineOrchestrationPanel refreshIntervalMs={1000} />);
+    await screen.findByText("5");
+    const callsBefore = client.getJson.mock.calls.length;
+    jest.advanceTimersByTime(1000);
+    await screen.findByText("5");
+    expect(client.getJson.mock.calls.length).toBeGreaterThan(callsBefore);
+    jest.useRealTimers();
   });
 });

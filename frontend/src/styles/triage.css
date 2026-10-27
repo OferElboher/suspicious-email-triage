@@ -423,6 +423,14 @@ button:disabled {
   height: 2rem;
 }
 
+/* Status breakdown bar chart — capped width so bars stay readable on ultra-wide layouts. */
+.analytics-status-breakdown {
+  width: 100%;
+  max-width: 36rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 /* Prefect + dbt panel on Analytics tab — two-column layout on wide screens. */
 .pipeline-panel__grid {
   display: grid;
