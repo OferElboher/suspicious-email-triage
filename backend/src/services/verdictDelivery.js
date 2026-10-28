@@ -1,5 +1,11 @@
 /**
- * Delivers final verdicts via signed customer webhooks and optional Kafka fan-out.
+ * This service sends finalized verdicts back to customer mail platforms.
+ *
+ * It loads per-client webhook URLs and HMAC secrets from ingestClientsPg.js, signs JSON bodies, POSTs HTTPS callbacks, and may publish Kafka completion events for subscribers.
+ *
+ * Triggered when reviews reach completed/failed states or analysts save overrides.
+ *
+ * mock-verdict-callback receives test POSTs in dev Compose.
  */
 const Review = require("../models/Review");
 const logger = require("../lib/logger");

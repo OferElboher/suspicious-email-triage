@@ -1,5 +1,11 @@
 /**
- * Auth REST API: login, JWT session, password reset, Google OAuth, dev bootstrap reset.
+ * This Express router handles email/password login, JWT session introspection, theme preferences, forgot/reset password, Google OAuth routes, and dev bootstrap password reset.
+ *
+ * It delegates credential checks to authPg.js and email delivery to email.js.
+ *
+ * Successful login returns a bearer token the React app stores in localStorage.
+ *
+ * Dev-only routes gate on DEPLOYMENT_ENV and permissions to avoid production exposure.
  */
 const express = require("express");
 const logger = require("../lib/logger");

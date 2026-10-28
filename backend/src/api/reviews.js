@@ -1,6 +1,11 @@
 /**
- * Review triage REST API: create, list, detail, override, and queue helpers used by the React
- * dashboard and polling flow.
+ * This file implements the analyst-facing review API: creating a suspicious-email review, listing and paginating the queue, fetching one review for polling, and recording an analyst override with a reason string.
+ *
+ * When a review is created it persists a MongoDB Review document, then calls reviewPipeline.enqueueAfterCreate so statistics and Kafka stay in sync with every other ingest path.
+ *
+ * Date-jump helpers let the UI jump pagination to reviews on a given calendar day without scanning the whole collection client-side.
+ *
+ * All routes expect a valid JWT with appropriate permissions (for example reviews.read and reviews.write) except for internal routes mounted elsewhere.
  */
 const express = require("express");
 const router = express.Router();

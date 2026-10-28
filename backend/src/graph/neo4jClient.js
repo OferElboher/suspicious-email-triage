@@ -1,5 +1,11 @@
 /**
- * Neo4j driver helper: Cypher for campaigns, senders, URLs, and review neighborhoods.
+ * This module wraps the Neo4j driver for Cypher queries that build phishing campaign graphs.
+ *
+ * It creates and links Sender, Review, Url, Domain, and Campaign nodes based on analysis extracts.
+ *
+ * Read queries power GET /graph routes; write queries run from internal sync routes after scoring.
+ *
+ * Connection URI and credentials arrive from secrets loaded at startup.
  */
 const neo4j = require("neo4j-driver");
 const logger = require("../lib/logger");

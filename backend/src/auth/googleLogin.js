@@ -1,5 +1,11 @@
 /**
- * Google OAuth flow: authorize URL, state validation, token exchange, user link, JWT for SPA.
+ * This module implements Google OAuth 2.0 authorization code flow for optional passwordless login.
+ *
+ * It builds the Google authorize URL with state tokens, validates callbacks, exchanges codes for profile email, links or creates users in PostgreSQL, and returns JWTs for the SPA.
+ *
+ * When GOOGLE_CLIENT_ID is unset the feature stays disabled and AuthViews hides the button.
+ *
+ * State cookies prevent CSRF on the OAuth redirect round trip.
  */
 const crypto = require("crypto");
 const { signAccessToken, jwtTtlSeconds } = require("./jwt");

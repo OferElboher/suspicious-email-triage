@@ -1,5 +1,11 @@
 /**
- * Search API: GET /search/reviews and page-for-date pagination for the #search tab.
+ * This router implements GET /search/reviews and page-for-date pagination for the Search tab.
+ *
+ * It builds Elasticsearch queries from query string parameters and enforces reviews.read permissions.
+ *
+ * Plain-language keyword search in the UI maps directly to multi_match on indexed fields.
+ *
+ * Total hit counts may be approximate for large indices (relation gte).
  */
 const express = require("express");
 const {

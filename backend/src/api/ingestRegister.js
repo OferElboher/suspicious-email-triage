@@ -1,5 +1,11 @@
 /**
- * Webhook registration API for mail platforms using INGEST_CLIENT_REGISTRATION_TOKEN.
+ * This route lets mail platforms register default webhook settings using INGEST_CLIENT_REGISTRATION_TOKEN.
+ *
+ * It upserts ingest_clients rows without granting permission to create arbitrary reviews.
+ *
+ * Separate from INGEST_INTERNAL_TOKEN used by Go to Node ingest.
+ *
+ * Documented in data_guide_verdict_webhooks.md for integrators.
  */
 const express = require("express");
 const logger = require("../lib/logger");

@@ -1,5 +1,12 @@
 """
-Python secrets loader matching Node: mock AWS or real Secrets Manager at worker startup.
+This Python module loads the secrets JSON bundle at worker and dispatcher startup.
+
+It matches the contract used by backend/src/secrets/secretsProvider.js so all containers share JWT
+keys and DB passwords.
+
+In dev it HTTP-gets mock-secrets-manager; in AWS environments it uses boto3 GetSecretValue.
+
+Import side effects set os.environ before Celery connects to brokers.
 """
 
 from __future__ import annotations

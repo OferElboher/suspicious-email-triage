@@ -1,6 +1,11 @@
 /**
- * Node HTTP entrypoint: connects MongoDB, builds the Express app, listens on PORT, and starts
- * the dev simulation timer after the server accepts connections.
+ * This file is the Node.js process entry point for the triage API container.
+ *
+ * It connects to MongoDB, ensures PostgreSQL auth and statistics schemas exist, builds the Express application from createApp.js, and starts listening on the configured PORT.
+ *
+ * After the HTTP server is accepting traffic, it loads dev simulation settings from Redis and may start the synthetic review timer so dashboards can be tested without manual submissions.
+ *
+ * Operators and developers start this file directly in local Node runs; in Docker the backend container typically runs preload-secrets.js first, which then requires this module.
  */
 const { createApp } = require("./http/createApp");
 const { connectMongo } = require("./lib/mongoConnect");

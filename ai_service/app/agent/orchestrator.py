@@ -1,5 +1,14 @@
 """
-Agent triage finite-state machine with tool calls and cloud LLM rounds for advanced reviews.
+This module implements the agent triage finite-state machine with tool calls and multi-turn cloud
+LLM dialogue.
+
+It is used when agent mode is enabled for a review, delegating complex investigations to Bedrock,
+Vertex, or mock-cloud-llm.
+
+The orchestrator redacts PII before sending text upstream and records traces on the Review for the
+agent activity UI.
+
+It sits alongside single-shot llm_client scoring rather than replacing rule_engine heuristics.
 """
 
 from __future__ import annotations

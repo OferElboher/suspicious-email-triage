@@ -1,6 +1,11 @@
 /**
- * Internal graph sync routes Celery calls to upsert Neo4j without exposing write Cypher
- * publicly.
+ * This internal router lets Celery workers trigger Neo4j upserts after analysis enriches link graphs.
+ *
+ * It is mounted with service authentication distinct from analyst JWTs.
+ *
+ * Keeping writes internal prevents attackers from mutating graph data through the public API.
+ *
+ * Dev maintenance routes may prune duplicate nodes through related modules.
  */
 const express = require("express");
 const router = express.Router();

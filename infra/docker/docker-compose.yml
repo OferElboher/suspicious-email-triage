@@ -1,5 +1,8 @@
 ###############################################################################
-# Local stack: API, optional Node worker, Redpanda (Kafka API), Celery, dispatcher.
+# This Compose file describes the default local development stack: databases, Redpanda, Elasticsearch, Node backend, Go ingest-gateway, Python workers, Django admin, Mailpit, and HTTP mocks for AWS, Snowflake, LLM, and verdict callbacks.
+# Services load backend/.env.dev plus gitignored backend/.env and dev.secrets via entrypoint scripts.
+# Named volumes persist Postgres, Mongo, Neo4j, logs, and Django SQLite session data between restarts.
+# DEPLOYMENT_ENV=dev selects mock URLs; staging and production use different env files and real cloud endpoints.
 ###############################################################################
 services:
   # mongo: local dev document database for Review records and analysis results.

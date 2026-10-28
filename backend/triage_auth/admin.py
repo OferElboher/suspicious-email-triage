@@ -1,5 +1,11 @@
 """
-Django ModelAdmin for users and roles; custom role sync avoids broken composite-PK inlines.
+This file registers ModelAdmin classes for triage users and roles in Django admin.
+
+Custom forms sync role assignments via multi-select instead of broken inlines on composite primary keys.
+
+TriageAdminLoggingMixin disables writing django_admin_log rows that would violate SQLite FK constraints.
+
+Operators use this UI on port 8000 when they need CRUD beyond what the React app provides.
 """
 
 import bcrypt

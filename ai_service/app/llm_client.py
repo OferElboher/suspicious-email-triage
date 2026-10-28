@@ -1,5 +1,13 @@
 """
-Routes LLM scoring to OpenAI-compatible HTTP (mock-llm or production API) via LLM_BASE_URL.
+This module chooses and invokes the configured LLM provider for commercial scoring inside Celery
+tasks.
+
+It reads LLM_PROVIDER and LLM_BASE_URL to call either mock-llm or a real OpenAI-compatible HTTPS
+API with bearer auth.
+
+Responses are parsed into Python dicts consumed by merge.py.
+
+Teams enable or disable LLM spend without code changes by switching environment variables.
 """
 
 from __future__ import annotations

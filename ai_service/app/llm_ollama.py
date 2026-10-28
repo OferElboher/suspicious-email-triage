@@ -1,5 +1,12 @@
 """
-Optional local Ollama HTTP client when OLLAMA_BASE_URL is configured for scoring.
+This module calls a local Ollama HTTP API when OLLAMA_BASE_URL is configured for offline or lab
+scoring.
+
+It formats review text into prompts and parses model responses into structured fields.
+
+It is an alternative to llm_client.py commercial paths when teams self-host models.
+
+Disabled by default in favor of mock-llm or OpenAI-compatible endpoints in most dev profiles.
 """
 
 import json

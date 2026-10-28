@@ -1,6 +1,11 @@
 /**
- * Kafka producer: publishes email.review.ingested after a review is saved so Python workers
- * can score asynchronously.
+ * This module publishes JSON messages to the Kafka topic email.review.ingested after a review id is known.
+ *
+ * The Python ai-kafka-dispatch process consumes those messages and enqueues Celery analyze_review tasks, which decouples HTTP latency from scoring work.
+ *
+ * It uses KafkaJS with broker addresses from environment variables (Redpanda in dev).
+ *
+ * If publishing fails, reviewPipeline.js may fall back to BullMQ when that legacy path is enabled in runtime config.
  */
 const { Kafka, logLevel } = require("kafkajs");
 const logger = require("../lib/logger");

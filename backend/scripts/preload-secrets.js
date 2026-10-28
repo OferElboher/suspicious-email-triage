@@ -1,5 +1,11 @@
 /**
- * Node preload: fetch secrets before server.js so JWT and DB env vars exist at listen time.
+ * This small Node script runs before backend/src/server.js inside Docker.
+ *
+ * It awaits loadApplicationSecrets from the secrets module, logs how many keys loaded, and only then requires server.js.
+ *
+ * If secrets cannot be fetched the process exits non-zero so Compose restarts or fails visibly.
+ *
+ * Local developers running node src/server.js directly must ensure env vars are already set.
  */
 const { loadApplicationSecrets } = require("../src/secrets/loadSecrets");
 

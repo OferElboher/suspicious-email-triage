@@ -1,5 +1,13 @@
 """
-Writes status_changed rows to PostgreSQL when Celery updates review status for charts.
+This module inserts status_changed events into PostgreSQL when Celery updates review pipeline
+status.
+
+It mirrors what Node statsPg.js does on create so Analytics charts include worker transitions.
+
+Using the same table as Node keeps manager dashboards consistent regardless of which service
+emitted the event.
+
+Connection parameters come from the same secrets bundle as the Node API.
 """
 
 # os reads STATISTICS_PG_URL from Docker Compose or deployment secrets.

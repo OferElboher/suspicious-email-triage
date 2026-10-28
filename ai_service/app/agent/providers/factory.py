@@ -1,5 +1,11 @@
 """
-Picks Bedrock, Vertex, or mock-cloud-llm client from AGENT_LLM_PROVIDER environment.
+This factory returns the correct cloud LLM client class based on AGENT_LLM_PROVIDER.
+
+Supported paths include production Bedrock and Vertex adapters plus mock_client for dev.
+
+Centralizing selection keeps orchestrator.py free of vendor-specific imports.
+
+Adding a provider means implementing one client class and a factory branch.
 """
 
 from __future__ import annotations

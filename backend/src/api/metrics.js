@@ -1,6 +1,11 @@
 /**
- * Analytics REST API: aggregates PostgreSQL review_stats_events into time-series and
- * status-breakdown JSON for the Analytics tab.
+ * This file serves the Analytics tab and related dashboards with time-series and breakdown data derived from PostgreSQL, not from full MongoDB review scans.
+ *
+ * Handlers read the review_stats_events table through statsPg.js, honoring query parameters for time window, bucket size (15m, 1h, 1d), and measure type (ingests vs status events).
+ *
+ * The responses are JSON arrays shaped for Recharts in AnalyticsView.jsx.
+ *
+ * Keeping metrics in PostgreSQL makes chart queries cheap even when thousands of reviews exist in MongoDB.
  */
 const express = require("express");
 const logger = require("../lib/logger");

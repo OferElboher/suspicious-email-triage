@@ -1,5 +1,12 @@
 """
-Dev Bedrock/Vertex-shaped mock on port 8091 for agent triage without cloud billing.
+This HTTP server mimics Bedrock/Vertex Converse-style responses for the agent triage FSM on port
+8091.
+
+The agent orchestrator uses mock_client.py to talk to it instead of billing cloud APIs.
+
+It enables full agent tool-loop demos in Compose without AWS or GCP credentials.
+
+Responses are scripted but follow the same JSON shape production adapters expect.
 """
 
 from __future__ import annotations

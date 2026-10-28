@@ -1,6 +1,11 @@
 /**
- * Mongoose Review schema: email content, pipeline status, analysisResult, overrides, graph
- * links.
+ * This Mongoose schema defines the Review collection: email fields, processing status, analysisResult, analyst override, extracted links, agent traces, and timestamps.
+ *
+ * Nearly every triage feature reads or updates documents through this model.
+ *
+ * Status transitions drive UI polling, stats events, verdict delivery, and warehouse export.
+ *
+ * Indexes support queue sorting and id lookups from Kafka messages.
  */
 const mongoose = require("mongoose");
 

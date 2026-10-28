@@ -1,6 +1,11 @@
 /**
- * BullMQ job handler: loads a review and runs the Node-side processing path for legacy
- * deployments.
+ * This module handles a single BullMQ job that analyzes one review using the Node rule engine.
+ *
+ * It loads the Review from MongoDB, runs ruleEngine.js heuristics, updates the document status, and may write PostgreSQL stats events.
+ *
+ * It mirrors a subset of what ai_service/app/tasks.py does in Python but without LLM integration.
+ *
+ * Only active when BullMQ enqueue is enabled as a fallback or primary worker mode.
  */
 const Review = require("../models/Review");
 const logger = require("../lib/logger");

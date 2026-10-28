@@ -1,5 +1,11 @@
 /**
- * PostgreSQL auth: users, bcrypt hashes, roles, login, bootstrap admin, password reset tokens.
+ * This module implements PostgreSQL authentication tables and logic: user CRUD, bcrypt password hashing, role assignments, login, bootstrap admin creation, and password reset tokens.
+ *
+ * Node JWT auth and Django admin both rely on the same auth_users rows.
+ *
+ * bootstrap scripts call into here to seed or reset the dev admin account.
+ *
+ * It uses a dedicated Postgres pool separate from statistics tables.
  */
 const { Pool } = require("pg");
 const logger = require("../lib/logger");

@@ -1,5 +1,11 @@
 /**
- * CRUD API for ingest client configuration rows used by verdict delivery.
+ * This admin API lists and updates ingest client records for operators.
+ *
+ * It complements django-admin visibility but follows JWT permission checks used by the React app or automation.
+ *
+ * Changes affect the next verdictDelivery attempt for that client id.
+ *
+ * Used when rotating webhook secrets or callback URLs.
  */
 const express = require("express");
 const logger = require("../lib/logger");

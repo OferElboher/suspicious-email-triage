@@ -1,6 +1,11 @@
 /**
- * PostgreSQL statistics layer: schema, event inserts, chart queries, and truncation during dev
- * reset-local-state.
+ * This module owns the PostgreSQL side of operational analytics: table creation, inserting compact events, and aggregating them for charts.
+ *
+ * It writes rows when reviews are created or when pipeline status changes (pending, processing, completed, failed), storing timestamps and review ids without duplicating email bodies.
+ *
+ * Chart query functions use date_trunc-style grouping for the metrics API; dev reset-local-state truncates this table along with other dev data.
+ *
+ * Both Node (on ingest) and Python Celery (on status updates) call into this layer so managers see one consistent timeline.
  */
 const { Pool } = require("pg");
 const logger = require("../lib/logger");

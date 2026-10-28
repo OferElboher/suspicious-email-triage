@@ -1,5 +1,11 @@
 """
-Keyword rules producing deterministic chat completion JSON for mock-llm demos.
+This module builds fake chat completion JSON based on keywords in the analyst email text.
+
+The mock HTTP server imports these builders so repeated demos stay deterministic.
+
+It avoids network calls and API keys during CI and local Compose.
+
+Keyword rules approximate phishing scenarios for training and UI screenshots.
 """
 
 from __future__ import annotations

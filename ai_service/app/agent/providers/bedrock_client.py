@@ -1,5 +1,12 @@
 """
-Production agent LLM adapter using boto3 bedrock-runtime Converse with tools.
+This adapter sends Converse API requests through boto3 bedrock-runtime with tool configurations.
+
+It translates agent tool definitions into Bedrock toolConfig blocks and parses model responses
+back into Python structures.
+
+Used when staging or production sets AGENT_LLM_PROVIDER to bedrock with IAM roles.
+
+Network calls bill per token—disabled in default dev in favor of mock-cloud-llm.
 """
 
 from __future__ import annotations

@@ -1,5 +1,11 @@
 /**
- * Password-reset email composition and delivery via SMTP, SES, Gmail OAuth, or Mailpit in dev.
+ * This module composes password-reset emails and sends them via the configured transport.
+ *
+ * Supports SMTP to Mailpit in dev, Amazon SES, Gmail OAuth APIs, or generic SMTP URLs from secrets.
+ *
+ * It never logs raw reset tokens; URLs point to the React app with one-time tokens validated by authPg.js.
+ *
+ * Misconfigured SMTP still returns generic success to avoid account enumeration.
  */
 const nodemailer = require("nodemailer");
 const logger = require("../lib/logger");

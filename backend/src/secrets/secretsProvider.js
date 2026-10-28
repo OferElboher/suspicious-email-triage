@@ -1,6 +1,11 @@
 /**
- * Secrets bootstrap: loads JWT keys and DB passwords from AWS Secrets Manager or
- * mock-secrets-manager before the API process starts.
+ * This module abstracts where sensitive configuration comes from at process startup.
+ *
+ * In production it uses the AWS SDK to call Secrets Manager; in dev it HTTP-fetches a bundle from mock-secrets-manager that mirrors the same JSON shape.
+ *
+ * The loaded values populate environment variables for JWT signing keys, database passwords, ingest tokens, and third-party API keys without committing secrets to git.
+ *
+ * Node preload-secrets.js and the Docker entrypoint script invoke this before the API listens on a port.
  */
 const fs = require("fs");
 const path = require("path");

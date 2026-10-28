@@ -1,6 +1,11 @@
 /**
- * Redis-backed dev simulation settings (on/off, interval) surviving API restarts until dev
- * reset.
+ * This module reads and writes dev simulation settings (enabled flag, interval milliseconds) in Redis.
+ *
+ * Persisting settings in Redis lets simulation survive Node API restarts until an engineer runs reset-local-state, which flushes Redis among other stores.
+ *
+ * simulationLoop.js consults this store on startup and when dev routes update configuration.
+ *
+ * This is separate from Celery’s Redis broker database index but uses the same Redis container in Compose.
  */
 const { getRedis } = require("../lib/getRedis");
 

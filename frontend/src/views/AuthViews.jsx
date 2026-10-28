@@ -1,5 +1,11 @@
 /**
- * Login and forgot-password UI: email/password, optional Google, dev bootstrap password reset.
+ * This file defines LoginView and ForgotPasswordView shown before AuthContext marks the user signed in.
+ *
+ * LoginView posts credentials to POST /auth/login, surfaces dev bootstrap reset, and shows Google sign-in when config enables it.
+ *
+ * ForgotPasswordView triggers email reset tokens handled by backend email.js (Mailpit in dev).
+ *
+ * The CRA dev server proxies /auth to the backend container on port 3000.
  */
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";

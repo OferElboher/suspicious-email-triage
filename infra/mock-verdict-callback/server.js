@@ -1,5 +1,11 @@
 /**
- * Dev HTTP receiver that logs test verdict webhook POSTs from verdictDelivery.
+ * This dev HTTP server logs incoming verdict webhook POSTs for manual inspection.
+ *
+ * It validates optional signatures when configured to mirror production integrators.
+ *
+ * Compose attaches it so engineers can see outbound delivery from verdictDelivery.js without a real SEG endpoint.
+ *
+ * Not used in production deployments.
  */
 const http = require("http");
 const crypto = require("crypto");

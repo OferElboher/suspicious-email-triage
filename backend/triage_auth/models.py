@@ -1,5 +1,11 @@
 """
-Django unmanaged ORM models for Node-owned PostgreSQL auth tables; session hash for admin login.
+Django unmanaged models map PostgreSQL auth_users, auth_roles, and junction tables owned by Node migrations.
+
+They let django-admin display and edit users without Django creating duplicate tables in Postgres.
+
+TriageUser implements get_session_auth_hash so Django sessions invalidate when password_hash changes.
+
+These models are read/write against the triage database router, not SQLite.
 """
 
 from django.db import models

@@ -1,6 +1,11 @@
 /**
- * Dev-only Express routes: simulation, reset-local-state, bootstrap password reset, feature
- * flags.
+ * This file registers Express routes that exist only when DEPLOYMENT_ENV=dev.
+ *
+ * They control synthetic traffic (simulation start/stop), wipe local databases and queues (reset-local-state), reset the bootstrap admin password, and expose feature flags for engineering demos.
+ *
+ * Each route checks permissions and dev deployment flags so these dangerous operations never appear in production builds.
+ *
+ * SimulationPanel.jsx and sign-in recovery UI call these endpoints.
  */
 const express = require("express");
 const { Kafka, logLevel } = require("kafkajs");

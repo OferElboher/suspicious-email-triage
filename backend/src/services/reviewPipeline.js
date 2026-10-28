@@ -1,6 +1,11 @@
 /**
- * Shared post-create pipeline: stats events plus Kafka enqueue (and optional BullMQ) so every
- * ingest path behaves the same.
+ * This module is the single post-save hook used whenever a Review document already exists in MongoDB.
+ *
+ * Its exported function enqueueAfterCreate(reviewId) records review_created and initial status_changed statistics in PostgreSQL, then publishes the review id to Kafka for asynchronous Python scoring.
+ *
+ * Manual triage (POST /reviews), Go mailbox ingest (internal route), and the dev simulation loop all call this function so behavior does not depend on which UI or gateway created the review.
+ *
+ * If Kafka is unavailable and BullMQ enqueue is turned on, it queues a legacy Node worker job as a degraded fallback.
  */
 const logger = require("../lib/logger");
 const reviewQueue = require("../queue/reviewQueue");

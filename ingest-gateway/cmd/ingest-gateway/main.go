@@ -1,4 +1,8 @@
-// Go ingest-gateway binary: HTTP server for mailbox webhooks and dev simulation on port 8080.
+// This Go program starts the mailbox ingest edge service listening on port 8080.
+// It wires configuration, structured logging, Prometheus metrics, an HTTP handler package, a simulation controller, and a client to the Node internal ingest API.
+// Docker Compose runs it as ingest-gateway for webhook and simulation traffic.
+// The binary is built multi-stage into a small image suitable for edge deployment.
+
 
 package main
 

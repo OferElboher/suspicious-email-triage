@@ -1,5 +1,11 @@
 /**
- * Polls GET /reviews/:id until completed or failed so the triage UI tracks async scoring.
+ * This React hook repeatedly calls GET /reviews/:id until the review reaches a terminal status (completed or failed).
+ *
+ * Triage views pass a callback to merge polling results into UI state so analysts see analysis results without manual refresh.
+ *
+ * The poll interval is about 1.5 seconds while status remains pending or processing.
+ *
+ * It encapsulates cleanup on unmount so timers do not leak when navigating away.
  */
 import { useEffect, useRef } from "react";
 import { getJson } from "../api/client";

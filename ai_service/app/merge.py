@@ -1,5 +1,14 @@
 """
-Combines rule-engine and LLM outputs into the final analysisResult on the review document.
+This module combines rule-engine output and LLM JSON into the final analysisResult object stored
+on the Review.
+
+It resolves conflicts, sets verdict labels, recommended actions, and explanation text shown in the
+UI.
+
+Celery tasks call merge after both stages complete.
+
+Keeping merge separate makes it easy to add new scoring sources without changing MongoDB schema
+handlers.
 """
 
 from typing import Any, Dict, List

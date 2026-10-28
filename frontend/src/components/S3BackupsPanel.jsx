@@ -1,5 +1,11 @@
 /**
- * Admin UI for backup stats and POST /ops/backups/run against mock-s3 or real S3.
+ * This React component shows backup usage statistics and buttons to run or inspect S3 backups.
+ *
+ * It calls GET /ops/backups/stats and POST /ops/backups/run with the user’s JWT.
+ *
+ * Displayed data helps operators confirm mock-s3 or AWS buckets received snapshots.
+ *
+ * It appears on the Admin tab for users with ops.backups permission.
  */
 import { useCallback, useEffect, useState } from "react";
 import { getJson, postJson } from "../api/client";

@@ -1,6 +1,11 @@
 /**
- * Snowflake HTTP client: insert and reporting calls against SNOWFLAKE_URL (mock-snowflake in
- * dev, real warehouse in production).
+ * This module is the HTTP client for pushing analytical rows and fetching reporting aggregates from a warehouse-compatible API.
+ *
+ * The URL comes from SNOWFLAKE_URL—mock-snowflake in dev, a real Snowflake proxy or partner API in staging/production.
+ *
+ * It implements the small REST contract our product needs (insert row, query verdict distribution, etc.) rather than speaking raw Snowflake SQL from Node.
+ *
+ * snowflakeExport.js and analytics API routes call these functions after reviews complete or analysts override verdicts.
  */
 const logger = require("../lib/logger");
 

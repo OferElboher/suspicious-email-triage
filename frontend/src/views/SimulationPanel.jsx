@@ -1,5 +1,11 @@
 /**
- * Dev simulation controls: start/stop synthetic traffic and POST /dev/reset-local-state.
+ * This view exposes dev-only controls to start and stop synthetic review generation and to trigger POST /dev/reset-local-state.
+ *
+ * Engineers use it to fill queues for dashboard screenshots or regression tests without scripting curl.
+ *
+ * Settings changes hit devRoutes.js and Redis-backed simulationStore.js on the server.
+ *
+ * The panel is hidden or disabled for users without dev permissions.
  */
 import { useCallback, useEffect, useState } from "react";
 import { getJson, postJson } from "../api/client";

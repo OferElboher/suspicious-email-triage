@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # docker-entrypoint-with-secrets: fetch credentials from mock AWS Secrets Manager, then exec the app.
 # Wraps container CMD: fetch secrets bundle into env, then exec Node/Celery/Go/Django process.
+# This bash wrapper runs as the entrypoint for Node, Celery, Go, and Django containers.
+# It calls the configured secrets provider (mock HTTP or AWS) to export key-value pairs into the environment, then execs the real command (node, celery, go binary, manage.py).
+# Without this step containers would start with missing JWT_SECRET or database passwords.
+# It keeps secret loading identical across languages and services.
 
 set -euo pipefail
 
@@ -37,4 +41,5 @@ PY
 fi
 
 exec "$@"
+
 

@@ -1,6 +1,11 @@
 /**
- * Maps completed reviews to warehouse rows and calls snowflakeClient after analysis or
- * override.
+ * This module maps a completed Review document into the row shape expected by snowflakeClient.js insert APIs.
+ *
+ * It runs after automated scoring or analyst override when warehouse export is enabled.
+ *
+ * Keeping mapping separate from HTTP client code clarifies which fields become analytics dimensions.
+ *
+ * Failures are logged but do not block review completion in the triage UI.
  */
 const Review = require("../models/Review");
 const logger = require("../lib/logger");

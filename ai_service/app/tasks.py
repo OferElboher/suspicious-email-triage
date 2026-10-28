@@ -1,6 +1,14 @@
 """
-Celery tasks: analyze_review runs rules, optional LLM/agent, merges verdict,
-updates Mongo and PostgreSQL stats.
+This module defines Celery tasks, chiefly analyze_review, which implements asynchronous email
+scoring.
+
+A task loads the Review from MongoDB, runs the rule engine, optionally calls commercial or Ollama
+LLMs via llm_client.py, may run the agent orchestrator, merges results, updates MongoDB, writes
+PostgreSQL stats, and triggers graph/search sync callbacks to Node.
+
+Failures mark reviews failed and still record stats where possible.
+
+This is the core background job analysts wait on when submitting suspicious email.
 """
 
 from bson import ObjectId

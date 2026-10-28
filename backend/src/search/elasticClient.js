@@ -1,5 +1,11 @@
 /**
- * Elasticsearch client setup for the triage-reviews index used by full-text search.
+ * This module creates the Elasticsearch client used for review full-text search.
+ *
+ * It reads cluster URL and index name from environment variables set in Compose for the elasticsearch service.
+ *
+ * Health of the cluster affects GET /search/status shown in dev admin panels.
+ *
+ * Single-node dev image differs from managed OpenSearch in production but API usage is the same.
  */
 const { Client } = require("@elastic/elasticsearch");
 const logger = require("../lib/logger");

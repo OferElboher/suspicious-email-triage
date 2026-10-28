@@ -1,5 +1,11 @@
 /**
- * Central log search: scans NDJSON merged.log with filters; powers GET /logs/search and #logs.
+ * This module implements server-side search over the shared NDJSON merged.log file used for central logging in dev.
+ *
+ * It streams lines, parses JSON, and applies filters for keyword, regex, topic, level, service name, and UTC time range.
+ *
+ * The Express route GET /logs/search returns matching entries to the React LogSearchPanel; this is file-based search, not Elasticsearch.
+ *
+ * Multiple containers append to the same volume path so operators can diagnose cross-service failures in one query.
  */
 const fs = require("fs");
 const readline = require("readline");

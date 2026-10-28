@@ -1,6 +1,11 @@
 /**
- * Operations API: S3 backups, Prometheus metrics text, alerts (ops.backups and related
- * permissions).
+ * This Express router implements operational endpoints: S3 backup listing and run, Prometheus text exposition, and alert status JSON.
+ *
+ * Routes check ops.backups or related permissions before calling backupService.js or metrics helpers.
+ *
+ * SREs and admin users trigger backups from here or from S3BackupsPanel.jsx.
+ *
+ * Prometheus scraping supports staging monitoring patterns documented in ops guides.
  */
 const express = require("express");
 const { renderPrometheusText } = require("../lib/appMetrics");

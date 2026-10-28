@@ -1,4 +1,8 @@
-// Go client posting mailbox payloads to Node POST /ingest/internal/mailbox with shared secret.
+// This Go HTTP client posts normalized mailbox payloads to Node POST /ingest/internal/mailbox.
+// It attaches X-Ingest-Internal-Token from secrets loaded at gateway startup.
+// Retries and timeouts protect against transient Node errors during webhook bursts.
+// Simulation goroutines use the same client so synthetic and real mail share one code path.
+
 
 package backend
 

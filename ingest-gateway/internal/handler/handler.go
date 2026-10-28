@@ -1,4 +1,8 @@
-// Go HTTP handlers: webhook ingest, simulation API, health, and stats for the #ingest dashboard.
+// This package registers HTTP routes for mailbox webhook ingest, dev simulation control, health checks, and dashboard statistics.
+// Webhook handlers validate incoming JSON, normalize fields, and call the Node backend client with the shared internal token.
+// Simulation endpoints start and stop periodic synthetic posts for pipeline testing.
+// Metrics feed the React #ingest tab through Node proxy routes.
+
 
 package handler
 

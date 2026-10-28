@@ -1,5 +1,11 @@
 /**
- * Snowflake-backed reporting endpoints for verdict distribution and phishing trend dashboards.
+ * This router exposes Snowflake-backed reporting endpoints such as verdict distribution and phishing trend series.
+ *
+ * Handlers authenticate JWTs, call snowflakeClient queries, and return JSON for dashboards or external BI tools.
+ *
+ * In dev responses come from mock-snowflake; in production from the configured warehouse URL.
+ *
+ * It complements PostgreSQL metrics routes which cover operational queue health rather than warehouse history.
  */
 const express = require("express");
 const {

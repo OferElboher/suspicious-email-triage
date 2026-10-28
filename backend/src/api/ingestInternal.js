@@ -1,5 +1,11 @@
 /**
- * Internal mailbox ingest route: validates ingest token, creates review, enqueues Kafka.
+ * This internal route creates Reviews from the Go gateway without exposing public unauthenticated ingest to the internet.
+ *
+ * It validates the shared secret header, normalizes body fields to match manual triage shape, saves MongoDB documents, and calls enqueueAfterCreate.
+ *
+ * External mail platforms should hit Go :8080, not this URL directly.
+ *
+ * Misconfigured tokens return 401 without leaking whether emails were accepted.
  */
 const express = require("express");
 const Review = require("../models/Review");

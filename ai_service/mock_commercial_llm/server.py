@@ -1,5 +1,12 @@
 """
-Dev OpenAI-compatible mock on port 8090: POST /v1/chat/completions with canned analyses.
+This standalone HTTP server imitates OpenAI Chat Completions for local development on port 8090.
+
+Celery calls it when LLM_BASE_URL points at mock-llm and LLM_PROVIDER selects mock_commercial.
+
+It returns deterministic JSON analyses from keyword rules in responses.py so demos do not spend
+tokens.
+
+Health checks support Docker Compose dependency ordering.
 """
 
 from __future__ import annotations

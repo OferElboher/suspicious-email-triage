@@ -1,5 +1,11 @@
 /**
- * S3 backup adapter: upload, list, and download Postgres backup JSON via AWS SDK or mock-s3.
+ * This module uploads and lists logical PostgreSQL backup objects in S3 or a compatible object store.
+ *
+ * It wraps the AWS SDK with path-style addressing so mock-s3 on port 4568 works the same as real S3 in production.
+ *
+ * Backup JSON snapshots are produced by backupService.js and stored under configurable bucket/prefix names from environment variables.
+ *
+ * The Admin tab and POST /ops/backups/run use this provider when BACKUP_PROVIDER allows backups.
  */
 const {
   S3Client,

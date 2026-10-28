@@ -1,5 +1,11 @@
 /**
- * Main React shell: icon navigation, RBAC tabs, and hash routing for triage and sub-windows.
+ * This component is the root layout after login: icon navigation, permission-gated screens, and URL hash routing (#analytics, #graph, etc.).
+ *
+ * It renders the review queue, detail pane, and switches between major sub-windows (analytics, search, logs, ingest, admin) based on RBAC permissions from AuthContext.
+ *
+ * The dev proxy forwards API calls to the Node backend; this file does not embed API URLs for production builds.
+ *
+ * New features typically add a nav icon here and a matching view component.
  */
 import { useCallback, useEffect, useState } from "react";
 import { postJson, getJson } from "./api/client";

@@ -1,5 +1,11 @@
 /**
- * Dev Snowflake-style REST mock on :4567 for insert and analytics queries.
+ * This dev server on port 4567 accepts insert and analytics GET requests mimicking our Snowflake client contract.
+ *
+ * It stores rows in memory for demo dashboards.
+ *
+ * Node snowflakeClient.js points here when SNOWFLAKE_URL is set for dev Compose.
+ *
+ * It is not a SQL engine—only the REST surface the product actually uses.
  */
 const http = require("http");
 const crypto = require("crypto");

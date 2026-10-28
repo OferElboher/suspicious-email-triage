@@ -1,5 +1,12 @@
 """
-Dev agent LLM adapter that POSTs to the mock-cloud-llm container.
+This adapter POSTs agent prompts to the mock-cloud-llm container URL from MOCK_CLOUD_LLM_URL.
+
+It mirrors the method surface of bedrock_client so orchestrator code stays identical in dev and
+prod.
+
+No AWS credentials are required when this client is selected.
+
+Used heavily in full Capability C Compose stacks.
 """
 
 from __future__ import annotations

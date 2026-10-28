@@ -1,5 +1,11 @@
 /**
- * Ingest tab: gateway simulation controls and Recharts metrics from Go stats API.
+ * This tab shows mailbox ingest metrics, simulation controls, and charts backed by Go gateway stats APIs proxied through Node.
+ *
+ * Security teams use it to verify webhook and simulation traffic before integrating real SEG products.
+ *
+ * It requires permissions for ingest features as defined in RBAC docs.
+ *
+ * Recharts visualizes throughput similar to the operational flow dashboard.
  */
 import { useCallback, useState } from "react";
 import {

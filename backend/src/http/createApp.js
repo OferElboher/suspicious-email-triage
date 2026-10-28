@@ -1,6 +1,11 @@
 /**
- * Express application factory: registers middleware and mounts REST routes (reviews, auth,
- * metrics, graph, search, logs, ops, dev, health).
+ * This file defines the Express application object that exposes the entire REST surface of the product.
+ *
+ * It registers global middleware (JSON parsing, CORS, request logging), mounts route modules for reviews, authentication, metrics, graph, search, logs, operations, ingest, and dev-only tools, and wires health probes used by Docker and Kubernetes.
+ *
+ * Each route module stays in backend/src/api/ or related folders; this file is the single composition root so middleware order and path prefixes stay consistent.
+ *
+ * Nothing in this file implements business rules itself—it only connects HTTP paths to the handlers that do.
  */
 const express = require("express");
 const cors = require("cors");

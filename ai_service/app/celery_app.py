@@ -1,5 +1,12 @@
 """
-Celery application configuration: broker, result backend, and task routing for ai-celery.
+This file constructs the Celery application object used by worker and dispatcher containers.
+
+It configures broker URL, result backend, task serialization, and routing to
+ai_service/app/tasks.py.
+
+Environment variables point Redis and Mongo/Postgres credentials loaded via secrets_provider.py.
+
+Workers execute with concurrency settings suitable for CPU and LLM I/O bound tasks.
 """
 
 # os reads Celery broker/result URLs from environment variables.

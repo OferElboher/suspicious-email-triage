@@ -1,5 +1,11 @@
 /**
- * In-memory S3 API mock on :4568 for local backup demos without AWS credentials.
+ * This lightweight server implements enough S3 API for the AWS SDK to PUT and LIST backup objects in memory on port 4568.
+ *
+ * It enables backup demos without IAM users or buckets in AWS.
+ *
+ * path-style URLs match backend BACKUP_ENDPOINT configuration in dev.
+ *
+ * Data is ephemeral unless volumes are added—acceptable for local testing.
  */
 const http = require("http");
 const { URL } = require("url");

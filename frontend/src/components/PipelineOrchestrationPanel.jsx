@@ -1,5 +1,11 @@
 /**
- * Prefect health card and dbt daily bar chart fed by GET /pipeline/* on the Analytics tab.
+ * This panel sits below the main analytics charts and surfaces data-platform health for demos.
+ *
+ * It calls GET /pipeline/prefect-health and GET /pipeline/dbt-daily, showing event counts, flow status, and a bar chart of dbt model review_stats_daily.
+ *
+ * When AnalyticsView auto-refresh is enabled, this panel polls on the same 30-second timer; otherwise the user clicks Refresh pipeline data.
+ *
+ * It links conceptually to Prefect and dbt documentation in the repo for analytics engineering workflows.
  */
 import { useCallback, useEffect, useState } from "react";
 import {

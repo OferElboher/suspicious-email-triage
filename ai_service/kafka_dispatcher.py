@@ -1,5 +1,12 @@
 """
-Kafka consumer process: reads email.review.ingested and dispatches analyze_review Celery tasks.
+This long-running Python process subscribes to email.review.ingested on Redpanda/Kafka.
+
+For each message it enqueues a Celery analyze_review task on Redis so worker containers can scale
+independently.
+
+It is the bridge between Node’s fire-and-forget publish and Python’s heavy scoring pipeline.
+
+The dispatcher container starts alongside ai-celery in full dev stacks.
 """
 
 import json

@@ -1,5 +1,11 @@
 /**
- * JWT-protected graph API returning campaign list and subgraph JSON for GraphView.
+ * This router exposes JWT-protected graph read APIs for the React GraphView tab.
+ *
+ * It returns campaign lists sorted by activity and subgraph JSON for selected campaigns.
+ *
+ * Permissions require graph.read; responses contain nodes and edges for SVG layout client-side.
+ *
+ * It never exposes arbitrary Cypher—queries stay parameterized server-side.
  */
 const express = require("express");
 const router = express.Router();

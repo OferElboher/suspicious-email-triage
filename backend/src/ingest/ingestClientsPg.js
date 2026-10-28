@@ -1,5 +1,11 @@
 /**
- * PostgreSQL access for ingest_clients: callback URLs and secrets for verdict delivery.
+ * This module reads and writes PostgreSQL ingest_clients rows mapping tenant ids to callback URLs and signing secrets.
+ *
+ * verdictDelivery.js and registration APIs depend on it for outbound integration configuration.
+ *
+ * Data is relational for auditability unlike Mongo review documents.
+ *
+ * Migrations run from Node auth schema setup on startup.
  */
 const { Pool } = require("pg");
 const logger = require("../lib/logger");

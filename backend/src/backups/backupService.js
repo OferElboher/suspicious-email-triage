@@ -1,5 +1,11 @@
 /**
- * Orchestrates logical Postgres snapshot export and upload through s3BackupProvider.
+ * This module orchestrates a logical export of selected PostgreSQL tables into JSON and uploads the artifact via s3BackupProvider.js.
+ *
+ * It is invoked by POST /ops/backups/run and records metadata for the Admin UI.
+ *
+ * Backups complement MongoDB review storage by snapshotting auth and stats relational data.
+ *
+ * In dev the object lands in mock-s3; in production it lands in a real bucket.
  */
 const { Pool } = require("pg");
 const logger = require("../lib/logger");

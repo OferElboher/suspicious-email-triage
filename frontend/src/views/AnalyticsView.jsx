@@ -1,5 +1,11 @@
 /**
- * Analytics tab: Recharts metrics, default auto-refresh, and Prefect/dbt pipeline panel host.
+ * This view renders the Analytics and graphs tab using Recharts line and bar charts fed by GET /metrics/*.
+ *
+ * Auto-refresh is on by default: every 30 seconds it reloads rolling 24-hour PostgreSQL metrics and passes the same interval to PipelineOrchestrationPanel for Prefect/dbt data.
+ *
+ * Users can turn auto-refresh off to pick custom From/To windows and bucket sizes.
+ *
+ * It requires metrics.read permission and explains chart measures in plain language above the plots.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {

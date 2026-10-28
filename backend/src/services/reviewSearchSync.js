@@ -1,5 +1,11 @@
 /**
- * Indexes or updates Elasticsearch when reviews change so search stays in sync with MongoDB.
+ * This service updates or deletes Elasticsearch documents when reviews change in MongoDB.
+ *
+ * Celery or Node hooks call it after scoring completes so new reviews appear in search without manual reindex.
+ *
+ * Failures log warnings but do not block review completion.
+ *
+ * Decoupling sync from API handlers avoids slowing POST /reviews responses.
  */
 const Review = require("../models/Review");
 const { indexReviewDocument } = require("../search/reviewSearchIndex");

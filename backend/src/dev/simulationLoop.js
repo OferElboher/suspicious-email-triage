@@ -1,6 +1,11 @@
 /**
- * Dev simulation timer: periodically creates synthetic reviews and enqueues them like real
- * traffic.
+ * This module runs a timer-driven loop that creates fake reviews at a configurable interval for load testing dashboards and workers.
+ *
+ * When simulation is enabled in Redis via dev routes, it builds synthetic email payloads, saves Reviews, and calls the same enqueueAfterCreate pipeline as real submissions.
+ *
+ * The loop is restarted when settings change and stopped during dev reset-local-state.
+ *
+ * It helps validate Kafka, Celery, and chart pipelines without clicking Submit repeatedly.
  */
 const Review = require("../models/Review");
 const logger = require("../lib/logger");

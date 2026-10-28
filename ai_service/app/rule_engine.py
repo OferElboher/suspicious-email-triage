@@ -1,5 +1,13 @@
 """
-Deterministic heuristics (URLs, sender patterns) that always run before optional LLM calls.
+This module applies deterministic heuristics to email content and metadata before any LLM call.
+
+It flags suspicious links, sender anomalies, and keyword patterns that do not require paid API
+tokens.
+
+Results feed merge.py together with optional LLM output.
+
+Running rules first keeps costs down and guarantees a baseline verdict even when LLM_PROVIDER
+disables cloud calls.
 """
 
 from typing import Any, Dict, List, Tuple

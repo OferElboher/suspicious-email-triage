@@ -1,5 +1,11 @@
 /**
- * Proxies Go ingest-gateway metrics to Node for the React #ingest dashboard.
+ * This helper calls Go ingest-gateway HTTP APIs from Node for proxy routes used by the React ingest dashboard.
+ *
+ * It forwards stats and simulation commands so the browser only talks to the trusted Node origin.
+ *
+ * Environment variables set the gateway base URL inside Docker DNS.
+ *
+ * Keeps CORS and JWT enforcement on Node while metrics originate in Go.
  */
 const logger = require("../lib/logger");
 

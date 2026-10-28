@@ -1,5 +1,11 @@
 /**
- * Index mappings and bulk helpers for denormalized review documents in Elasticsearch.
+ * This module defines index mappings and helper functions to bulk index or update review documents.
+ *
+ * Denormalized fields include subject, body snippets, sender addresses, and verdict labels for multi_match queries.
+ *
+ * Background sync keeps Elasticsearch aligned with MongoDB source of truth.
+ *
+ * Large reindex operations belong to dev maintenance scripts documented separately.
  */
 const { getElasticsearchClient, resetElasticsearchClient, isElasticsearchEnabled } = require("./elasticClient");
 const { dayBoundsUtc, pageIndexForDate } = require("../lib/dateNav");

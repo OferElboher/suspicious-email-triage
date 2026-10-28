@@ -1,5 +1,11 @@
 /**
- * Node rule engine for the BullMQ worker path; primary scoring remains Python Celery.
+ * This file implements lightweight deterministic checks (suspicious URLs, keywords, sender patterns) for the Node BullMQ worker.
+ *
+ * It produces a partial analysis object that can be stored on the Review when Python Celery is not used.
+ *
+ * The primary production scoring path uses Python rule_engine.py plus optional LLM calls instead.
+ *
+ * Keeping rules in Node allows the legacy worker to run without a Python container.
  */
 /** Host substrings aligned with mock_commercial_llm demo URLs (graph campaign tests). */
 const PHISHING_URL_HINTS = [

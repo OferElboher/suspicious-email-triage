@@ -1,5 +1,11 @@
 /**
- * Admin tab: Django admin link plus S3 backup panel for privileged operators.
+ * This view is the gateway to operator tasks outside the main triage workflow.
+ *
+ * It opens Django admin in a new browser tab for auth_users and role management, and embeds S3BackupsPanel for backup stats and manual backup runs.
+ *
+ * Typical users need admin.users or ops.backups permissions respectively.
+ *
+ * It intentionally does not duplicate full CRUD that Django admin already provides.
  */
 import { useAuth } from "../context/AuthContext";
 import HoverHelp from "../components/HoverHelp";

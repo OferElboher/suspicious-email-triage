@@ -1,5 +1,11 @@
 /**
- * Dev Secrets Manager mock on :4566 serving gitignored backend/dev.secrets as SecretString.
+ * This Node HTTP service pretends to be AWS Secrets Manager for dev on port 4566.
+ *
+ * It reads gitignored backend/dev.secrets from disk and returns the contents as SecretString JSON.
+ *
+ * Both Node and Python entrypoints fetch triage/dev bundle ids from this mock.
+ *
+ * It must never be exposed publicly; it exists only on the Docker network.
  */
 const http = require("http");
 const fs = require("fs");

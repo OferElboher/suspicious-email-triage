@@ -1,5 +1,11 @@
 """
-Django auth backend: verifies bcrypt password_hash from PostgreSQL for django-admin sign-in.
+This authentication backend validates django-admin login forms against bcrypt password_hash columns written by Node.
+
+It looks up users by email, checks is_active, and verifies password using the same hashing scheme as POST /auth/login.
+
+Only users with the admin role should pass is_staff checks for admin access.
+
+It replaces Django’s default User model backend entirely for this project.
 """
 
 import bcrypt
