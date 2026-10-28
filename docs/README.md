@@ -19,6 +19,7 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 | Goal | Document |
 |------|----------|
 | Non-technical product overview | [biz_guide_user.md](biz_guide_user.md) |
+| **Languages, databases, cloud services — why we use them** | [tech_guide_project_stack_intro.md](tech_guide_project_stack_intro.md) |
 | **Agent triage FSM** (Bedrock/Vertex/mock, tools, guardrails) | [data_guide_agent_triage.md](data_guide_agent_triage.md) |
 | **S3 database backups** (dev mock / AWS stg/prod) | [ops_guide_s3_backups.md](ops_guide_s3_backups.md) |
 | **S3 backups Admin UI** (usage stats + run backup) | [ui_guide_s3_backups.md](ui_guide_s3_backups.md) |
@@ -141,6 +142,7 @@ All guides live under `docs/`. Names use a **prefix** so you can tell **function
 
 ## Technology guides
 
+- [tech_guide_project_stack_intro.md](tech_guide_project_stack_intro.md) — languages, stacks, AWS/Google/Snowflake/etc. and dev mocks
 - [tech_env_configuration.md](tech_env_configuration.md) — environment variables
 - [tech_neo4j_setup_wsl_windows.md](tech_neo4j_setup_wsl_windows.md) — Neo4j Docker on WSL
 - [tech_neo4j_browser_guide.md](tech_neo4j_browser_guide.md) — Neo4j Browser & Cypher

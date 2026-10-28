@@ -1,6 +1,6 @@
 # System handbook (comprehensive)
 
-This document answers “what is this software, why does it exist, how is it structured, and how do requests move through it?” in one place. For a shorter non-technical overview, read [biz_guide_user.md](biz_guide_user.md). For diagrams of every container and data store, read [arch_guide_system_flowchart.md](arch_guide_system_flowchart.md). The doc index is [README.md](README.md).
+This document answers “what is this software, why does it exist, how is it structured, and how do requests move through it?” in one place. For a shorter non-technical overview, read [biz_guide_user.md](biz_guide_user.md). For a focused intro to languages, databases, and external services (and why each is used), read [tech_guide_project_stack_intro.md](tech_guide_project_stack_intro.md). For diagrams of every container and data store, read [arch_guide_system_flowchart.md](arch_guide_system_flowchart.md). The doc index is [README.md](README.md).
 
 **Security:** this handbook uses **placeholders** only (URLs, emails like `you@example.com`). Real passwords and API keys live in gitignored `backend/dev.secrets` and `backend/.env` — never copy those values into markdown or chat. See [ops_guide_secrets_management.md](ops_guide_secrets_management.md).
 
