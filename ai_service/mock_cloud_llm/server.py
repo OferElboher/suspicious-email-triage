@@ -1,8 +1,5 @@
 """
-HTTP server emulating Bedrock Converse for agent triage (PLAN / TOOL_LOOP / SYNTHESIZE).
-
-Run: python -m mock_cloud_llm.server
-Technology: stdlib http.server — same pattern as mock_commercial_llm.server.
+Dev Bedrock/Vertex-shaped mock on port 8091 for agent triage without cloud billing.
 """
 
 from __future__ import annotations

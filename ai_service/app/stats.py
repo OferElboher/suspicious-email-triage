@@ -1,4 +1,6 @@
-"""PostgreSQL statistics writer for chart events created by Python workers."""
+"""
+Writes status_changed rows to PostgreSQL when Celery updates review status for charts.
+"""
 
 # os reads STATISTICS_PG_URL from Docker Compose or deployment secrets.
 import os

@@ -1,7 +1,6 @@
 /**
- * Persisted dev-simulation settings in Redis (survives API restarts within the same Redis).
- * Key triage:dev:simulation holds JSON { enabled:boolean, eventsPerMinute:number }.
- * Falls back to in-process memory when Redis is unreachable so local dev without Redis still boots.
+ * Redis-backed dev simulation settings (on/off, interval) surviving API restarts until dev
+ * reset.
  */
 const { getRedis } = require("../lib/getRedis");
 

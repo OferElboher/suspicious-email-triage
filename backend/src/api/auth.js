@@ -1,3 +1,6 @@
+/**
+ * Auth REST API: login, JWT session, password reset, Google OAuth, dev bootstrap reset.
+ */
 const express = require("express");
 const logger = require("../lib/logger");
 const { signAccessToken, jwtTtlSeconds } = require("../auth/jwt");

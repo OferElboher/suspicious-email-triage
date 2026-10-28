@@ -1,8 +1,5 @@
 """
-Unmanaged ORM models mirroring Node-owned PostgreSQL auth tables.
-
-Node DDL uses composite primary keys on junction tables (no surrogate ``id`` column).
-Django defaults assume an ``id`` AutoField — ``CompositePrimaryKey`` matches the real schema.
+Django unmanaged ORM models for Node-owned PostgreSQL auth tables; session hash for admin login.
 """
 
 from django.db import models

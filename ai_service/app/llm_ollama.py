@@ -1,4 +1,7 @@
-"""Optional Ollama call from Celery; DISABLE_LLM skips network."""
+"""
+Optional local Ollama HTTP client when OLLAMA_BASE_URL is configured for scoring.
+"""
+
 import json
 import os
 import re

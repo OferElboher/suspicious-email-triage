@@ -1,6 +1,6 @@
 /**
- * Fire-and-forget producer for review-ingest topic (Celery pipeline entry).
- * Uses reviewId as message key so all events for one review land in the same partition.
+ * Kafka producer: publishes email.review.ingested after a review is saved so Python workers
+ * can score asynchronously.
  */
 const { Kafka, logLevel } = require("kafkajs");
 const logger = require("../lib/logger");

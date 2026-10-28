@@ -1,5 +1,5 @@
 /**
- * Redis BullMQ consumer (legacy path). Primary pipeline: Kafka → Celery (Python).
+ * Legacy BullMQ worker entry when the legacy-bullmq Compose profile replaces Celery scoring.
  */
 const mongoose = require("mongoose");
 const { Worker } = require("bullmq");

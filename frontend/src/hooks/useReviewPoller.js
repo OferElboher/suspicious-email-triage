@@ -1,3 +1,6 @@
+/**
+ * Polls GET /reviews/:id until completed or failed so the triage UI tracks async scoring.
+ */
 import { useEffect, useRef } from "react";
 import { getJson } from "../api/client";
 

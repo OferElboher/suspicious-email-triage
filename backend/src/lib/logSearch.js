@@ -1,8 +1,5 @@
 /**
- * Reads merged JSON-lines log and filters by time range, topic, level, keyword, and regex.
- *
- * Pattern: streaming readline over `merged.log` (central logging) — no Elasticsearch required.
- * Technology: Node.js fs + readline; optional RegExp when `regex=true`.
+ * Central log search: scans NDJSON merged.log with filters; powers GET /logs/search and #logs.
  */
 const fs = require("fs");
 const readline = require("readline");

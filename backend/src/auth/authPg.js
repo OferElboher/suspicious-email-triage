@@ -1,6 +1,5 @@
 /**
- * PostgreSQL-backed users, roles, permissions, and password-reset tokens.
- * Shares the statistics database connection (STATISTICS_PG_URL).
+ * PostgreSQL auth: users, bcrypt hashes, roles, login, bootstrap admin, password reset tokens.
  */
 const { Pool } = require("pg");
 const logger = require("../lib/logger");

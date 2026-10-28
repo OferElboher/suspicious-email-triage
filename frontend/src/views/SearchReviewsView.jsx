@@ -1,8 +1,5 @@
 /**
- * Dedicated Elasticsearch review search sub-window (#search).
- *
- * Pattern: mirrors LogsView — full-width tools moved off the crowded dashboard footer.
- * Technology: ReviewSearchPanel (reviews.read) + SearchIndexPanel (dev.reset admin).
+ * Search tab shell: Elasticsearch review search and optional index admin for dev.reset users.
  */
 import ReviewSearchPanel from "../components/ReviewSearchPanel";
 import SearchIndexPanel from "../components/SearchIndexPanel";

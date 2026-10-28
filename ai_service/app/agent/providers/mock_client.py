@@ -1,8 +1,5 @@
 """
-Mock cloud LLM client — talks to mock-cloud-llm container (zero API cost).
-
-Pattern: Bedrock Converse-shaped HTTP API; dev replacement for paid Bedrock/Vertex.
-Technology: requests POST /v1/converse; responses emulate tool_use + JSON synthesis.
+Dev agent LLM adapter that POSTs to the mock-cloud-llm container.
 """
 
 from __future__ import annotations

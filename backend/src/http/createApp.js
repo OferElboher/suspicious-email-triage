@@ -1,5 +1,6 @@
 /**
- * Express app factory: middleware + routes only (no listen).
+ * Express application factory: registers middleware and mounts REST routes (reviews, auth,
+ * metrics, graph, search, logs, ops, dev, health).
  */
 const express = require("express");
 const cors = require("cors");

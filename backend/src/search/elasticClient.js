@@ -1,6 +1,5 @@
 /**
- * Elasticsearch client singleton (optional — disabled when ELASTICSEARCH_ENABLED=false).
- * Pattern: same graceful degradation as Neo4j; laptop-friendly single-node dev cluster.
+ * Elasticsearch client setup for the triage-reviews index used by full-text search.
  */
 const { Client } = require("@elastic/elasticsearch");
 const logger = require("../lib/logger");

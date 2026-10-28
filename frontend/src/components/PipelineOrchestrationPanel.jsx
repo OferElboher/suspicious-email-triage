@@ -1,8 +1,5 @@
 /**
- * Pipeline orchestration panel — Prefect health check + dbt daily rollup chart on Analytics tab.
- *
- * Pattern: React fetches GET /pipeline/* (Express) which bridges Prefect Python flow and dbt VIEW.
- * Technology: Recharts bar chart for dbt model output; status badges for Prefect flow result.
+ * Prefect health card and dbt daily bar chart fed by GET /pipeline/* on the Analytics tab.
  */
 import { useCallback, useEffect, useState } from "react";
 import {

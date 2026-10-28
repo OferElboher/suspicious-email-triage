@@ -1,5 +1,5 @@
 /**
- * Fire-and-forget Elasticsearch indexing for reviews (mirrors graph sync pattern).
+ * Indexes or updates Elasticsearch when reviews change so search stays in sync with MongoDB.
  */
 const Review = require("../models/Review");
 const { indexReviewDocument } = require("../search/reviewSearchIndex");

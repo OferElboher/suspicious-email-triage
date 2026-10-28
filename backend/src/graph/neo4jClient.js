@@ -1,6 +1,5 @@
 /**
- * Lazy Neo4j driver singleton.
- * When NEO4J_ENABLED=false the graph layer returns empty results instead of throwing.
+ * Neo4j driver helper: Cypher for campaigns, senders, URLs, and review neighborhoods.
  */
 const neo4j = require("neo4j-driver");
 const logger = require("../lib/logger");

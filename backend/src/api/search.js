@@ -1,5 +1,5 @@
 /**
- * REST routes for Elasticsearch review search (optional laptop-friendly dev stack).
+ * Search API: GET /search/reviews and page-for-date pagination for the #search tab.
  */
 const express = require("express");
 const {

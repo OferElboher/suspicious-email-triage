@@ -1,8 +1,5 @@
 """
-Python secrets-provider — mirrors Node secretsProvider.js for Celery/Kafka workers.
-
-Pattern: SECRETS_PROVIDER=mock-aws (dev Docker) or aws (staging/prod IAM) at process start.
-Technology: urllib mock HTTP for dev; boto3 GetSecretValue for real AWS Secrets Manager.
+Python secrets loader matching Node: mock AWS or real Secrets Manager at worker startup.
 """
 
 from __future__ import annotations

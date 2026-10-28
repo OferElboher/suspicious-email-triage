@@ -1,9 +1,5 @@
 /**
- * Outbound verdict delivery — POST webhook to mail platforms when analysis completes or override changes.
- *
- * Pattern: fire-and-forget scheduleVerdictDelivery (like scheduleSnowflakeExport);
- * Celery triggers via POST /ingest/internal/verdict-deliver/:id after scoring.
- * Technology: Node fetch, HMAC X-Verdict-Signature, Postgres ingest_clients registry, optional Kafka event.
+ * Delivers final verdicts via signed customer webhooks and optional Kafka fan-out.
  */
 const Review = require("../models/Review");
 const logger = require("../lib/logger");

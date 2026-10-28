@@ -1,8 +1,6 @@
 /**
- * Export completed MongoDB reviews into Snowflake analytical tables (mock or real).
- *
- * Pattern: fire-and-forget ETL after analysis completes — mirrors Elasticsearch indexing.
- * MongoDB = OLTP operational store; Snowflake = OLAP reporting warehouse.
+ * Maps completed reviews to warehouse rows and calls snowflakeClient after analysis or
+ * override.
  */
 const Review = require("../models/Review");
 const logger = require("../lib/logger");

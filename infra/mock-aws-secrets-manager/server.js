@@ -1,11 +1,5 @@
 /**
- * Mock AWS Secrets Manager — local stand-in for GetSecretValue (LocalStack REST + AWS JSON 1.1).
- *
- * Real AWS Secrets Manager uses HTTPS POST with header X-Amz-Target: secretsmanager.GetSecretValue
- * and JSON body { "SecretId": "..." }. LocalStack also exposes GET /v1/secrets/{id} for simplicity.
- *
- * This server implements BOTH shapes so Node/Python clients and AWS-SDK-style tools work in dev.
- * Response fields match AWS GetSecretValue: SecretString, ARN, Name, VersionId, CreatedDate.
+ * Dev Secrets Manager mock on :4566 serving gitignored backend/dev.secrets as SecretString.
  */
 const http = require("http");
 const fs = require("fs");

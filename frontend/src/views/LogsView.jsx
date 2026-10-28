@@ -1,8 +1,5 @@
 /**
- * Dedicated sub-window for central log search (merged.log).
- *
- * Pattern: full-width layout; requires logs.read permission (RBAC).
- * Technology: LogSearchPanel → GET /logs/search — see ops_guide_central_logging.md.
+ * Logs tab shell: unified merged.log search via LogSearchPanel (logs.read permission).
  */
 import LogSearchPanel from "../components/LogSearchPanel";
 

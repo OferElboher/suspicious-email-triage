@@ -1,4 +1,7 @@
-/** Mongoose model: email payload, async status, hybrid analysis, analyst override. */
+/**
+ * Mongoose Review schema: email content, pipeline status, analysisResult, overrides, graph
+ * links.
+ */
 const mongoose = require("mongoose");
 
 const FindingSchema = new mongoose.Schema(

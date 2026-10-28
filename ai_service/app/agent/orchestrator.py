@@ -1,10 +1,5 @@
 """
-Agent triage orchestrator — bounded finite-state machine for Celery scoring.
-
-States: INTAKE → PLAN → TOOL_LOOP → SYNTHESIZE → GUARD_VALIDATE → PERSIST (or FALLBACK_RULES).
-
-Pattern: explicit FSM (not unbounded ReAct); workflow YAML + tool allowlist + guardrails.
-Technology: CloudLlmClient (mock/Bedrock/Vertex), jsonschema post-validation, Mongo agentTrace.
+Agent triage finite-state machine with tool calls and cloud LLM rounds for advanced reviews.
 """
 
 from __future__ import annotations

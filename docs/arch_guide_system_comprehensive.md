@@ -233,7 +233,7 @@ Paths below are **relative to the repository root**.
 ### Go (`ingest-gateway/`)
 
 - `ingest-gateway/cmd/ingest-gateway/main.go` — HTTP server entrypoint.
-- `ingest-gateway/internal/handlers/*` — webhook, simulation, metrics routes.
+- `ingest-gateway/internal/handler/handler.go` — webhook, simulation, metrics routes.
 
 ### Django admin (`backend/triage_auth/`)
 
@@ -297,7 +297,7 @@ Paths below are **relative to the repository root**.
 ### Customer mail platform webhooks (production) / `ingest-gateway` (dev)
 
 - `ingest-gateway/cmd/ingest-gateway/main.go` — Go HTTP server (:8080).
-- `ingest-gateway/internal/handlers/` — webhook, simulation, stats handlers.
+- `ingest-gateway/internal/handler/handler.go` — webhook, simulation, stats handlers.
 - `ingest-gateway/internal/backend/client.go` — forwards to Node with `X-Ingest-Internal-Token`.
 - `backend/src/api/ingestInternal.js` — `POST /ingest/internal/mailbox`.
 - `backend/src/lib/ingestGatewayClient.js` — Node proxy metrics for `#ingest` UI.
@@ -314,7 +314,7 @@ Paths below are **relative to the repository root**.
 
 - **MongoDB:** `backend/src/models/Review.js`, `backend/src/lib/mongoConnect.js`
 - **PostgreSQL:** `backend/src/auth/authPg.js`, `backend/src/stats/statsPg.js`
-- **Redis:** `backend/src/dev/simulationState.js`, Celery broker via `ai_service/app/celery_app.py`
+- **Redis:** `backend/src/dev/simulationStore.js`, Celery broker via `ai_service/app/celery_app.py`
 - **Kafka/Redpanda:** `backend/src/kafka/reviewIngestProducer.js`, `ai_service/kafka_dispatcher.py`
 - **Neo4j:** `backend/src/graph/neo4jClient.js`, `backend/src/api/graph.js`, `backend/src/api/graphInternal.js`
 - **Elasticsearch:** `backend/src/search/elasticClient.js`, `backend/src/search/reviewSearchIndex.js`, `backend/src/api/search.js`, `backend/src/services/reviewSearchSync.js`

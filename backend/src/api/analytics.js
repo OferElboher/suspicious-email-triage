@@ -1,8 +1,5 @@
 /**
- * REST routes for Snowflake analytical warehouse queries and export status.
- *
- * Pattern: read-only analytics via metrics.read; mutating dev export via dev.reset.
- * Technology: Express router + snowflakeClient HTTP to mock-aws-snowflake service.
+ * Snowflake-backed reporting endpoints for verdict distribution and phishing trend dashboards.
  */
 const express = require("express");
 const {

@@ -1,4 +1,8 @@
-"""Celery task: Kafka-dispatched review analysis (rules + LLM or agent triage) writes Mongo."""
+"""
+Celery tasks: analyze_review runs rules, optional LLM/agent, merges verdict,
+updates Mongo and PostgreSQL stats.
+"""
+
 from bson import ObjectId
 
 from app.celery_app import celery_app

@@ -1,6 +1,6 @@
 /**
- * HTTP server entry: env, mongo, express listen.
- * Pipeline default: Kafka ingest → Python Celery; optional BullMQ worker for legacy/fallback.
+ * Node HTTP entrypoint: connects MongoDB, builds the Express app, listens on PORT, and starts
+ * the dev simulation timer after the server accepts connections.
  */
 const { createApp } = require("./http/createApp");
 const { connectMongo } = require("./lib/mongoConnect");

@@ -1,8 +1,5 @@
 """
-Minimal OpenAI-compatible HTTP server for local demos (no paid API calls).
-
-Implements POST /v1/chat/completions with Bearer auth (LLM_API_KEY).
-Run: python -m mock_commercial_llm.server
+Dev OpenAI-compatible mock on port 8090: POST /v1/chat/completions with canned analyses.
 """
 
 from __future__ import annotations

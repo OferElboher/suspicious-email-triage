@@ -1,6 +1,6 @@
 /**
- * Metrics routes: chart data backed by PostgreSQL statistics events.
- * MongoDB is intentionally not scanned here, so large review history stays cheap to browse.
+ * Analytics REST API: aggregates PostgreSQL review_stats_events into time-series and
+ * status-breakdown JSON for the Analytics tab.
  */
 const express = require("express");
 const logger = require("../lib/logger");

@@ -1,8 +1,5 @@
 """
-Amazon Bedrock adapter — production path using boto3 bedrock-runtime Converse API.
-
-Pattern: same orchestrator code path as mock; only this module imports boto3 at runtime.
-Technology: bedrock-runtime.converse with toolConfig for tool-calling rounds.
+Production agent LLM adapter using boto3 bedrock-runtime Converse with tools.
 """
 
 from __future__ import annotations

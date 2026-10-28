@@ -1,4 +1,7 @@
-"""Merge deterministic rules with LLM JSON; persist `analysisResult` + status."""
+"""
+Combines rule-engine and LLM outputs into the final analysisResult on the review document.
+"""
+
 from typing import Any, Dict, List
 
 

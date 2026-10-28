@@ -1,4 +1,6 @@
-"""Stock OpenAI-style analysis payloads for the mock commercial LLM server (zero API cost)."""
+"""
+Keyword rules producing deterministic chat completion JSON for mock-llm demos.
+"""
 
 from __future__ import annotations
 

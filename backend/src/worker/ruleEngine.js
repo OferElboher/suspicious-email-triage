@@ -1,5 +1,5 @@
 /**
- * Deterministic rules; security-critical outcomes must not be weakened by LLM output downstream.
+ * Node rule engine for the BullMQ worker path; primary scoring remains Python Celery.
  */
 /** Host substrings aligned with mock_commercial_llm demo URLs (graph campaign tests). */
 const PHISHING_URL_HINTS = [

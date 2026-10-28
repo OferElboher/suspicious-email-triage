@@ -1,8 +1,5 @@
 /**
- * Mailbox ingest dashboard — statistics and charts for the Go ingest-gateway service.
- *
- * Shows webhook vs simulation throughput, error counts, and dev simulation controls.
- * Pattern: polls GET /metrics/mailbox-ingest (Node proxy → Go gateway).
+ * Ingest tab: gateway simulation controls and Recharts metrics from Go stats API.
  */
 import { useCallback, useState } from "react";
 import {

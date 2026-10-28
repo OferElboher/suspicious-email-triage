@@ -1,13 +1,5 @@
-// Command ingest-gateway is the Go mailbox ingest service entry point.
-//
-// Architecture: this binary runs as a separate container (ingest-gateway) in Docker Compose.
-// It receives email-shaped HTTP payloads, optionally simulates mailbox traffic in dev, and
-// delegates review persistence to the existing Node.js API via an internal authenticated route.
-//
-// Go patterns used here:
-//   - net/http.Server with ReadHeaderTimeout (slowloris mitigation)
-//   - http.NewServeMux with Go 1.22 method-aware patterns (GET /health/live)
-//   - Dependency injection: config, stats store, backend client, simulation controller
+// Go ingest-gateway binary: HTTP server for mailbox webhooks and dev simulation on port 8080.
+
 package main
 
 import (

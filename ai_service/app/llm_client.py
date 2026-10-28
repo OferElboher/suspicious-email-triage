@@ -1,7 +1,5 @@
 """
-Unified LLM client for Celery scoring.
-
-Supports Ollama, mock commercial (OpenAI API shape), or disabled stub.
+Routes LLM scoring to OpenAI-compatible HTTP (mock-llm or production API) via LLM_BASE_URL.
 """
 
 from __future__ import annotations

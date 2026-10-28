@@ -1,7 +1,5 @@
 /**
- * Google OAuth2 sign-in for the triage app (OpenID Connect style, no App Passwords).
- *
- * Uses authorization-code flow; maps Google email to existing auth_users rows and issues JWT.
+ * Google OAuth flow: authorize URL, state validation, token exchange, user link, JWT for SPA.
  */
 const crypto = require("crypto");
 const { signAccessToken, jwtTtlSeconds } = require("./jwt");

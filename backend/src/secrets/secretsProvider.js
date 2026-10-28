@@ -1,9 +1,6 @@
 /**
- * Secrets-provider abstraction — enterprise pattern for loading credentials outside Git.
- *
- * Production teams point SECRETS_PROVIDER=aws at real AWS Secrets Manager.
- * Local Docker uses SECRETS_PROVIDER=mock-aws and the mock-secrets-manager container.
- * Unit tests and CI use SECRETS_PROVIDER=file with committed ci.secrets (fake values only).
+ * Secrets bootstrap: loads JWT keys and DB passwords from AWS Secrets Manager or
+ * mock-secrets-manager before the API process starts.
  */
 const fs = require("fs");
 const path = require("path");

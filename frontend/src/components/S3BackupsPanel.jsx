@@ -1,8 +1,5 @@
 /**
- * S3 database backup statistics panel — Admin sub-window.
- *
- * Pattern: polls GET /ops/backups/stats; manual backup via POST /ops/backups/run.
- * Technology: React state + shared API client; permission ops.backups (admin role).
+ * Admin UI for backup stats and POST /ops/backups/run against mock-s3 or real S3.
  */
 import { useCallback, useEffect, useState } from "react";
 import { getJson, postJson } from "../api/client";

@@ -1,22 +1,5 @@
-// Package backend calls the Node.js internal ingest API to persist reviews.
-//
-// Why this package exists:
-// The Go ingest-gateway is a thin edge service. It validates HTTP payloads from mail platforms
-// but does NOT talk to MongoDB or Kafka directly. Instead it forwards JSON to Node Express routes
-// that already implement Review creation, Kafka enqueue, and Postgres client registry.
-//
-// Typical call flows:
-//
-//  Flow A — real mailbox webhook ingest:
-//    POST /v1/ingest/email (handler) → CreateMailboxReview → Node POST /ingest/internal/mailbox
-//    → Node creates Review, enqueues Kafka → returns { id, status: "pending" }
-//
-//  Flow B — dev simulation tick:
-//    simulation.Controller.emitOne → CreateMailboxReview (source=mailbox_simulation)
-//
-//  Flow C — mail platform registers default verdict webhook:
-//    PUT /v1/clients/{id} (handler) → RegisterIngestClient → Node PUT /ingest/register/{id}
-//    → Postgres ingest_clients row upserted
+// Go client posting mailbox payloads to Node POST /ingest/internal/mailbox with shared secret.
+
 package backend
 
 import (

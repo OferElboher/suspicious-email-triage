@@ -1,8 +1,5 @@
 /**
- * Analytics dashboard — Recharts line + bar charts with legends, axis labels, and measure selector.
- *
- * Pattern: PostgreSQL review_stats_events → GET /metrics/* → Recharts ResponsiveContainer.
- * Technology: recharts library; measure query param switches event_type aggregation.
+ * Analytics tab: Recharts metrics, default auto-refresh, and Prefect/dbt pipeline panel host.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {

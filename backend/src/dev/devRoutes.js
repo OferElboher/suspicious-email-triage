@@ -1,11 +1,6 @@
 /**
- * Dev-only HTTP surface for simulation controls and capability advertisement to the SPA.
- *
- * Pattern: Express Router mounted at `/dev` in createApp.js; `requirePermission` middleware
- * checks PostgreSQL-backed permission codes; `isAdminOrDeveloper` allows bootstrap admin OR
- * dedicated developer role for mutating dev tools (simulation, reset, graph prune, requeue).
- *
- * Technology: Redis (simulation state), KafkaJS (topic recreate on reset), Mongo/Postgres/Neo4j clients.
+ * Dev-only Express routes: simulation, reset-local-state, bootstrap password reset, feature
+ * flags.
  */
 const express = require("express");
 const { Kafka, logLevel } = require("kafkajs");

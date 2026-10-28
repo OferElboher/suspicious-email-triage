@@ -1,5 +1,5 @@
 /**
- * Review document indexing in Elasticsearch (full-text search, laptop-sized dev index).
+ * Index mappings and bulk helpers for denormalized review documents in Elasticsearch.
  */
 const { getElasticsearchClient, resetElasticsearchClient, isElasticsearchEnabled } = require("./elasticClient");
 const { dayBoundsUtc, pageIndexForDate } = require("../lib/dateNav");

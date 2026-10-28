@@ -1,4 +1,6 @@
-"""Authenticate Django admin sessions against auth_users (bcrypt, same as Node API)."""
+"""
+Django auth backend: verifies bcrypt password_hash from PostgreSQL for django-admin sign-in.
+"""
 
 import bcrypt
 from django.contrib.auth.backends import BaseBackend

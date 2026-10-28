@@ -1,3 +1,6 @@
+/**
+ * Login and forgot-password UI: email/password, optional Google, dev bootstrap password reset.
+ */
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { getJson, postJson } from "../api/client";

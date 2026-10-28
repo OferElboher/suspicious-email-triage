@@ -1,17 +1,5 @@
-// Package handler implements HTTP routes for mailbox ingest and dev simulation.
-//
-// This is the public edge of the Go ingest-gateway. Mail platforms and the React #ingest UI
-// call these routes; handlers validate input, update in-memory stats, and delegate persistence
-// to backend.Client (Node internal API).
-//
-// Route map (Go 1.22 method-aware ServeMux patterns):
-//   GET  /health/live, /health/ready     — Docker/Kubernetes probes
-//   GET  /metrics                        — Prometheus scrape
-//   GET  /v1/stats/dashboard             — JSON for React #ingest charts
-//   POST /v1/ingest/email                — production mailbox webhook ingest
-//   PUT  /v1/clients/{clientId}          — mail platform verdict webhook self-registration
-//   POST /v1/simulation/start|stop       — dev-only synthetic traffic (403 when not dev)
-//   GET  /v1/simulation/status           — dev simulation state
+// Go HTTP handlers: webhook ingest, simulation API, health, and stats for the #ingest dashboard.
+
 package handler
 
 import (

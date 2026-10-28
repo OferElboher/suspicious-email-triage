@@ -1,9 +1,6 @@
 /**
- * In-process dev simulation timer — synthetic Review documents at a Redis-configured rate.
- *
- * Pattern: setInterval inside the Node API process (not Celery); each tick creates a Mongo
- * review with source:dev_simulation and calls enqueueAfterCreate (Kafka ingest).
- * State: simulationStore.js (Redis); toggled via POST /dev/simulation from SimulationPanel.jsx.
+ * Dev simulation timer: periodically creates synthetic reviews and enqueues them like real
+ * traffic.
  */
 const Review = require("../models/Review");
 const logger = require("../lib/logger");

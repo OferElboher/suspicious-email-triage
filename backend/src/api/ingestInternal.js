@@ -1,8 +1,5 @@
 /**
- * Internal mailbox ingest + verdict delivery routes — called by Go gateway and Celery (not browser JWT).
- *
- * Pattern: same as graphInternal.js — shared secret header before JWT middleware in createApp.
- * Technology: Express Router, Mongoose Review, reviewPipeline, verdictDelivery service.
+ * Internal mailbox ingest route: validates ingest token, creates review, enqueues Kafka.
  */
 const express = require("express");
 const Review = require("../models/Review");

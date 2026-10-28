@@ -1,6 +1,6 @@
 /**
- * Shared “after review persisted” side-effects: Kafka ingest (and optional BullMQ fallback).
- * Keeps POST /reviews, /test, and the dev simulator aligned on the same enqueue rules.
+ * Shared post-create pipeline: stats events plus Kafka enqueue (and optional BullMQ) so every
+ * ingest path behaves the same.
  */
 const logger = require("../lib/logger");
 const reviewQueue = require("../queue/reviewQueue");

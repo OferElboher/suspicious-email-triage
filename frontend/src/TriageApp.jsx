@@ -1,8 +1,5 @@
 /**
- * Primary analyst UI shell — icon navigation bar and dedicated sub-windows.
- *
- * Sub-windows: Review dashboard, Analytics, Phishing graph, Search reviews, Logs, Admin, Settings.
- * Pattern: URL hash routing (appScreenNavigation.js) + RBAC-gated AppNavBar icons.
+ * Main React shell: icon navigation, RBAC tabs, and hash routing for triage and sub-windows.
  */
 import { useCallback, useEffect, useState } from "react";
 import { postJson, getJson } from "./api/client";

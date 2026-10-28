@@ -1,6 +1,5 @@
 /**
- * Async startup: fetch secrets from mock AWS Secrets Manager, then boot the HTTP server.
- * Docker CMD uses this instead of server.js so credentials load before any DB connection.
+ * Node preload: fetch secrets before server.js so JWT and DB env vars exist at listen time.
  */
 const { loadApplicationSecrets } = require("../src/secrets/loadSecrets");
 

@@ -1,4 +1,7 @@
-"""Mirror of Node ruleEngine heuristics for Celery scoring path."""
+"""
+Deterministic heuristics (URLs, sender patterns) that always run before optional LLM calls.
+"""
+
 from typing import Any, Dict, List, Tuple
 
 _PHISHING_URL_HINTS = (

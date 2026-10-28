@@ -1,8 +1,6 @@
 /**
- * HTTP client for Snowflake analytics export (mock dev server or future real Snowflake SQL API).
- *
- * Pattern: singleton fetch client with graceful degradation when SNOWFLAKE_ENABLED=false.
- * Technology: Node fetch (Docker healthcheck pattern) against mock-aws-snowflake container.
+ * Snowflake HTTP client: insert and reporting calls against SNOWFLAKE_URL (mock-snowflake in
+ * dev, real warehouse in production).
  */
 const logger = require("../lib/logger");
 

@@ -1,7 +1,5 @@
 """
-Cloud LLM client factory — selects Bedrock, Vertex, or mock based on env.
-
-Pattern: provider interface hides vendor SDK differences from the orchestrator FSM.
+Picks Bedrock, Vertex, or mock-cloud-llm client from AGENT_LLM_PROVIDER environment.
 """
 
 from __future__ import annotations

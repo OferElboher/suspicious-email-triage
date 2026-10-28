@@ -1,5 +1,6 @@
 /**
- * Internal graph sync route mounted before JWT auth so Celery can call it with a service token.
+ * Internal graph sync routes Celery calls to upsert Neo4j without exposing write Cypher
+ * publicly.
  */
 const express = require("express");
 const router = express.Router();

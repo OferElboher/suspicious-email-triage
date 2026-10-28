@@ -1,4 +1,6 @@
-"""Django admin registrations for Node-owned auth tables (CRUD + read-only reference views)."""
+"""
+Django ModelAdmin for users and roles; custom role sync avoids broken composite-PK inlines.
+"""
 
 import bcrypt
 from django import forms

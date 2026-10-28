@@ -1,6 +1,6 @@
 /**
- * PostgreSQL statistics store for chart data.
- * MongoDB keeps full review documents; PostgreSQL keeps narrow time-series events.
+ * PostgreSQL statistics layer: schema, event inserts, chart queries, and truncation during dev
+ * reset-local-state.
  */
 const { Pool } = require("pg");
 const logger = require("../lib/logger");

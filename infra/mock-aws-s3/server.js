@@ -1,11 +1,5 @@
 /**
- * Mock Amazon S3 — local stand-in for PutObject / ListObjectsV2 / GetObject.
- *
- * Real AWS S3 uses REST with path-style or virtual-hosted URLs. This mock keeps objects
- * in memory and exposes a simplified path-style API so @aws-sdk/client-s3 with a custom
- * endpoint works in Docker dev without billing or IAM setup.
- *
- * Technology: Node.js http module; Map<string, Buffer> keyed by "bucket/key".
+ * In-memory S3 API mock on :4568 for local backup demos without AWS credentials.
  */
 const http = require("http");
 const { URL } = require("url");

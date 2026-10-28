@@ -1,4 +1,6 @@
-"""Celery application: Redis broker; tasks loaded from `app.tasks`."""
+"""
+Celery application configuration: broker, result backend, and task routing for ai-celery.
+"""
 
 # os reads Celery broker/result URLs from environment variables.
 import os

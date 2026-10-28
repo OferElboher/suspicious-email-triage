@@ -1,5 +1,6 @@
 /**
- * Reviews REST: create (Kafka + optional BullMQ), list, detail, analyst override.
+ * Review triage REST API: create, list, detail, override, and queue helpers used by the React
+ * dashboard and polling flow.
  */
 const express = require("express");
 const router = express.Router();

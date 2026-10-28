@@ -1,10 +1,5 @@
 /**
- * Password-reset email delivery.
- *
- * EMAIL_DELIVERY modes (EMAIL_DELIVERY or legacy SMTP_DELIVERY):
- *   mailpit      — local Mailpit sink (default dev)
- *   google_oauth — Gmail API via Sign in with Google OAuth (no App Passwords)
- *   external     — legacy SMTP username/password (discouraged for Gmail)
+ * Password-reset email composition and delivery via SMTP, SES, Gmail OAuth, or Mailpit in dev.
  */
 const nodemailer = require("nodemailer");
 const logger = require("../lib/logger");

@@ -1,8 +1,5 @@
 /**
- * S3 backup provider — abstraction for Amazon S3 (staging/prod) and mock-aws-s3 (dev).
- *
- * Pattern: same factory style as secretsProvider.js — BACKUP_PROVIDER env selects implementation.
- * Technology: @aws-sdk/client-s3 with custom endpoint for mock; path-style addressing for LocalStack compatibility.
+ * S3 backup adapter: upload, list, and download Postgres backup JSON via AWS SDK or mock-s3.
  */
 const {
   S3Client,

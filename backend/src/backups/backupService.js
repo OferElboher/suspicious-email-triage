@@ -1,8 +1,5 @@
 /**
- * Logical PostgreSQL backup builder — exports stats/auth metadata as JSON for S3 upload.
- *
- * Pattern: application-level snapshot (no pg_dump in container) — portable across dev/stg/prod.
- * Technology: pg Pool + s3BackupProvider factory (mock-aws or aws).
+ * Orchestrates logical Postgres snapshot export and upload through s3BackupProvider.
  */
 const { Pool } = require("pg");
 const logger = require("../lib/logger");

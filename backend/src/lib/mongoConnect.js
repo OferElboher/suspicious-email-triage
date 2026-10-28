@@ -1,3 +1,6 @@
+/**
+ * Connects mongoose to MONGO_URI with timeout and safe URI logging for startup diagnostics.
+ */
 const mongoose = require("mongoose");
 const logger = require("./logger");
 const { mongoUri } = require("../config/runtime");

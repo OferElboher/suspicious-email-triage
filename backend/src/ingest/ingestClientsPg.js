@@ -1,9 +1,5 @@
 /**
- * PostgreSQL registry for mail ingest clients — each client email platform gets its own default verdict webhook URL.
- *
- * Pattern: narrow config table in Postgres (same database as review_stats_events); Mongo Review stores
- * ingestClientId per message for lookup at verdict delivery time.
- * Technology: node-pg Pool (shared with statsPg.js connection string via statsPgUrl()).
+ * PostgreSQL access for ingest_clients: callback URLs and secrets for verdict delivery.
  */
 const { Pool } = require("pg");
 const logger = require("../lib/logger");

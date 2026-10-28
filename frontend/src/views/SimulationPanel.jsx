@@ -1,8 +1,5 @@
 /**
- * Dev-only simulation controls on the Review dashboard (visible when GET /dev/features → simulation:true).
- *
- * Pattern: POST /dev/simulation → Redis state → simulationLoop.js setInterval → Mongo + Kafka.
- * UX: compact left-aligned controls; HoverHelp tooltips replace inline instruction paragraphs.
+ * Dev simulation controls: start/stop synthetic traffic and POST /dev/reset-local-state.
  */
 import { useCallback, useEffect, useState } from "react";
 import { getJson, postJson } from "../api/client";

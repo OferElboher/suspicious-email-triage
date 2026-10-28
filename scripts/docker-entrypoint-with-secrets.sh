@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # docker-entrypoint-with-secrets: fetch credentials from mock AWS Secrets Manager, then exec the app.
+# Wraps container CMD: fetch secrets bundle into env, then exec Node/Celery/Go/Django process.
+
 set -euo pipefail
 
 DEPLOYMENT="${DEPLOYMENT_ENV:-${APP_ENV:-dev}}"
@@ -35,3 +37,4 @@ PY
 fi
 
 exec "$@"
+

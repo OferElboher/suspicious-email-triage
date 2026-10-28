@@ -1,5 +1,5 @@
 /**
- * Graph REST API: campaigns, neighborhoods, visualization, and internal worker sync.
+ * JWT-protected graph API returning campaign list and subgraph JSON for GraphView.
  */
 const express = require("express");
 const router = express.Router();

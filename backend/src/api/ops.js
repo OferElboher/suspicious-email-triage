@@ -1,5 +1,6 @@
 /**
- * Operations routes: Prometheus scrape, alert evaluation, log summary (TBD 1.3–1.4 free path).
+ * Operations API: S3 backups, Prometheus metrics text, alerts (ops.backups and related
+ * permissions).
  */
 const express = require("express");
 const { renderPrometheusText } = require("../lib/appMetrics");

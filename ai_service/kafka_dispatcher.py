@@ -1,4 +1,6 @@
-"""Consume Kafka ingest topic and dispatch Celery `analyze_review` tasks."""
+"""
+Kafka consumer process: reads email.review.ingested and dispatches analyze_review Celery tasks.
+"""
 
 import json
 import os

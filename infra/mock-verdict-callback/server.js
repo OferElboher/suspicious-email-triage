@@ -1,11 +1,5 @@
 /**
- * Mock verdict callback receiver — dev stand-in for customer mail platform webhooks.
- *
- * Real SEG/Graph adapters expose HTTPS endpoints that accept verdict JSON and drive
- * quarantine/release actions. This mock stores POST bodies in memory for demos and tests.
- *
- * Technology: Node.js http module; in-memory array (like mock-s3 Map pattern).
- * Port 4569 — see infra/docker/docker-compose.yml service mock-verdict-callback.
+ * Dev HTTP receiver that logs test verdict webhook POSTs from verdictDelivery.
  */
 const http = require("http");
 const crypto = require("crypto");

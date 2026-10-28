@@ -1,5 +1,6 @@
 /**
- * BullMQ job body: load review, rules + LLM, persist. Used when USE_BULLMQ_ENQUEUE=true.
+ * BullMQ job handler: loads a review and runs the Node-side processing path for legacy
+ * deployments.
  */
 const Review = require("../models/Review");
 const logger = require("../lib/logger");

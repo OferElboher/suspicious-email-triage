@@ -1,8 +1,5 @@
 /**
- * HTTP client for the Go ingest-gateway service (server-side proxy for the React UI).
- *
- * Pattern: Node proxies gateway stats so the browser keeps using JWT auth + CRA proxy
- * instead of calling the Go container directly from the browser.
+ * Proxies Go ingest-gateway metrics to Node for the React #ingest dashboard.
  */
 const logger = require("../lib/logger");
 

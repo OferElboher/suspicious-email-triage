@@ -1,15 +1,5 @@
 /**
- * JWT-authenticated CRUD for mail platform ingest client registry (Postgres ingest_clients).
- *
- * Usage flow (operator UI):
- *  1. Admin/manager/developer opens #ingest → RegisterIngestClientForm.
- *  2. Form calls PUT /ingest/clients/:clientId with Bearer JWT (ingest.clients.write).
- *  3. upsertIngestClient stores default verdict webhook URL for that ingestClientId.
- *
- * Usage flow (read-only):
- *  GET /ingest/clients with metrics.read → list for dashboards or scripts.
- *
- * Technology: Express Router, requirePermission middleware, ingestClientsPg.js.
+ * CRUD API for ingest client configuration rows used by verdict delivery.
  */
 const express = require("express");
 const logger = require("../lib/logger");
