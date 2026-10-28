@@ -1,11 +1,14 @@
 """
 Django ORM models for PostgreSQL auth tables that Node creates and migrates (``auth_users``, ``auth_roles``, …).
 
-**Unmanaged** (``Meta.managed = False``) means Django will **not** run migrations to create, alter, or drop these
-tables. Node ``authPg.js`` owns the DDL and bcrypt ``password_hash`` format; Django only **reads and writes rows**
-through the ORM for django-admin. **Managed** models would let ``migrate`` create parallel Django tables or fight
-Node schema changes — we avoid that so there is one source of truth for login data shared by JWT (Node) and admin
-(Django).
+**Unmanaged** (``Meta.managed = False``): Django maps to existing tables but does **not** emit migrations or DDL for
+them. **Why not managed** (normal Django-owned tables)? Auth is owned by the Node API: ``authPg.js`` creates and
+evolves schema on startup, stores bcrypt in ``password_hash``, and serves JWT login. django-admin is a secondary
+UI on the **same** rows. If these models were **managed**, ``django-admin migrate`` would try to create its own
+``auth_*`` tables (or alter columns Django expects), producing duplicate schemas or migration conflicts whenever
+Node adds a column or composite-key junction table. Managed mode also tempts using ``django.contrib.auth.User``,
+which would not match Node's table layout. Unmanaged keeps **one** DDL owner (Node) and **one** login store while
+Django still gets ModelAdmin CRUD.
 
 ``TriageUser`` implements ``get_session_auth_hash`` so admin sessions invalidate when ``password_hash`` changes.
 Django **sessions** use SQLite in the admin container; triage auth **data** uses the Postgres router, not SQLite.
