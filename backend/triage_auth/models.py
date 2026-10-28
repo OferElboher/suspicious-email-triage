@@ -1,11 +1,16 @@
 """
-Django unmanaged models map PostgreSQL auth_users, auth_roles, and junction tables owned by Node migrations.
+Django ORM models for PostgreSQL auth tables that Node creates and migrates (``auth_users``, ``auth_roles``, …).
 
-They let django-admin display and edit users without Django creating duplicate tables in Postgres.
+**Unmanaged** (``Meta.managed = False``) means Django will **not** run migrations to create, alter, or drop these
+tables. Node ``authPg.js`` owns the DDL and bcrypt ``password_hash`` format; Django only **reads and writes rows**
+through the ORM for django-admin. **Managed** models would let ``migrate`` create parallel Django tables or fight
+Node schema changes — we avoid that so there is one source of truth for login data shared by JWT (Node) and admin
+(Django).
 
-TriageUser implements get_session_auth_hash so Django sessions invalidate when password_hash changes.
+``TriageUser`` implements ``get_session_auth_hash`` so admin sessions invalidate when ``password_hash`` changes.
+Django **sessions** use SQLite in the admin container; triage auth **data** uses the Postgres router, not SQLite.
 
-These models are read/write against the triage database router, not SQLite.
+Node junction tables use composite primary keys (no surrogate ``id``); see ``CompositePrimaryKey`` on role models.
 """
 
 from django.db import models

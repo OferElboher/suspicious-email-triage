@@ -14,7 +14,7 @@ This guide is for anyone new to the repository who wants a **plain-language map*
 
 **Python** powers asynchronous scoring in `ai_service/`. Celery, Kafka consumers, rule engines, and LLM clients are mature in Python, so heavy analysis stays **out of the Node process** and can scale on separate containers without blocking HTTP requests.
 
-**Go** powers the **ingest-gateway** in `ingest-gateway/`. A small compiled binary is a good edge service for mailbox webhooks and dev simulation: fast startup, low memory, and a clear security boundary between public ingest and the Node API.
+**Go** powers the **ingest-gateway** in `ingest-gateway/`. A small compiled binary is a good edge service for mailbox webhooks and dev simulation: fast startup and low memory. **Security boundary:** mail platforms and the internet-facing webhook URL talk only to the gateway on port **8080**, not to the main Node API on **3000**. The gateway normalizes each payload and forwards it to a **single internal** Node route (`POST /ingest/internal/mailbox`) using a shared secret header (`X-Ingest-Internal-Token` loaded from Secrets Manager / `dev.secrets`). Node rejects that route unless the token matches, so random callers cannot create reviews by hitting the API directly. Analyst traffic still uses **JWT** login on Node and `POST /reviews`; ingest traffic never needs user passwords on the edge box. In production you can place the gateway in a DMZ while keeping Node and databases on a private network.
 
 **SQL** appears in PostgreSQL schemas, dbt demo models, and Django admin queries. Relational storage fits auth rows, chart statistics, and ingest-client registry data that benefits from indexes and joins.
 

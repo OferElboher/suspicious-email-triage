@@ -237,7 +237,7 @@ Paths below are **relative to the repository root**.
 
 ### Django admin (`backend/triage_auth/`)
 
-- `backend/triage_auth/models.py` — unmanaged ORM models mirroring Node-owned PostgreSQL auth tables.
+- `backend/triage_auth/models.py` — **unmanaged** ORM models (`Meta.managed = False`) mirroring Node-owned PostgreSQL auth tables: Django does not migrate/create those tables (Node `authPg.js` owns schema and bcrypt hashes); Django admin only reads/writes existing rows so JWT login and admin CRUD share one `auth_users` table without duplicate Django tables.
 - `backend/triage_auth/backends.py` — email/password authentication for admin login.
 - `backend/triage_auth/admin.py` — user/role ModelAdmin (audit log disabled for SQLite FK reasons).
 
